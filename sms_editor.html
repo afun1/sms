@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Editor - Sparky Messaging</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding-top: 80px;
+        }
+
+        .sticky-nav {
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            height: 60px;
+        }
+        
+        .nav-container {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            height: 100%;
+            max-width: 100%;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-left {
+            display: flex;
+            align-items: center;
+            padding: 5px 5px 0 5px;
+        }
+        
+        .nav-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            margin-right: 10px;
+        }
+        
+        .nav-brand {
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            white-space: nowrap;
+            margin-right: 5px;
+        }
+        
+        .nav-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        
+        .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+        
+        .nav-link.active {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+        
+        .nav-separator {
+            color: rgba(255,255,255,0.6);
+            margin: 0 2px;
+            font-weight: bold;
+        }
+        
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-right: 20px;
+            justify-content: flex-end;
+        }
+        
+        .nav-welcome {
+            color: rgba(255,255,255,0.95);
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .nav-logout {
+            color: #ff4757 !important;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9em;
+        }
+        
+        .nav-logout:hover {
+            color: #ff3742 !important;
+            text-shadow: 0 0 8px rgba(255, 71, 87, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+        
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #007bff;
+            color: white;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <nav class="sticky-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="/static/logo.png" alt="Sparky" class="nav-logo" onerror="this.src='/static/logo.png';">
+                <span class="nav-brand">Sparky Messaging</span>
+            </div>
+            
+            <div class="nav-center">
+                <a href="ai_editor.html" class="nav-link">🏠 Home</a>
+                <span class="nav-separator">•</span>
+                <a href="ai_editor.html" class="nav-link">Sparky AI Content</a>
+                <span class="nav-separator">•</span>
+                <a href="sms_editor.html" class="nav-link active">SMS</a>
+                <span class="nav-separator">•</span>
+                <a href="email_editor.html" class="nav-link">Email</a>
+                <span class="nav-separator">•</span>
+                <a href="rvm_editor.html" class="nav-link">RVM</a>
+                <span class="nav-separator">•</span>
+                <a href="campaign_builder.html" class="nav-link">Multi-Provider Optimization</a>
+                <span class="nav-separator" id="adminSeparator" style="display: none;">•</span>
+                <a href="admin.html" class="nav-link" id="adminLink" style="display: none;">⚙️ Admin</a>
+            </div>
+            
+            <div class="nav-right">
+                <span class="nav-welcome" id="navWelcome">Welcome!</span>
+                <a href="#" class="nav-logout" onclick="logout(); return false;">Log Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>📱 SMS Message Editor</h1>
+            <p>Create and send SMS messages</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="form-group">
+                <label for="recipientPhone">Recipient Phone Number</label>
+                <input type="tel" id="recipientPhone" placeholder="+1234567890" value="+1234567890">
+            </div>
+            
+            <div class="form-group">
+                <label for="messageText">Message Content</label>
+                <textarea id="messageText" placeholder="Type your message here...">Hey! This is a test message from Sparky Messaging. 🚀</textarea>
+            </div>
+            
+            <button class="btn" onclick="sendSMS()">📤 Send SMS</button>
+            <button class="btn" onclick="testMessage()">🧪 Test Message</button>
+            
+            <div id="results" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; display: none;">
+                <!-- Results will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // NO AUTH CHECKS - SIMPLE INITIALIZATION
+        document.addEventListener('DOMContentLoaded', function() {
+            const username = localStorage.getItem('username') || 'User';
+            const role = localStorage.getItem('userRole') || 'user';
+            document.getElementById('navWelcome').textContent = `Welcome, ${username}${role === 'admin' ? ' (Admin)' : ''}!`;
+            
+            // Show admin link if user is admin
+            if (role === 'admin') {
+                document.getElementById('adminLink').style.display = 'inline-flex';
+                document.getElementById('adminSeparator').style.display = 'inline';
+            }
+        });
+
+        function sendSMS() {
+            const phone = document.getElementById('recipientPhone').value;
+            const message = document.getElementById('messageText').value;
+            
+            if (!phone || !message) {
+                alert('Please enter both phone number and message!');
+                return;
+            }
+            
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <div style="color: #155724; background: #d4edda; padding: 15px; border-radius: 8px; border: 1px solid #c3e6cb;">
+                    ✅ SMS would be sent to: ${phone}<br>
+                    Message: "${message}"<br>
+                    Characters: ${message.length}
+                </div>
+            `;
+            results.style.display = 'block';
+        }
+
+        function testMessage() {
+            const message = document.getElementById('messageText').value;
+            const results = document.getElementById('results');
+            results.innerHTML = `
+                <div style="color: #0c5460; background: #d1ecf1; padding: 15px; border-radius: 8px; border: 1px solid #bee5eb;">
+                    🧪 Test Mode - Message Preview:<br>
+                    "${message}"<br>
+                    Characters: ${message.length}
+                </div>
+            `;
+            results.style.display = 'block';
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userRole');
+                localStorage.removeItem('username');
+                window.location.href = 'ai_editor.html';
+            }
+        }
+    </script>
+</body>
+</html>

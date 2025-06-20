@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting to AI Editor...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .redirect-message {
+            text-align: center;
+            padding: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <div class="redirect-message">
+        <h2>🔄 Redirecting to AI Editor...</h2>
+        <p>All users now access the AI Editor directly.</p>
+        <p>You will be redirected in 2 seconds...</p>
+    </div>
+    <script>
+        // ALL ADMIN USERS GO TO AI EDITOR - NO EXCEPTIONS
+        if (!localStorage.getItem('authToken')) {
+            window.location.href = 'index.html';
+        } else {
+            setTimeout(() => {
+                window.location.href = 'http://localhost:5000/ai_editor.html';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

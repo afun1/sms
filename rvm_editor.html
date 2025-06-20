@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVM Editor - Sparky Messaging</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding-top: 80px;
+        }
+
+        /* Unified Sticky Navigation Header */
+        .sticky-nav {
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            height: 60px;
+        }
+        
+        .nav-container {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            height: 100%;
+            max-width: 100%;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-left {
+            display: flex;
+            align-items: center;
+            padding: 5px 5px 0 5px;
+        }
+        
+        .nav-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            margin-right: 10px;
+        }
+        
+        .nav-brand {
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            white-space: nowrap;
+            margin-right: 5px;
+        }
+        
+        .nav-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        
+        .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+        
+        .nav-link.active {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+        
+        .nav-separator {
+            color: rgba(255,255,255,0.6);
+            margin: 0 2px;
+            font-weight: bold;
+        }
+        
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-right: 20px;
+            justify-content: flex-end;
+        }
+        
+        .nav-welcome {
+            color: rgba(255,255,255,0.95);
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .nav-logout {
+            color: #ff4757 !important;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9em;
+        }
+        
+        .nav-logout:hover {
+            color: #ff3742 !important;
+            text-shadow: 0 0 8px rgba(255, 71, 87, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .editor-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+        }
+        
+        .panel-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #9b59b6;
+            box-shadow: 0 0 0 3px rgba(155, 89, 182, 0.1);
+        }
+        
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #9b59b6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #8e44ad;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin: 5px;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .audio-controls {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .play-button {
+            background: #9b59b6;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 20px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .play-button:hover {
+            background: #8e44ad;
+            transform: scale(1.1);
+        }
+        
+        .timer-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #9b59b6;
+            margin-top: 10px;
+        }
+        
+        .script-tips {
+            background: #e8f4f8;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .script-tips h4 {
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+        
+        .script-tips ul {
+            margin-left: 20px;
+            color: #0c5460;
+        }
+        
+        @media (max-width: 768px) {
+            .editor-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding: 10px;
+                gap: 10px;
+            }
+            
+            .nav-center {
+                order: 2;
+            }
+            
+            .nav-right {
+                order: 3;
+                justify-content: center;
+                padding-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Unified Sticky Navigation Header -->
+    <nav class="sticky-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="/static/logo.png" alt="Sparky" class="nav-logo" onerror="this.src='/static/logo.png';">
+                <span class="nav-brand">Sparky Messaging</span>
+            </div>
+            
+            <div class="nav-center">
+                <a href="ai_editor.html" class="nav-link">🏠 Home</a>
+                <span class="nav-separator">•</span>
+                <a href="ai_editor.html" class="nav-link">Sparky AI Content</a>
+                <span class="nav-separator">•</span>
+                <a href="sms_editor.html" class="nav-link">SMS</a>
+                <span class="nav-separator">•</span>
+                <a href="email_editor.html" class="nav-link">Email</a>
+                <span class="nav-separator">•</span>
+                <a href="rvm_editor.html" class="nav-link active">RVM</a>
+                <span class="nav-separator">•</span>
+                <a href="campaign_builder.html" class="nav-link">Multi-Provider Optimization</a>
+                <span class="nav-separator" id="adminSeparator" style="display: none;">•</span>
+                <a href="admin.html" class="nav-link" id="adminLink" style="display: none;">⚙️ Admin</a>
+            </div>
+            
+            <div class="nav-right">
+                <span class="nav-welcome" id="navWelcome">Welcome!</span>
+                <a href="#" class="nav-logout" onclick="logout(); return false;">Log Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎙️ RVM Script Editor</h1>
+            <p>Create and test ringless voicemail scripts</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="editor-grid">
+                <!-- Script Composer -->
+                <div class="editor-panel">
+                    <h2 class="panel-title">
+                        ✍️ Script Composer
+                    </h2>
+                    
+                    <div class="form-group">
+                        <label for="recipientPhone">Recipient Phone Number</label>
+                        <input type="tel" id="recipientPhone" placeholder="+1234567890" value="+1234567890">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="callerName">Caller Name</label>
+                        <input type="text" id="callerName" placeholder="Your Name" value="John from Sparky">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="companyName">Company/Business</label>
+                        <input type="text" id="companyName" placeholder="Company Name" value="Sparky Messaging">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rvmScript">RVM Script</label>
+                        <textarea id="rvmScript" placeholder="Type your voicemail script here..." oninput="updatePreview()">Hi! This is John from Sparky Messaging. I wanted to reach out about our amazing messaging services that can help grow your business. 
+
+We specialize in SMS, email, and voicemail campaigns that get results. 
+
+Please give me a call back at 555-0123 when you get a chance. I'd love to discuss how we can help you reach more customers.
+
+Thanks, and have a great day!</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="callbackNumber">Callback Number</label>
+                        <input type="tel" id="callbackNumber" placeholder="555-0123" value="555-0123">
+                    </div>
+                    
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="sendRVM()">
+                            📞 Send RVM
+                        </button>
+                        <button class="btn btn-secondary" onclick="testScript()">
+                            🧪 Test Script
+                        </button>
+                        <button class="btn btn-secondary" onclick="saveScript()">
+                            💾 Save Script
+                        </button>
+                    </div>
+
+                    <div class="script-tips">
+                        <h4>💡 RVM Best Practices</h4>
+                        <ul>
+                            <li>Keep it under 30 seconds</li>
+                            <li>Speak clearly and slowly</li>
+                            <li>Include a clear call-to-action</li>
+                            <li>Always provide callback number</li>
+                            <li>Be personable and authentic</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Audio Preview & Controls -->
+                <div class="editor-panel">
+                    <h2 class="panel-title">
+                        🎧 Audio Preview
+                    </h2>
+                    
+                    <div class="audio-controls">
+                        <h3>Text-to-Speech Preview</h3>
+                        <button class="play-button" onclick="playPreview()" id="playBtn">
+                            ▶️
+                        </button>
+                        <br>
+                        <div class="timer-display" id="timerDisplay">0:00 / 0:30</div>
+                        <div style="margin-top: 15px;">
+                            <label for="voiceSelect">Voice:</label>
+                            <select id="voiceSelect" onchange="updateVoice()">
+                                <option value="male">Professional Male</option>
+                                <option value="female">Professional Female</option>
+                                <option value="casual-male">Casual Male</option>
+                                <option value="casual-female">Casual Female</option>
+                            </select>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <label for="speedSlider">Speed:</label>
+                            <input type="range" id="speedSlider" min="0.5" max="2" step="0.1" value="1" onchange="updateSpeed()">
+                            <span id="speedValue">1.0x</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h4>📊 Script Analysis</h4>
+                        <div style="background: white; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                            <div style="margin-bottom: 10px;">
+                                <strong>Word Count:</strong> <span id="wordCount">0</span>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Estimated Duration:</strong> <span id="estimatedDuration">0 seconds</span>
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Tone:</strong> <span id="toneAnalysis">Professional</span>
+                            </div>
+                            <div>
+                                <strong>Callback Numbers:</strong> <span id="phoneNumbers">1 found</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SIMPLIFIED - NO AUTH CHECKS
+        function initializePage() {
+            const username = localStorage.getItem('username') || 'User';
+            const role = localStorage.getItem('userRole') || 'user';
+            
+            document.getElementById('navWelcome').textContent = `Welcome, ${username}${role === 'admin' ? ' (Admin)' : ''}!`;
+            
+            // Show admin link if user is admin
+            if (role === 'admin') {
+                document.getElementById('adminLink').style.display = 'inline-flex';
+                document.getElementById('adminSeparator').style.display = 'inline';
+            }
+            
+            // Initialize preview
+            updatePreview();
+        }
+
+        // Initialize immediately
+        initializePage();
+
+        function updatePreview() {
+            const script = document.getElementById('rvmScript').value;
+            
+            // Word count
+            const words = script.trim().split(/\s+/).length;
+            document.getElementById('wordCount').textContent = words;
+            
+            // Estimated duration (average 150 words per minute)
+            const duration = Math.ceil((words / 150) * 60);
+            document.getElementById('estimatedDuration').textContent = `${duration} seconds`;
+            
+            // Find phone numbers
+            const phoneRegex = /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g;
+            const phones = script.match(phoneRegex) || [];
+            document.getElementById('phoneNumbers').textContent = `${phones.length} found`;
+            
+            // Simple tone analysis
+            const tone = script.toLowerCase().includes('amazing') || script.toLowerCase().includes('great') ? 
+                'Enthusiastic' : 'Professional';
+            document.getElementById('toneAnalysis').textContent = tone;
+        }
+
+        function playPreview() {
+            const script = document.getElementById('rvmScript').value;
+            const playBtn = document.getElementById('playBtn');
+            
+            if ('speechSynthesis' in window) {
+                // Stop any existing speech
+                speechSynthesis.cancel();
+                
+                if (playBtn.textContent === '▶️') {
+                    // Start playing
+                    const utterance = new SpeechSynthesisUtterance(script);
+                    utterance.rate = parseFloat(document.getElementById('speedSlider').value);
+                    
+                    utterance.onstart = () => {
+                        playBtn.textContent = '⏸️';
+                    };
+                    
+                    utterance.onend = () => {
+                        playBtn.textContent = '▶️';
+                    };
+                    
+                    speechSynthesis.speak(utterance);
+                } else {
+                    // Stop playing
+                    speechSynthesis.cancel();
+                    playBtn.textContent = '▶️';
+                }
+            } else {
+                alert('Text-to-speech preview not supported in this browser.');
+            }
+        }
+
+        function updateVoice() {
+            // Voice selection logic would go here
+            console.log('Voice changed to:', document.getElementById('voiceSelect').value);
+        }
+
+        function updateSpeed() {
+            const speed = document.getElementById('speedSlider').value;
+            document.getElementById('speedValue').textContent = speed + 'x';
+        }
+
+        function sendRVM() {
+            const phone = document.getElementById('recipientPhone').value;
+            const script = document.getElementById('rvmScript').value;
+            
+            if (!phone || !script) {
+                alert('Please enter both phone number and script!');
+                return;
+            }
+            
+            alert(`RVM would be sent to: ${phone}\nDuration: ${document.getElementById('estimatedDuration').textContent}`);
+        }
+
+        function testScript() {
+            updatePreview();
+            alert('Script analysis updated! Check the right panel for details.');
+        }
+
+        function saveScript() {
+            const script = document.getElementById('rvmScript').value;
+            const scriptName = prompt('Enter script name:');
+            
+            if (scriptName && script) {
+                // Save to localStorage
+                const scripts = JSON.parse(localStorage.getItem('rvmScripts') || '{}');
+                scripts[scriptName] = script;
+                localStorage.setItem('rvmScripts', JSON.stringify(scripts));
+                
+                alert(`Script "${scriptName}" saved successfully!`);
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userRole');
+                localStorage.removeItem('username');
+                window.location.href = 'ai_editor.html';
+            }
+        }
+    </script>
+</body>
+</html>

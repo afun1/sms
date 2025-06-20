@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Editor - Sparky Messaging</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding-top: 80px;
+        }
+
+        /* Unified Sticky Navigation Header */
+        .sticky-nav {
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            height: 60px;
+        }
+        
+        .nav-container {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            height: 100%;
+            max-width: 100%;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-left {
+            display: flex;
+            align-items: center;
+            padding: 5px 5px 0 5px;
+        }
+        
+        .nav-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            margin-right: 10px;
+        }
+        
+        .nav-brand {
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            white-space: nowrap;
+            margin-right: 5px;
+        }
+        
+        .nav-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        
+        .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+        
+        .nav-link.active {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+        
+        .nav-separator {
+            color: rgba(255,255,255,0.6);
+            margin: 0 2px;
+            font-weight: bold;
+        }
+        
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-right: 20px;
+            justify-content: flex-end;
+        }
+        
+        .nav-welcome {
+            color: rgba(255,255,255,0.95);
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .nav-logout {
+            color: #ff4757 !important;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9em;
+        }
+        
+        .nav-logout:hover {
+            color: #ff3742 !important;
+            text-shadow: 0 0 8px rgba(255, 71, 87, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .editor-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+        }
+        
+        .panel-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2ecc71;
+            box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
+        }
+        
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #2ecc71;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            margin: 5px;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        @media (max-width: 768px) {
+            .editor-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding: 10px;
+                gap: 10px;
+            }
+            
+            .nav-center {
+                order: 2;
+            }
+            
+            .nav-right {
+                order: 3;
+                justify-content: center;
+                padding-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Unified Sticky Navigation Header -->
+    <nav class="sticky-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="/static/logo.png" alt="Sparky" class="nav-logo" onerror="this.src='/static/logo.png';">
+                <span class="nav-brand">Sparky Messaging</span>
+            </div>
+            
+            <div class="nav-center">
+                <a href="ai_editor.html" class="nav-link">🏠 Home</a>
+                <span class="nav-separator">•</span>
+                <a href="ai_editor.html" class="nav-link">Sparky AI Content</a>
+                <span class="nav-separator">•</span>
+                <a href="sms_editor.html" class="nav-link">SMS</a>
+                <span class="nav-separator">•</span>
+                <a href="email_editor.html" class="nav-link active">Email</a>
+                <span class="nav-separator">•</span>
+                <a href="rvm_editor.html" class="nav-link">RVM</a>
+                <span class="nav-separator">•</span>
+                <a href="campaign_builder.html" class="nav-link">Multi-Provider Optimization</a>
+                <span class="nav-separator" id="adminSeparator" style="display: none;">•</span>
+                <a href="admin.html" class="nav-link" id="adminLink" style="display: none;">⚙️ Admin</a>
+            </div>
+            
+            <div class="nav-right">
+                <span class="nav-welcome" id="navWelcome">Welcome!</span>
+                <a href="#" class="nav-logout" onclick="logout(); return false;">Log Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>📧 Email Campaign Editor</h1>
+            <p>Create and send email campaigns with multi-provider optimization</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="editor-grid">
+                <!-- Email Composer -->
+                <div class="editor-panel">
+                    <h2 class="panel-title">
+                        ✍️ Email Composer
+                    </h2>
+                    
+                    <div class="form-group">
+                        <label for="emailSubject">Subject Line</label>
+                        <input type="text" id="emailSubject" placeholder="Enter email subject">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="recipientEmail">Recipient Email</label>
+                        <input type="email" id="recipientEmail" placeholder="recipient@example.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="emailContent">Email Content</label>
+                        <textarea id="emailContent" placeholder="Type your email content here...">Hello!
+
+This is a test email from Sparky Messaging.
+
+Best regards,
+Your Team</textarea>
+                    </div>
+                    
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn btn-primary" onclick="sendEmail()">
+                            📤 Send Email
+                        </button>
+                        <button class="btn btn-secondary" onclick="previewEmail()">
+                            👁️ Preview
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Email Preview -->
+                <div class="editor-panel">
+                    <h2 class="panel-title">
+                        👁️ Email Preview
+                    </h2>
+                    
+                    <div id="emailPreview" style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px; min-height: 300px;">
+                        <div style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+                            <strong>From:</strong> noreply@sparky.com<br>
+                            <strong>To:</strong> <span id="previewTo">recipient@example.com</span><br>
+                            <strong>Subject:</strong> <span id="previewSubject">Email Subject</span>
+                        </div>
+                        <div id="previewContent">
+                            Hello!<br><br>
+                            This is a test email from Sparky Messaging.<br><br>
+                            Best regards,<br>
+                            Your Team
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SIMPLIFIED - NO AUTH CHECKS
+        function initializePage() {
+            const username = localStorage.getItem('username') || 'User';
+            const role = localStorage.getItem('userRole') || 'user';
+            
+            document.getElementById('navWelcome').textContent = `Welcome, ${username}${role === 'admin' ? ' (Admin)' : ''}!`;
+            
+            // Show admin link if user is admin
+            if (role === 'admin') {
+                document.getElementById('adminLink').style.display = 'inline-flex';
+                document.getElementById('adminSeparator').style.display = 'inline';
+            }
+            
+            // Set up live preview
+            document.getElementById('emailSubject').addEventListener('input', updatePreview);
+            document.getElementById('recipientEmail').addEventListener('input', updatePreview);
+            document.getElementById('emailContent').addEventListener('input', updatePreview);
+            
+            updatePreview();
+        }
+
+        // Initialize immediately
+        initializePage();
+
+        function updatePreview() {
+            const subject = document.getElementById('emailSubject').value || 'Email Subject';
+            const recipient = document.getElementById('recipientEmail').value || 'recipient@example.com';
+            const content = document.getElementById('emailContent').value.replace(/\n/g, '<br>');
+            
+            document.getElementById('previewSubject').textContent = subject;
+            document.getElementById('previewTo').textContent = recipient;
+            document.getElementById('previewContent').innerHTML = content;
+        }
+
+        function sendEmail() {
+            const subject = document.getElementById('emailSubject').value;
+            const recipient = document.getElementById('recipientEmail').value;
+            const content = document.getElementById('emailContent').value;
+            
+            if (!subject || !recipient || !content) {
+                alert('Please fill in all fields!');
+                return;
+            }
+            
+            alert(`Email would be sent to: ${recipient}\nSubject: ${subject}`);
+        }
+
+        function previewEmail() {
+            updatePreview();
+            alert('Preview updated! Check the right panel.');
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userRole');
+                localStorage.removeItem('username');
+                window.location.href = 'ai_editor.html';
+            }
+        }
+    </script>
+</body>
+</html>

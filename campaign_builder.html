@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Builder - Sparky Messaging</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding-top: 80px;
+        }
+
+        /* Unified Sticky Navigation Header */
+        .sticky-nav {
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            height: 60px;
+        }
+        
+        .nav-container {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            height: 100%;
+            max-width: 100%;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-left {
+            display: flex;
+            align-items: center;
+            padding: 5px 5px 0 5px;
+        }
+        
+        .nav-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            margin-right: 10px;
+        }
+        
+        .nav-brand {
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            white-space: nowrap;
+            margin-right: 5px;
+        }
+        
+        .nav-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-link {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        
+        .nav-link:hover {
+            color: white;
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-1px);
+        }
+        
+        .nav-link.active {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+        
+        .nav-separator {
+            color: rgba(255,255,255,0.6);
+            margin: 0 2px;
+            font-weight: bold;
+        }
+        
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-right: 20px;
+            justify-content: flex-end;
+        }
+        
+        .nav-welcome {
+            color: rgba(255,255,255,0.95);
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        
+        .nav-logout {
+            color: #ff4757 !important;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9em;
+        }
+        
+        .nav-logout:hover {
+            color: #ff3742 !important;
+            text-shadow: 0 0 8px rgba(255, 71, 87, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            padding: 40px;
+        }
+        
+        .campaign-wizard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            min-height: 600px;
+        }
+        
+        .wizard-sidebar {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+        }
+        
+        .wizard-steps {
+            list-style: none;
+        }
+        
+        .wizard-step {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .wizard-step.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .wizard-step.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .wizard-step:hover:not(.active) {
+            background: #e9ecef;
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .wizard-content {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            position: relative;
+        }
+        
+        .step-content {
+            display: none;
+        }
+        
+        .step-content.active {
+            display: block;
+        }
+        
+        .step-title {
+            font-size: 1.8em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .form-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .section-title {
+            font-size: 1.2em;
+            color: #495057;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #f5576c;
+            box-shadow: 0 0 0 3px rgba(245,87,108,0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245,87,108,0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        
+        .wizard-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .campaign-preview {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .campaign-flow {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .flow-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .flow-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .flow-type {
+            background: #007bff;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .flow-type.sms {
+            background: #28a745;
+        }
+        
+        .flow-type.rvm {
+            background: #17a2b8;
+        }
+        
+        .flow-content {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .channel-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .channel-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .channel-card.selected {
+            border-color: #f5576c;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .channel-card:hover:not(.selected) {
+            border-color: #f5576c;
+            transform: translateY(-2px);
+        }
+        
+        .channel-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .target-audience {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .audience-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .audience-tag {
+            background: #2196f3;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+        
+        .progress-bar {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        
+        .launch-section {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .launch-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .launch-stat {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 1200px) {
+            .campaign-wizard {
+                grid-template-columns: 1fr;
+            }
+            
+            .wizard-sidebar {
+                order: -1;
+            }
+            
+            .wizard-steps {
+                display: flex;
+                overflow-x: auto;
+                gap: 10px;
+            }
+            
+            .wizard-step {
+                min-width: 200px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .channel-selector {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding: 10px;
+                gap: 10px;
+            }
+            
+            .nav-center {
+                order: 2;
+            }
+            
+            .nav-right {
+                order: 3;
+                justify-content: center;
+                padding-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Unified Sticky Navigation Header -->
+    <nav class="sticky-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <img src="/static/logo.png" alt="Sparky" class="nav-logo" onerror="this.src='/static/logo.png';">
+                <span class="nav-brand">Sparky Messaging</span>
+            </div>
+            
+            <div class="nav-center">
+                <a href="ai_editor.html" class="nav-link">🏠 Home</a>
+                <span class="nav-separator">•</span>
+                <a href="ai_editor.html" class="nav-link">Sparky AI Content</a>
+                <span class="nav-separator">•</span>
+                <a href="sms_editor.html" class="nav-link">SMS</a>
+                <span class="nav-separator">•</span>
+                <a href="email_editor.html" class="nav-link">Email</a>
+                <span class="nav-separator">•</span>
+                <a href="rvm_editor.html" class="nav-link">RVM</a>
+                <span class="nav-separator">•</span>
+                <a href="campaign_builder.html" class="nav-link active">Multi-Provider Optimization</a>
+            </div>
+            
+            <div class="nav-right">
+                <span class="nav-welcome" id="navWelcome">Welcome!</span>
+                <a href="#" class="nav-logout" onclick="logout(); return false;">Log Out</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Campaign Builder</h1>
+            <p>Create multi-channel SMS + RVM campaigns with AI-powered content</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 16.66%;"></div>
+            </div>
+            
+            <div class="campaign-wizard">
+                <div class="wizard-sidebar">
+                    <h3 style="margin-bottom: 20px; color: #2c3e50;">Campaign Setup</h3>
+                    <ul class="wizard-steps">
+                        <li class="wizard-step active" onclick="showStep(1)">
+                            <div class="step-number">1</div>
+                            <div>Campaign Goals</div>
+                        </li>
+                        <li class="wizard-step" onclick="showStep(2)">
+                            <div class="step-number">2</div>
+                            <div>Target Audience</div>
+                        </li>
+                        <li class="wizard-step" onclick="showStep(3)">
+                            <div class="step-number">3</div>
+                            <div>Channel Selection</div>
+                        </li>
+                        <li class="wizard-step" onclick="showStep(4)">
+                            <div class="step-number">4</div>
+                            <div>Message Creation</div>
+                        </li>
+                        <li class="wizard-step" onclick="showStep(5)">
+                            <div class="step-number">5</div>
+                            <div>Campaign Flow</div>
+                        </li>
+                        <li class="wizard-step" onclick="showStep(6)">
+                            <div class="step-number">6</div>
+                            <div>Review & Launch</div>
+                        </li>
+                    </ul>
+                    
+                    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 10px;">
+                        <h4 style="margin-bottom: 15px; color: #2c3e50;">💡 Quick Tips</h4>
+                        <ul style="color: #6c757d; font-size: 0.9em; line-height: 1.6;">
+                            <li>Start with clear campaign goals</li>
+                            <li>Know your target audience</li>
+                            <li>Mix SMS and RVM for best results</li>
+                            <li>Use AI to optimize messages</li>
+                            <li>Test before launching</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="wizard-content">
+                    <!-- Step 1: Campaign Goals -->
+                    <div class="step-content active" id="step1">
+                        <h2 class="step-title">
+                            🎯 Campaign Goals & Objectives
+                        </h2>
+                        
+                        <div class="form-grid">
+                            <div class="form-section">
+                                <h3 class="section-title">📋 Basic Information</h3>
+                                
+                                <div class="form-group">
+                                    <label for="campaignName">Campaign Name</label>
+                                    <input type="text" id="campaignName" placeholder="e.g., Q1 Lead Generation Campaign" value="Business Automation Lead Gen">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="campaignGoal">Primary Goal</label>
+                                    <select id="campaignGoal">
+                                        <option value="lead-generation">Lead Generation</option>
+                                        <option value="sales">Direct Sales</option>
+                                        <option value="customer-retention">Customer Retention</option>
+                                        <option value="appointment-setting">Appointment Setting</option>
+                                        <option value="brand-awareness">Brand Awareness</option>
+                                        <option value="event-promotion">Event Promotion</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="campaignBudget">Budget ($)</label>
+                                        <input type="number" id="campaignBudget" placeholder="500" value="1000">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="campaignDuration">Duration (days)</label>
+                                        <input type="number" id="campaignDuration" placeholder="30" value="14">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h3 class="section-title">📊 Success Metrics</h3>
+                                
+                                <div class="form-group">
+                                    <label for="targetResponses">Target Response Rate (%)</label>
+                                    <input type="number" id="targetResponses" placeholder="5" value="8" min="1" max="100">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="targetLeads">Target Leads</label>
+                                    <input type="number" id="targetLeads" placeholder="50" value="100">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="expectedROI">Expected ROI (%)</label>
+                                    <input type="number" id="expectedROI" placeholder="300" value="400">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="trackingMethod">Tracking Method</label>
+                                    <select id="trackingMethod">
+                                        <option value="phone-calls">Phone Call Responses</option>
+                                        <option value="website-visits">Website Visits</option>
+                                        <option value="email-replies">Email Replies</option>
+                                        <option value="form-submissions">Form Submissions</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Target Audience -->
+                    <div class="step-content" id="step2">
+                        <h2 class="step-title">
+                            👥 Target Audience Definition
+                        </h2>
+                        
+                        <div class="target-audience">
+                            <h4 style="color: #1976d2; margin-bottom: 10px;">Current Audience Profile</h4>
+                            <p id="audiencePreview" style="color: #495057;">Small to medium business owners in technology, healthcare, and professional services sectors</p>
+                            <div class="audience-tags" id="audienceTags">
+                                <span class="audience-tag">SMB Owners</span>
+                                <span class="audience-tag">Tech Industry</span>
+                                <span class="audience-tag">25-500 Employees</span>
+                                <span class="audience-tag">Growth-Focused</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-section">
+                                <h3 class="section-title">🏢 Business Demographics</h3>
+                                
+                                <div class="form-group">
+                                    <label for="businessType">Business Type</label>
+                                    <select id="businessType" multiple style="height: 120px;">
+                                        <option value="technology" selected>Technology</option>
+                                        <option value="healthcare" selected>Healthcare</option>
+                                        <option value="professional-services" selected>Professional Services</option>
+                                        <option value="retail">Retail</option>
+                                        <option value="manufacturing">Manufacturing</option>
+                                        <option value="finance">Finance</option>
+                                        <option value="education">Education</option>
+                                        <option value="real-estate">Real Estate</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="companySize">Company Size</label>
+                                        <select id="companySize">
+                                            <option value="1-10">1-10 employees</option>
+                                            <option value="11-50" selected>11-50 employees</option>
+                                            <option value="51-200">51-200 employees</option>
+                                            <option value="201-500">201-500 employees</option>
+                                            <option value="500+">500+ employees</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="revenueRange">Revenue Range</label>
+                                        <select id="revenueRange">
+                                            <option value="under-1m">Under $1M</option>
+                                            <option value="1m-5m" selected>$1M - $5M</option>
+                                            <option value="5m-10m">$5M - $10M</option>
+                                            <option value="10m-50m">$10M - $50M</option>
+                                            <option value="50m+">$50M+</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h3 class="section-title">📍 Geographic & Behavioral</h3>
+                                
+                                <div class="form-group">
+                                    <label for="targetLocation">Geographic Focus</label>
+                                    <textarea id="targetLocation" rows="3" placeholder="e.g., United States, California, San Francisco Bay Area">United States - primarily California, Texas, New York, and Florida</textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="painPoints">Key Pain Points</label>
+                                    <textarea id="painPoints" rows="3" placeholder="What problems does your audience face?">Manual processes, inefficient workflows, high operational costs, difficulty scaling operations</textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="buyingBehavior">Buying Behavior</label>
+                                    <select id="buyingBehavior">
+                                        <option value="research-heavy" selected>Research-Heavy (long sales cycle)</option>
+                                        <option value="quick-decision">Quick Decision Makers</option>
+                                        <option value="committee-based">Committee-Based Decisions</option>
+                                        <option value="price-sensitive">Price-Sensitive</option>
+                                        <option value="relationship-focused">Relationship-Focused</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Channel Selection -->
+                    <div class="step-content" id="step3">
+                        <h2 class="step-title">
+                            📱 Communication Channels
+                        </h2>
+                        
+                        <div class="channel-selector">
+                            <div class="channel-card selected" onclick="toggleChannel('sms')">
+                                <div class="channel-icon">📱</div>
+                                <h3>SMS Messages</h3>
+                                <p>Direct, immediate, high open rates</p>
+                                <div style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                                    📊 98% open rate • 🚀 Instant delivery
+                                </div>
+                            </div>
+                            
+                            <div class="channel-card selected" onclick="toggleChannel('rvm')">
+                                <div class="channel-icon">🎙️</div>
+                                <h3>Ringless Voicemail</h3>
+                                <p>Personal, engaging, non-intrusive</p>
+                                <div style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                                    📊 85% listen rate • 🎯 High conversion
+                                </div>
+                            </div>
+                            
+                            <div class="channel-card" onclick="toggleChannel('email')">
+                                <div class="channel-icon">📧</div>
+                                <h3>Email Follow-up</h3>
+                                <p>Detailed content, nurturing</p>
+                                <div style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                                    📊 25% open rate • 📋 Rich content
+                                </div>
+                            </div>
+                            
+                            <div class="channel-card" onclick="toggleChannel('social')">
+                                <div class="channel-icon">📲</div>
+                                <h3>Social Media</h3>
+                                <p>Brand awareness, engagement</p>
+                                <div style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                                    📊 Variable reach • 🌟 Brand building
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3 class="section-title">⚙️ Channel Configuration</h3>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="smsProvider">SMS Provider Preference</label>
+                                    <select id="smsProvider">
+                                        <option value="auto">Auto-Select Best</option>
+                                        <option value="twilio">Twilio (Premium)</option>
+                                        <option value="textbelt">TextBelt (Cost-Effective)</option>
+                                        <option value="clicksend">ClickSend (International)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rvmVoice">RVM Voice Setting</label>
+                                    <select id="rvmVoice">
+                                        <option value="female">Female Voice</option>
+                                        <option value="male" selected>Male Voice</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="sendingSchedule">Sending Schedule</label>
+                                    <select id="sendingSchedule">
+                                        <option value="business-hours">Business Hours Only (9AM-5PM)</option>
+                                        <option value="extended" selected>Extended Hours (8AM-8PM)</option>
+                                        <option value="custom">Custom Schedule</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="timeZone">Time Zone</label>
+                                    <select id="timeZone">
+                                        <option value="pst" selected>Pacific (PST/PDT)</option>
+                                        <option value="mst">Mountain (MST/MDT)</option>
+                                        <option value="cst">Central (CST/CDT)</option>
+                                        <option value="est">Eastern (EST/EDT)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Message Creation -->
+                    <div class="step-content" id="step4">
+                        <h2 class="step-title">
+                            ✍️ Message Content Creation
+                        </h2>
+                        
+                        <div class="form-grid">
+                            <div class="form-section">
+                                <h3 class="section-title">📱 SMS Message</h3>
+                                
+                                <div class="form-group">
+                                    <label for="smsMessage">SMS Content</label>
+                                    <textarea id="smsMessage" rows="4" placeholder="Your SMS message here..." onkeyup="updateCharCount()">Hi {name}! Are you tired of manual processes slowing down your business? Our automation solutions help companies like {company} save 30% on operational costs. Interested in a free consultation? Reply YES or call 555-AUTOMATE</textarea>
+                                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                                        Characters: <span id="smsCharCount">213</span>/160 • SMS Parts: <span id="smsParts">2</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="smsCallToAction">Call to Action</label>
+                                        <select id="smsCallToAction">
+                                            <option value="reply-yes">Reply YES</option>
+                                            <option value="call-number" selected>Call Number</option>
+                                            <option value="visit-website">Visit Website</option>
+                                            <option value="book-appointment">Book Appointment</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="smsUrgency">Urgency Level</label>
+                                        <select id="smsUrgency">
+                                            <option value="low">Low</option>
+                                            <option value="medium" selected>Medium</option>
+                                            <option value="high">High</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-secondary" onclick="generateAISMS()">
+                                    🤖 Generate with AI
+                                </button>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h3 class="section-title">🎙️ RVM Script</h3>
+                                
+                                <div class="form-group">
+                                    <label for="rvmScript">Voicemail Script</label>
+                                    <textarea id="rvmScript" rows="6" placeholder="Your voicemail script here..." onkeyup="updateWordCount()">Hi {name}, this is Sarah calling from AutomatePro Solutions. I hope you're having a great day! I'm reaching out because I know how challenging it can be to manage all the manual processes in a growing business like {company}. We've helped over 500 companies just like yours automate their workflows and reduce operational costs by an average of 30%. I'd love to share how we could help you too. Please give me a call back at 555-AUTOMATE, or visit our website at automatepro.com to learn more. Thanks so much, and I look forward to hearing from you soon!</textarea>
+                                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                                        Words: <span id="rvmWordCount">95</span> • Est. Duration: <span id="rvmDuration">38 seconds</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="rvmTone">Script Tone</label>
+                                        <select id="rvmTone">
+                                            <option value="conversational" selected>Conversational</option>
+                                            <option value="professional">Professional</option>
+                                            <option value="friendly">Friendly</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rvmSpeed">Speech Rate</label>
+                                        <select id="rvmSpeed">
+                                            <option value="slow">Slow</option>
+                                            <option value="normal" selected>Normal</option>
+                                            <option value="fast">Fast</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <button class="btn btn-secondary" onclick="generateAIRVM()">
+                                    🤖 Generate with AI
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 5: Campaign Flow -->
+                    <div class="step-content" id="step5">
+                        <h2 class="step-title">
+                            🔄 Campaign Flow & Timing
+                        </h2>
+                        
+                        <div class="campaign-preview">
+                            <div class="preview-header">
+                                <h3>Campaign Flow Preview</h3>
+                                <button class="btn btn-secondary" onclick="generateAIFlow()">
+                                    🤖 Generate AI Flow
+                                </button>
+                            </div>
+                            
+                            <div class="campaign-flow" id="campaignFlow">
+                                <div class="flow-item">
+                                    <div class="flow-header">
+                                        <div>
+                                            <strong>Step 1</strong> - Initial Contact
+                                        </div>
+                                        <div class="flow-type sms">SMS</div>
+                                    </div>
+                                    <div style="color: #6c757d; margin-bottom: 10px;">⏱️ Timing: Immediate</div>
+                                    <div class="flow-content">
+                                        <div id="flowSmsContent">Hi {name}! Are you tired of manual processes slowing down your business? Our automation solutions help companies like {company} save 30% on operational costs. Interested in a free consultation? Reply YES or call 555-AUTOMATE</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flow-item">
+                                    <div class="flow-header">
+                                        <div>
+                                            <strong>Step 2</strong> - Voice Follow-up
+                                        </div>
+                                        <div class="flow-type rvm">RVM</div>
+                                    </div>
+                                    <div style="color: #6c757d; margin-bottom: 10px;">⏱️ Timing: 24 hours later</div>
+                                    <div class="flow-content">
+                                        <div id="flowRvmContent">Hi {name}, this is Sarah calling from AutomatePro Solutions. I hope you're having a great day! I'm reaching out because I know how challenging it can be to manage all the manual processes in a growing business like {company}...</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flow-item">
+                                    <div class="flow-header">
+                                        <div>
+                                            <strong>Step 3</strong> - Final Touchpoint
+                                        </div>
+                                        <div class="flow-type sms">SMS</div>
+                                    </div>
+                                    <div style="color: #6c757d; margin-bottom: 10px;">⏱️ Timing: 72 hours later</div>
+                                    <div class="flow-content">
+                                        <div>Hi {name}, last chance! Our free automation audit has helped businesses save an average of $50k annually. Still available this week. Book your consultation at automatepro.com/book or call 555-AUTOMATE. Don't miss out!</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3 class="section-title">⚙️ Flow Configuration</h3>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="stepDelay">Delay Between Steps</label>
+                                    <select id="stepDelay">
+                                        <option value="1-hour">1 Hour</option>
+                                        <option value="6-hours">6 Hours</option>
+                                        <option value="24-hours" selected>24 Hours</option>
+                                        <option value="48-hours">48 Hours</option>
+                                        <option value="72-hours">72 Hours</option>
+                                        <option value="1-week">1 Week</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="stopCondition">Stop Condition</label>
+                                    <select id="stopCondition">
+                                        <option value="reply" selected>Any Reply</option>
+                                        <option value="positive-reply">Positive Reply Only</option>
+                                        <option value="call">Incoming Call</option>
+                                        <option value="website-visit">Website Visit</option>
+                                        <option value="complete-flow">Complete Full Flow</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 6: Review & Launch -->
+                    <div class="step-content" id="step6">
+                        <h2 class="step-title">
+                            🚀 Review & Launch Campaign
+                        </h2>
+                        
+                        <div class="launch-section">
+                            <h3 style="margin-bottom: 20px;">🎯 Campaign Summary</h3>
+                            <div style="background: rgba(255,255,255,0.1); border-radius: 10px; padding: 20px; margin-bottom: 20px; text-align: left;">
+                                <h4 id="finalCampaignName">Business Automation Lead Gen</h4>
+                                <p style="margin: 10px 0;">
+                                    <strong>Goal:</strong> <span id="finalGoal">Lead Generation</span><br>
+                                    <strong>Channels:</strong> <span id="finalChannels">SMS + RVM</span><br>
+                                    <strong>Duration:</strong> <span id="finalDuration">14 days</span><br>
+                                    <strong>Budget:</strong> $<span id="finalBudget">1000</span>
+                                </p>
+                            </div>
+                            
+                            <div class="launch-stats">
+                                <div class="launch-stat">
+                                    <div class="stat-value" id="estimatedReach">2,500</div>
+                                    <div class="stat-label">Estimated Reach</div>
+                                </div>
+                                <div class="launch-stat">
+                                    <div class="stat-value" id="estimatedCost">$425</div>
+                                    <div class="stat-label">Estimated Cost</div>
+                                </div>
+                                <div class="launch-stat">
+                                    <div class="stat-value" id="estimatedLeads">100</div>
+                                    <div class="stat-label">Expected Leads</div>
+                                </div>
+                                <div class="launch-stat">
+                                    <div class="stat-value" id="estimatedROI">400%</div>
+                                    <div class="stat-label">Expected ROI</div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 30px;">
+                                <button class="btn btn-success" style="font-size: 1.2em; padding: 15px 40px;" onclick="launchCampaign()">
+                                    🚀 Launch Campaign
+                                </button>
+                                <button class="btn btn-secondary" style="margin-left: 15px;" onclick="saveDraft()">
+                                    💾 Save as Draft
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="wizard-navigation">
+                        <button class="btn btn-secondary" onclick="previousStep()" id="prevBtn" style="display: none;">
+                            ← Previous
+                        </button>
+                        <button class="btn btn-primary" onclick="nextStep()" id="nextBtn">
+                            Next →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // SIMPLIFIED - NO AUTH CHECKS
+        function initializePage() {
+            const username = localStorage.getItem('username') || 'User';
+            const role = localStorage.getItem('userRole') || 'user';
+            
+            const welcomeElement = document.getElementById('navWelcome');
+            if (welcomeElement) {
+                welcomeElement.textContent = `Welcome, ${username}${role === 'admin' ? ' (Admin)' : ''}!`;
+            }
+            
+            // Initialize page functionality
+            updateProgressBar();
+            updateNavigation();
+            updateCharCount();
+            updateWordCount();
+            updateFinalSummary();
+        }
+
+        // Initialize immediately
+        initializePage();
+
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userRole');
+                localStorage.removeItem('username');
+                window.location.href = 'index.html';
+            }
+        }
+
+        let currentStep = 1;
+        const totalSteps = 6;
+        let selectedChannels = ['sms', 'rvm'];
+        
+        function showStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.wizard-step').forEach(stepEl => {
+                stepEl.classList.remove('active');
+                if (parseInt(stepEl.onclick.toString().match(/\d+/)[0]) < step) {
+                    stepEl.classList.add('completed');
+                } else {
+                    stepEl.classList.remove('completed');
+                }
+            });
+            
+            // Show current step
+            document.getElementById(`step${step}`).classList.add('active');
+            document.querySelector(`[onclick="showStep(${step})"]`).classList.add('active');
+            
+            currentStep = step;
+            updateProgressBar();
+            updateNavigation();
+            updateFinalSummary();
+        }
+        
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                showStep(currentStep + 1);
+            }
+        }
+        
+        function previousStep() {
+            if (currentStep > 1) {
+                showStep(currentStep - 1);
+            }
+        }
+        
+        function updateProgressBar() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+        
+        function updateNavigation() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
+            
+            if (currentStep === totalSteps) {
+                nextBtn.style.display = 'none';
+            } else {
+                nextBtn.style.display = 'block';
+                nextBtn.textContent = 'Next →';
+            }
+        }
+        
+        function toggleChannel(channel) {
+            const card = event.currentTarget;
+            const isSelected = card.classList.contains('selected');
+            
+            if (isSelected) {
+                card.classList.remove('selected');
+                selectedChannels = selectedChannels.filter(ch => ch !== channel);
+            } else {
+                card.classList.add('selected');
+                selectedChannels.push(channel);
+            }
+            
+            updateFinalSummary();
+            console.log('Selected channels:', selectedChannels);
+        }
+        
+        function updateCharCount() {
+            const smsText = document.getElementById('smsMessage').value;
+            const charCount = smsText.length;
+            const parts = Math.ceil(charCount / 160);
+            
+            document.getElementById('smsCharCount').textContent = charCount;
+            document.getElementById('smsParts').textContent = parts;
+            
+            // Update flow preview
+            if (document.getElementById('flowSmsContent')) {
+                document.getElementById('flowSmsContent').textContent = smsText;
+            }
+        }
+        
+        function updateWordCount() {
+            const rvmText = document.getElementById('rvmScript').value;
+            const words = rvmText.trim().split(/\s+/).filter(word => word.length > 0);
+            const wordCount = words.length;
+            const duration = Math.round((wordCount / 150) * 60); // 150 words per minute
+            
+            document.getElementById('rvmWordCount').textContent = wordCount;
+            document.getElementById('rvmDuration').textContent = `${duration} seconds`;
+            
+            // Update flow preview
+            if (document.getElementById('flowRvmContent')) {
+                document.getElementById('flowRvmContent').textContent = rvmText.substring(0, 150) + '...';
+            }
+        }
+        
+        async function generateAISMS() {
+            const context = "Lead generation for business automation services targeting SMB owners";
+            const payload = {
+                context: context,
+                contact_info: { name: "prospect", company: "their company" },
+                tone: "professional",
+                max_length: 160
+            };
+            
+            try {
+                const response = await fetch('/api/ai/generate/sms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('smsMessage').value = data.message;
+                    updateCharCount();
+                }
+            } catch (error) {
+                console.error('Error generating SMS:', error);
+                alert('SMS generation temporarily unavailable. Please write your message manually.');
+            }
+        }
+        
+        async function generateAIRVM() {
+            const context = "Introduction to business automation services for SMB owners";
+            const payload = {
+                context: context,
+                contact_info: { name: "prospect", company: "their company" },
+                tone: "conversational",
+                duration: "45 seconds"
+            };
+            
+            try {
+                const response = await fetch('/api/ai/generate/rvm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('rvmScript').value = data.script;
+                    updateWordCount();
+                }
+            } catch (error) {
+                console.error('Error generating RVM:', error);
+                alert('RVM generation temporarily unavailable. Please write your script manually.');
+            }
+        }
+        
+        async function generateAIFlow() {
+            const goal = document.getElementById('campaignName').value + " - " + document.getElementById('campaignGoal').value;
+            const audience = "Small to medium business owners looking to automate processes";
+            
+            const payload = {
+                campaign_goal: goal,
+                audience_info: audience,
+                num_steps: 3
+            };
+            
+            try {
+                const response = await fetch('/api/ai/conversation-flow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                if (response.ok && data.flow && data.flow.steps) {
+                    // Update flow with AI-generated content
+                    let flowHTML = '';
+                    data.flow.steps.forEach((step, index) => {
+                        const stepType = step.type === 'sms' ? 'sms' : 'rvm';
+                        flowHTML += `
+                            <div class="flow-item">
+                                <div class="flow-header">
+                                    <div><strong>Step ${step.step || index + 1}</strong> - ${step.purpose || 'Contact'}</div>
+                                    <div class="flow-type ${stepType}">${step.type?.toUpperCase() || 'MESSAGE'}</div>
+                                </div>
+                                <div style="color: #6c757d; margin-bottom: 10px;">⏱️ Timing: ${step.timing || 'As needed'}</div>
+                                <div class="flow-content">
+                                    <div>${step.message || 'Message content'}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('campaignFlow').innerHTML = flowHTML;
+                }
+            } catch (error) {
+                console.error('Error generating flow:', error);
+                alert('AI flow generation temporarily unavailable. Current flow design is ready to use.');
+            }
+        }
+        
+        function launchCampaign() {
+            // Collect all campaign data
+            const campaignData = {
+                name: document.getElementById('campaignName').value,
+                goal: document.getElementById('campaignGoal').value,
+                budget: document.getElementById('campaignBudget').value,
+                duration: document.getElementById('campaignDuration').value,
+                channels: selectedChannels,
+                smsMessage: document.getElementById('smsMessage').value,
+                rvmScript: document.getElementById('rvmScript').value,
+                audience: {
+                    businessType: Array.from(document.getElementById('businessType').selectedOptions).map(option => option.value),
+                    companySize: document.getElementById('companySize').value,
+                    location: document.getElementById('targetLocation').value
+                }
+            };
+            
+            // In a real implementation, this would send to the API
+            alert('🚀 Campaign launched successfully! You will receive updates as the campaign progresses.');
+            console.log('Campaign Data:', campaignData);
+        }
+        
+        function saveDraft() {
+            // Save campaign as draft
+            localStorage.setItem('campaignDraft', JSON.stringify({
+                step: currentStep,
+                data: collectAllFormData()
+            }));
+            alert('💾 Campaign saved as draft!');
+        }
+        
+        function collectAllFormData() {
+            // Collect all form data for saving
+            return {
+                campaignName: document.getElementById('campaignName').value,
+                campaignGoal: document.getElementById('campaignGoal').value,
+                campaignBudget: document.getElementById('campaignBudget').value,
+                campaignDuration: document.getElementById('campaignDuration').value,
+                smsMessage: document.getElementById('smsMessage').value,
+                rvmScript: document.getElementById('rvmScript').value
+            };
+        }
+        
+        // Update final summary
+        function updateFinalSummary() {
+            if (document.getElementById('finalCampaignName')) {
+                document.getElementById('finalCampaignName').textContent = document.getElementById('campaignName').value;
+                document.getElementById('finalGoal').textContent = document.getElementById('campaignGoal').options[document.getElementById('campaignGoal').selectedIndex].text;
+                document.getElementById('finalChannels').textContent = selectedChannels.map(ch => ch.toUpperCase()).join(' + ');
+                document.getElementById('finalDuration').textContent = document.getElementById('campaignDuration').value + ' days';
+                document.getElementById('finalBudget').textContent = document.getElementById('campaignBudget').value;
+            }
+        }
+        
+        // Add event listeners for input changes
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.getElementById('campaignName')) {
+                document.getElementById('campaignName').addEventListener('input', updateFinalSummary);
+                document.getElementById('campaignGoal').addEventListener('change', updateFinalSummary);
+                document.getElementById('campaignDuration').addEventListener('input', updateFinalSummary);
+                document.getElementById('campaignBudget').addEventListener('input', updateFinalSummary);
+            }
+        });
+    </script>
+</body>
+</html>

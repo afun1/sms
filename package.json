@@ -1,0 +1,15 @@
+{
+  "name": "sparky-messaging",
+  "version": "1.0.0",
+  "description": "Multi-Channel Marketing Powerhouse",
+  "scripts": {
+    "dev": "python sms_api_server.py",
+    "start": "python sms_api_server.py",
+    "restart": "taskkill /F /IM python.exe /T && python sms_api_server.py",
+    "setup": "pip install -r requirements.txt",
+    "test": "python test_api_endpoints.py"
+  },
+  "keywords": ["sms", "email", "rvm", "marketing", "flask"],
+  "author": "Sparky Messaging",
+  "license": "MIT"
+}
