@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assets Manager - Sparky Messaging</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px;
+            border: 2px dashed #dee2e6;
+            text-align: center;
+        }
+
+        .upload-btn {
+            background: #4e73df;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .file-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📁 Assets Manager</h1>
+            <p>Upload and manage your media files</p>
+        </div>
+        
+        <div class="upload-section">
+            <h3>📤 Upload Files</h3>
+            <p>Click to browse and upload files</p>
+            
+            <input type="file" id="fileInput" class="file-input" multiple>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                📁 Choose Files
+            </button>
+            
+            <div id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const files = e.target.files;
+            document.getElementById('status').innerHTML = `Selected ${files.length} file(s)`;
+        });
+    </script>
+</body>
+</html>

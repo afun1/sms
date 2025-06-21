@@ -6,7 +6,6 @@
     <title>SMS Editor - Sparky Messaging</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -14,114 +13,6 @@
             line-height: 1.6;
             padding-top: 80px;
         }
-
-        .sticky-nav {
-            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-            height: 60px;
-        }
-        
-        .nav-container {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            height: 100%;
-            max-width: 100%;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .nav-left {
-            display: flex;
-            align-items: center;
-            padding: 5px 5px 0 5px;
-        }
-        
-        .nav-logo {
-            width: 40px;
-            height: 40px;
-            object-fit: contain;
-            margin-right: 10px;
-        }
-        
-        .nav-brand {
-            color: white;
-            font-weight: bold;
-            font-size: 1.2em;
-            white-space: nowrap;
-            margin-right: 5px;
-        }
-        
-        .nav-center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            flex-wrap: wrap;
-        }
-        
-        .nav-link {
-            color: rgba(255,255,255,0.9);
-            text-decoration: none;
-            padding: 6px 12px;
-            border-radius: 15px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            font-size: 0.9em;
-            white-space: nowrap;
-        }
-        
-        .nav-link:hover {
-            color: white;
-            background: rgba(255,255,255,0.15);
-            transform: translateY(-1px);
-        }
-        
-        .nav-link.active {
-            background: rgba(255,255,255,0.25);
-            color: white;
-        }
-        
-        .nav-separator {
-            color: rgba(255,255,255,0.6);
-            margin: 0 2px;
-            font-weight: bold;
-        }
-        
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding-right: 20px;
-            justify-content: flex-end;
-        }
-        
-        .nav-welcome {
-            color: rgba(255,255,255,0.95);
-            font-size: 0.9em;
-            font-weight: 500;
-        }
-        
-        .nav-logout {
-            color: #ff4757 !important;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 0.9em;
-        }
-        
-        .nav-logout:hover {
-            color: #ff3742 !important;
-            text-shadow: 0 0 8px rgba(255, 71, 87, 0.5);
-            transform: translateY(-1px);
-        }
-        
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -130,49 +21,56 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-        
         .header {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: white;
             padding: 40px;
             text-align: center;
         }
-        
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
             font-weight: 300;
         }
-        
         .main-content {
             padding: 40px;
         }
-        
         .form-group {
             margin-bottom: 20px;
         }
-        
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
             color: #2c3e50;
         }
-        
-        .form-group input,
-        .form-group textarea {
+        .form-group input {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 1em;
         }
-        
-        .form-group textarea {
+        /* Editable div styling */
+        #messageText {
+            width: 100%;
             min-height: 120px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            background: #fff;
+            outline: none;
             resize: vertical;
+            color: #28a745; /* Default green */
+            transition: border 0.2s;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
-        
+        #messageText:focus {
+            border: 1.5px solid #007bff;
+        }
         .btn {
             padding: 12px 25px;
             border: none;
@@ -185,111 +83,278 @@
             color: white;
             margin: 5px;
         }
-        
         .btn:hover {
             background: #0056b3;
             transform: translateY(-2px);
         }
+        /* Carrier Buzzword Buttons */
+        .carrier-btn {
+            background: #4e73df;
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            margin-right: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .carrier-btn:hover {
+            background: #224abe;
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background: #fff;
+            max-width: 400px;
+            margin: 10vh auto;
+            padding: 30px 20px;
+            border-radius: 12px;
+            position: relative;
+        }
+        .modal-content h2 {
+            margin-bottom: 10px;
+        }
+        .modal-content ul {
+            margin-bottom: 20px;
+        }
+        /* Highlight colors */
+        .sms-good { color: #28a745; font-weight: bold; }
+        .sms-caution { color: #ffc107; font-weight: bold; }
+        .sms-bad { color: #dc3545; font-weight: bold; }
+        /* Counter styles */
+        .sms-counter {
+            font-size: 0.95em;
+            color: #555;
+            margin-top: 4px;
+            margin-bottom: 10px;
+            text-align: right;
+        }
+        .sms-counter .segments {
+            color: #007bff;
+            font-weight: 600;
+        }
+        .sms-counter .chars {
+            color: #28a745;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
-    <nav class="sticky-nav">
-        <div class="nav-container">
-            <div class="nav-left">
-                <img src="/static/logo.png" alt="Sparky" class="nav-logo" onerror="this.src='/static/logo.png';">
-                <span class="nav-brand">Sparky Messaging</span>
-            </div>
-            
-            <div class="nav-center">
-                <a href="ai_editor.html" class="nav-link">🏠 Home</a>
-                <span class="nav-separator">•</span>
-                <a href="ai_editor.html" class="nav-link">Sparky AI Content</a>
-                <span class="nav-separator">•</span>
-                <a href="sms_editor.html" class="nav-link active">SMS</a>
-                <span class="nav-separator">•</span>
-                <a href="email_editor.html" class="nav-link">Email</a>
-                <span class="nav-separator">•</span>
-                <a href="rvm_editor.html" class="nav-link">RVM</a>
-                <span class="nav-separator">•</span>
-                <a href="campaign_builder.html" class="nav-link">Multi-Provider Optimization</a>
-                <span class="nav-separator" id="adminSeparator" style="display: none;">•</span>
-                <a href="admin.html" class="nav-link" id="adminLink" style="display: none;">⚙️ Admin</a>
-            </div>
-            
-            <div class="nav-right">
-                <span class="nav-welcome" id="navWelcome">Welcome!</span>
-                <a href="#" class="nav-logout" onclick="logout(); return false;">Log Out</a>
-            </div>
-        </div>
-    </nav>
+    <!-- Navigation will be injected by global-nav.js -->
 
     <div class="container">
         <div class="header">
             <h1>📱 SMS Message Editor</h1>
             <p>Create and send SMS messages</p>
         </div>
-        
         <div class="main-content">
+            <!-- Carrier Buzzword Buttons -->
+            <div style="margin-bottom: 20px;">
+                <button class="carrier-btn" onclick="showBuzzwords('verizon')">Verizon Buzzwords</button>
+                <button class="carrier-btn" onclick="showBuzzwords('att')">AT&amp;T Buzzwords</button>
+                <button class="carrier-btn" onclick="showBuzzwords('tmobile')">T-Mobile Buzzwords</button>
+            </div>
             <div class="form-group">
                 <label for="recipientPhone">Recipient Phone Number</label>
                 <input type="tel" id="recipientPhone" placeholder="+1234567890" value="+1234567890">
             </div>
-            
             <div class="form-group">
                 <label for="messageText">Message Content</label>
-                <textarea id="messageText" placeholder="Type your message here...">Hey! This is a test message from Sparky Messaging. 🚀</textarea>
+                <div id="messageText"
+                    class="sms-good"
+                    contenteditable="true"
+                    spellcheck="true"
+                    style="min-height:120px;"
+                    aria-label="Message Content"
+                    placeholder="Type your message here..."></div>
+                <div class="sms-counter" id="smsCounter">
+                    <span class="chars">0</span> chars | <span class="segments">1</span> segment
+                </div>
             </div>
-            
             <button class="btn" onclick="sendSMS()">📤 Send SMS</button>
-            <button class="btn" onclick="testMessage()">🧪 Test Message</button>
-            
             <div id="results" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; display: none;">
                 <!-- Results will appear here -->
             </div>
         </div>
     </div>
 
+    <!-- Buzzword Modal -->
+    <div id="buzzwordModal" class="modal">
+        <div class="modal-content">
+            <h2 id="carrierTitle">Carrier Buzzwords</h2>
+            <ul id="buzzwordList"></ul>
+            <button onclick="closeBuzzwordModal()" style="background:#4e73df; color:#fff; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">Close</button>
+        </div>
+    </div>
+
     <script>
-        // NO AUTH CHECKS - SIMPLE INITIALIZATION
-        document.addEventListener('DOMContentLoaded', function() {
-            const username = localStorage.getItem('username') || 'User';
-            const role = localStorage.getItem('userRole') || 'user';
-            document.getElementById('navWelcome').textContent = `Welcome, ${username}${role === 'admin' ? ' (Admin)' : ''}!`;
-            
-            // Show admin link if user is admin
-            if (role === 'admin') {
-                document.getElementById('adminLink').style.display = 'inline-flex';
-                document.getElementById('adminSeparator').style.display = 'inline';
+        // Carrier buzzwords data
+        const buzzwords = {
+            verizon: [
+                "free", "winner", "guaranteed", "credit", "cash", "urgent", "act now", "risk-free", "no obligation", "investment", "call now", "limited time", "apply now", "exclusive deal"
+            ],
+            att: [
+                "free", "guaranteed", "winner", "urgent", "act now", "risk-free", "investment", "credit", "cash", "no obligation", "call now", "apply now", "exclusive", "deal"
+            ],
+            tmobile: [
+                "free", "winner", "guaranteed", "credit", "cash", "urgent", "act now", "risk-free", "investment", "no obligation", "call now", "apply now", "exclusive", "deal"
+            ]
+        };
+
+        function showBuzzwords(carrier) {
+            const modal = document.getElementById('buzzwordModal');
+            const title = document.getElementById('carrierTitle');
+            const list = document.getElementById('buzzwordList');
+            let carrierName = carrier.charAt(0).toUpperCase() + carrier.slice(1);
+            if (carrier === 'att') carrierName = 'AT&T';
+            if (carrier === 'tmobile') carrierName = 'T-Mobile';
+            title.textContent = `${carrierName} Negative Buzzwords`;
+            list.innerHTML = buzzwords[carrier].map(word => `<li>${word}</li>`).join('');
+            modal.style.display = 'block';
+        }
+
+        function closeBuzzwordModal() {
+            document.getElementById('buzzwordModal').style.display = 'none';
+        }
+
+        // Highlighting logic for contenteditable div
+        const goodWords = ["hello", "thanks", "update", "info", "reminder", "confirm", "appointment", "support"];
+        const cautionWords = ["now", "today", "offer", "deal", "exclusive", "apply", "call", "urgent"];
+        const badWords = [
+            "free", "winner", "guaranteed", "guarantee", "credit", "cash", "risk-free", "investment", "no obligation"
+        ];
+
+        function escapeHtml(text) {
+            return text.replace(/[&<>"']/g, function(m) {
+                return ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                })[m];
+            });
+        }
+
+        function highlightWords(text) {
+            // Split by word boundaries, keep punctuation
+            return text.split(/(\b)/).map(word => {
+                const lower = word.toLowerCase();
+                if (badWords.includes(lower)) {
+                    return `<span class="sms-bad">${escapeHtml(word)}</span>`;
+                } else if (cautionWords.includes(lower)) {
+                    return `<span class="sms-caution">${escapeHtml(word)}</span>`;
+                } else if (word.trim() !== "") {
+                    return `<span class="sms-good">${escapeHtml(word)}</span>`;
+                } else {
+                    return escapeHtml(word);
+                }
+            }).join('');
+        }
+
+        // SMS segment calculation (GSM-7 and UCS-2)
+        function getSmsSegmentInfo(text) {
+            // GSM-7 basic character set regex (not perfect, but covers most)
+            const gsm7 = /^[\x00-\x7F€£¥èéùìòÇØøÅåΔ_ΦΓΛΩΠΨΣΘΞÆæÉ!"#$%&'()*+,\-./0123456789:;<=>?@A-Z\[\\\]^_`a-z{|}~ ]*$/;
+            const isGsm7 = gsm7.test(text);
+            let chars = text.length;
+            let segments = 1;
+            if (isGsm7) {
+                if (chars <= 160) segments = 1;
+                else segments = Math.ceil(chars / 153);
+            } else {
+                if (chars <= 70) segments = 1;
+                else segments = Math.ceil(chars / 67);
             }
-        });
+            return { chars, segments };
+        }
+
+        const messageDiv = document.getElementById('messageText');
+        const smsCounter = document.getElementById('smsCounter');
+
+        function updateHighlightingAndCounter() {
+            // Save caret position
+            const selection = window.getSelection();
+            let caretOffset = 0;
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                const preCaretRange = range.cloneRange();
+                preCaretRange.selectNodeContents(messageDiv);
+                preCaretRange.setEnd(range.endContainer, range.endOffset);
+                caretOffset = preCaretRange.toString().length;
+            }
+
+            // Get plain text and highlight
+            const text = messageDiv.innerText;
+            messageDiv.innerHTML = highlightWords(text);
+
+            // Restore caret position
+            setCaretPosition(messageDiv, caretOffset);
+
+            // Update counter
+            const info = getSmsSegmentInfo(text);
+            smsCounter.innerHTML = `<span class="chars">${info.chars}</span> chars | <span class="segments">${info.segments}</span> segment${info.segments > 1 ? 's' : ''}`;
+        }
+
+        // Set caret position in contenteditable div
+        function setCaretPosition(el, chars) {
+            if (chars >= 0) {
+                const selection = window.getSelection();
+                let node = el;
+                let found = false;
+                let charCount = 0;
+                function traverse(node) {
+                    if (found) return;
+                    if (node.nodeType === 3) { // text node
+                        if (charCount + node.length >= chars) {
+                            const range = document.createRange();
+                            range.setStart(node, chars - charCount);
+                            range.collapse(true);
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                            found = true;
+                        } else {
+                            charCount += node.length;
+                        }
+                    } else {
+                        for (let i = 0; i < node.childNodes.length; i++) {
+                            traverse(node.childNodes[i]);
+                            if (found) break;
+                        }
+                    }
+                }
+                traverse(el);
+            }
+        }
+
+        messageDiv.addEventListener('input', updateHighlightingAndCounter);
+
+        // Initial highlighting and counter
+        messageDiv.innerHTML = '';
+        smsCounter.innerHTML = `<span class="chars">0</span> chars | <span class="segments">1</span> segment`;
 
         function sendSMS() {
             const phone = document.getElementById('recipientPhone').value;
-            const message = document.getElementById('messageText').value;
-            
+            const message = messageDiv.innerText;
             if (!phone || !message) {
                 alert('Please enter both phone number and message!');
                 return;
             }
-            
             const results = document.getElementById('results');
             results.innerHTML = `
                 <div style="color: #155724; background: #d4edda; padding: 15px; border-radius: 8px; border: 1px solid #c3e6cb;">
                     ✅ SMS would be sent to: ${phone}<br>
-                    Message: "${message}"<br>
-                    Characters: ${message.length}
-                </div>
-            `;
-            results.style.display = 'block';
-        }
-
-        function testMessage() {
-            const message = document.getElementById('messageText').value;
-            const results = document.getElementById('results');
-            results.innerHTML = `
-                <div style="color: #0c5460; background: #d1ecf1; padding: 15px; border-radius: 8px; border: 1px solid #bee5eb;">
-                    🧪 Test Mode - Message Preview:<br>
-                    "${message}"<br>
+                    Message: "${escapeHtml(message)}"<br>
                     Characters: ${message.length}
                 </div>
             `;
@@ -305,5 +370,6 @@
             }
         }
     </script>
+    <script src="static/global-nav.js"></script>
 </body>
 </html>

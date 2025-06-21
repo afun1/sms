@@ -31,13 +31,13 @@
             }
             
             .sparky-global-nav .nav-container {
-                max-width: 1400px;
-                margin: 0 auto;
+                width: 100%;
                 display: grid;
                 grid-template-columns: 250px 1fr auto;
                 align-items: center;
                 gap: 20px;
-                padding: 0 30px;
+                padding-left: 0;
+                padding-right: 0;
             }
             
             .sparky-global-nav .nav-brand {
@@ -156,7 +156,9 @@
                 .sparky-global-nav .nav-container {
                     grid-template-columns: 200px 1fr auto;
                     gap: 15px;
-                    padding: 0 20px;
+                    padding-left: 0;
+                    padding-right: 0;
+                    width: 100%;
                 }
                 
                 .sparky-global-nav .nav-brand {
@@ -174,6 +176,7 @@
                     grid-template-columns: 1fr;
                     gap: 10px;
                     text-align: center;
+                    width: 100%;
                 }
                 
                 .sparky-global-nav .nav-menu {
@@ -224,6 +227,7 @@
                     <a href="rvm_editor.html" class="nav-link ${currentPage === 'rvm_editor' ? 'active' : ''}">📞 RVM</a>
                     <a href="ai_editor.html" class="nav-link ${currentPage === 'ai_editor' ? 'active' : ''}">🤖 AI</a>
                     <a href="campaign_builder.html" class="nav-link ${currentPage === 'campaign_builder' ? 'active' : ''}">🚀 Campaigns</a>
+                    <a href="list.html" class="nav-link ${currentPage === 'list' ? 'active' : ''}">📋 List Builder</a>
                     <a href="admin.html" class="nav-link admin-only" style="display: none;">⚙️ Admin</a>
                 </div>
                 <div class="nav-user">

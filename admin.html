@@ -1,42 +1,301 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Redirecting to AI Editor...</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Sparky Messaging</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        * {
             margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .redirect-message {
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding-top: 80px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 40px;
             text-align: center;
-            padding: 30px;
-            background: rgba(255,255,255,0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .admin-content {
+            padding: 40px;
+        }
+        
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .admin-card {
+            background: #f8f9fa;
             border-radius: 15px;
-            backdrop-filter: blur(10px);
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .admin-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .admin-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        
+        .admin-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .admin-description {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .admin-button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-button:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .debug-info {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .debug-info h4 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+
+        .debug-info p {
+            color: #155724;
+            margin: 5px 0;
+        }
+
+        /* MOBILE RESPONSIVE */
+        @media (max-width: 768px) {
+            .admin-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="redirect-message">
-        <h2>🔄 Redirecting to AI Editor...</h2>
-        <p>All users now access the AI Editor directly.</p>
-        <p>You will be redirected in 2 seconds...</p>
+    <!-- Navigation will be injected by global-nav.js -->
+
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Admin Panel</h1>
+            <p>System administration and management</p>
+        </div>
+        
+        <div class="admin-content">
+            <!-- Debug Information -->
+            <div class="debug-info">
+                <h4>🔍 Debug Information</h4>
+                <p><strong>Current User:</strong> <span id="debugUser">Loading...</span></p>
+                <p><strong>User Role:</strong> <span id="debugRole">Loading...</span></p>
+                <p><strong>Auth Token:</strong> <span id="debugToken">Loading...</span></p>
+            </div>
+
+            <div class="admin-grid">
+                <!-- User Management -->
+                <div class="admin-card">
+                    <div class="admin-icon">👥</div>
+                    <div class="admin-title">User Management</div>
+                    <div class="admin-description">
+                        Manage user accounts, roles, and permissions
+                    </div>
+                    <button class="admin-button" onclick="manageUsers()">
+                        Manage Users
+                    </button>
+                </div>
+                
+                <!-- System Settings -->
+                <div class="admin-card">
+                    <div class="admin-icon">⚙️</div>
+                    <div class="admin-title">System Settings</div>
+                    <div class="admin-description">
+                        Configure system-wide settings and preferences
+                    </div>
+                    <button class="admin-button" onclick="systemSettings()">
+                        System Settings
+                    </button>
+                </div>
+                
+                <!-- Analytics -->
+                <div class="admin-card">
+                    <div class="admin-icon">📊</div>
+                    <div class="admin-title">Analytics & Reports</div>
+                    <div class="admin-description">
+                        View detailed analytics and generate reports
+                    </div>
+                    <button class="admin-button" onclick="viewAnalytics()">
+                        View Analytics
+                    </button>
+                </div>
+                
+                <!-- API Management -->
+                <div class="admin-card">
+                    <div class="admin-icon">🔌</div>
+                    <div class="admin-title">API Management</div>
+                    <div class="admin-description">
+                        Manage API keys and integrations
+                    </div>
+                    <button class="admin-button" onclick="manageAPI()">
+                        Manage APIs
+                    </button>
+                </div>
+                
+                <!-- Billing -->
+                <div class="admin-card">
+                    <div class="admin-icon">💳</div>
+                    <div class="admin-title">Billing & Usage</div>
+                    <div class="admin-description">
+                        Monitor usage and manage billing settings
+                    </div>
+                    <button class="admin-button" onclick="manageBilling()">
+                        View Billing
+                    </button>
+                </div>
+                
+                <!-- Security -->
+                <div class="admin-card">
+                    <div class="admin-icon">🔒</div>
+                    <div class="admin-title">Security Settings</div>
+                    <div class="admin-description">
+                        Configure security policies and monitoring
+                    </div>
+                    <button class="admin-button" onclick="securitySettings()">
+                        Security Panel
+                    </button>
+                </div>
+
+                <!-- Set Admin Role -->
+                <div class="admin-card">
+                    <div class="admin-icon">🛠️</div>
+                    <div class="admin-title">Set Admin Role</div>
+                    <div class="admin-description">
+                        Click to set current user as admin for testing
+                    </div>
+                    <button class="admin-button" onclick="setAdminRole()">
+                        Become Admin
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
+
     <script>
-        // ALL ADMIN USERS GO TO AI EDITOR - NO EXCEPTIONS
-        if (!localStorage.getItem('authToken')) {
-            window.location.href = 'index.html';
-        } else {
-            setTimeout(() => {
-                window.location.href = 'http://localhost:5000/ai_editor.html';
-            }, 2000);
+        // TEMPORARY: Automatically set admin role
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('username', 'TestAdmin');
+        localStorage.setItem('authToken', 'test-admin-token');
+
+        // Admin page initialization - NO REDIRECTS
+        function initializeAdmin() {
+            const username = localStorage.getItem('username') || 'Admin';
+            const role = localStorage.getItem('userRole') || 'user';
+            const token = localStorage.getItem('authToken') || 'none';
+            
+            console.log('Admin page loading...', { username, role, token });
+            
+            // Update debug info
+            document.getElementById('debugUser').textContent = username;
+            document.getElementById('debugRole').textContent = role;
+            document.getElementById('debugToken').textContent = token ? 'Present' : 'None';
         }
+
+        function setAdminRole() {
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('username', 'AdminUser');
+            localStorage.setItem('authToken', 'admin-token-123');
+            
+            alert('✅ Admin role set! Refreshing page...');
+            location.reload();
+        }
+
+        function manageUsers() {
+            alert('👥 User Management - Feature coming soon!');
+        }
+
+        function systemSettings() {
+            alert('⚙️ System Settings - Feature coming soon!');
+        }
+
+        function viewAnalytics() {
+            alert('📊 Analytics & Reports - Feature coming soon!');
+        }
+
+        function manageAPI() {
+            alert('🔌 API Management - Feature coming soon!');
+        }
+
+        function manageBilling() {
+            alert('💳 Billing & Usage - Feature coming soon!');
+        }
+
+        function securitySettings() {
+            alert('🔒 Security Settings - Feature coming soon!');
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userRole');
+                localStorage.removeItem('username');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeAdmin);
     </script>
+    <script src="static/global-nav.js"></script>
 </body>
 </html>

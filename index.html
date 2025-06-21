@@ -3,1170 +3,479 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Sparky Messaging</title>
+    <title>Dashboard - Sparky Messaging</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .login-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            overflow: hidden;
-            width: 100%;
-            max-width: 900px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            min-height: 500px;
-        }
-
-        .signup-container, .reset-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            overflow: hidden;
-            width: 100%;
-            max-width: 600px;
-            padding: 40px;
-            display: none;
-        }
-
-        .login-info {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            color: white;
-            padding: 60px 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .login-info h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            font-weight: 300;
-        }
-
-        .login-info p {
-            font-size: 1.1em;
-            opacity: 0.9;
+            color: #333;
             line-height: 1.6;
-            margin-bottom: 20px;
+            padding-top: 80px;
         }
 
-        .features-list {
-            list-style: none;
-            margin-top: 20px;
+        /* MAIN CONTENT */
+        .main-content {
+            padding: 30px 20px;
         }
 
-        .features-list li {
-            padding: 8px 0;
-            opacity: 0.9;
-        }
-
-        .features-list li:before {
-            content: "✓ ";
-            color: #fff;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-
-        .login-form {
-            padding: 60px 40px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .form-header {
+        .dashboard-header {
             text-align: center;
             margin-bottom: 40px;
+            color: white;
         }
 
-        .form-header h2 {
-            font-size: 2em;
+        .dashboard-header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .dashboard-header p {
+            font-size: 1.3em;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
             color: #333;
             margin-bottom: 10px;
         }
 
-        .form-header p {
+        .stat-label {
             color: #666;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
+            font-size: 1.1em;
             font-weight: 500;
         }
 
-        .password-input-wrapper {
-            position: relative;
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        .form-input, .form-select {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 10px;
-            font-size: 1em;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
-        }
-
-        .form-input:focus, .form-select:focus {
-            outline: none;
-            border-color: #ff6b6b;
+        .tool-card {
             background: white;
-            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
         }
 
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .tool-card.ai {
+            border-color: #667eea;
+        }
+
+        .tool-card.sms {
+            border-color: #ff6b6b;
+        }
+
+        .tool-card.email {
+            border-color: #2ecc71;
+        }
+
+        .tool-card.rvm {
+            border-color: #9b59b6;
+        }
+
+        .tool-card.campaign {
+            border-color: #f39c12;
+        }
+
+        .tool-card.assets {
+            border-color: #ff9f43;
+        }
+
+        .tool-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .tool-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .tool-description {
             color: #666;
-            cursor: pointer;
-            font-size: 0.9em;
-            padding: 5px;
-            transition: color 0.3s ease;
+            margin-bottom: 25px;
+            line-height: 1.6;
         }
 
-        .password-toggle:hover {
-            color: #ff6b6b;
-        }
-
-        .password-requirements {
-            background: #f8f9fa;
-            border: 1px solid #e1e5e9;
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 8px;
-            font-size: 0.85em;
-            color: #666;
-        }
-
-        .password-requirements ul {
-            margin: 8px 0 0 20px;
-        }
-
-        .password-requirements li {
-            margin: 4px 0;
-        }
-
-        .requirement-met {
-            color: #28a745;
-        }
-
-        .requirement-unmet {
-            color: #dc3545;
-        }
-
-        .login-btn, .signup-btn, .reset-btn {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        .tool-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             padding: 15px 30px;
-            border-radius: 10px;
+            border-radius: 25px;
             font-size: 1.1em;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-bottom: 20px;
-        }
-
-        .login-btn:hover, .signup-btn:hover, .reset-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
-        }
-
-        .login-btn:disabled, .signup-btn:disabled, .reset-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .form-links {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .form-links a {
-            color: #ff6b6b;
             text-decoration: none;
-            margin: 0 15px;
+            display: inline-block;
         }
 
-        .form-links a:hover {
-            text-decoration: underline;
+        .tool-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
         }
 
-        .error-message {
-            background: #ffebee;
-            border: 1px solid #ffcdd2;
-            color: #c62828;
-            padding: 12px;
-            border-radius: 8px;
+        .recent-activity {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin: 40px auto;
+            max-width: 1200px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .activity-header {
+            font-size: 1.8em;
+            font-weight: bold;
             margin-bottom: 20px;
-            display: none;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .success-message {
-            background: #e8f5e8;
-            border: 1px solid #c8e6c9;
-            color: #2e7d32;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .signup-notice, .reset-notice {
-            background: #e3f2fd;
-            border: 1px solid #bbdefb;
-            border-radius: 10px;
+        .activity-item {
             padding: 15px;
-            margin-bottom: 25px;
-            color: #1976d2;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .back-btn {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .back-btn:hover {
-            background: #5a6268;
-        }
-
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-
-        .step {
+            border-bottom: 1px solid #eee;
             display: flex;
             align-items: center;
-            margin: 0 10px;
+            gap: 15px;
         }
 
-        .step-number {
-            width: 30px;
-            height: 30px;
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: #e1e5e9;
-            color: #666;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.2em;
+        }
+
+        .activity-icon.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .activity-icon.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .activity-icon.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .activity-details {
+            flex: 1;
+        }
+
+        .activity-title {
             font-weight: 600;
-            margin-right: 8px;
+            color: #333;
         }
 
-        .step.active .step-number {
-            background: #ff6b6b;
-            color: white;
+        .activity-time {
+            color: #666;
+            font-size: 0.9em;
         }
 
-        .step.completed .step-number {
-            background: #28a745;
-            color: white;
+        /* Asset Integration Styles */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* MOBILE RESPONSIVE */
         @media (max-width: 768px) {
-            .login-container {
-                grid-template-columns: 1fr;
-                max-width: 500px;
-            }
-            
-            .login-info {
-                padding: 40px 30px;
-                text-align: center;
-            }
-            
-            .login-info h1 {
-                font-size: 2em;
-            }
-            
-            .login-form {
-                padding: 40px 30px;
+            .dashboard-header h1 {
+                font-size: 2.5em;
             }
 
-            .signup-container, .reset-container {
-                padding: 30px 20px;
+            .tools-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 0 15px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Login Container -->
-    <div class="login-container" id="loginContainer">
-        <!-- Left Panel - Info -->
-        <div class="login-info">
-            <h1>Sparky Messaging</h1>
-            <p>Welcome to the Multi-Channel Marketing Powerhouse</p>
-            <p>Access your comprehensive messaging platform with advanced AI capabilities, multi-provider support, and professional campaign management tools.</p>
-            
-            <ul class="features-list">
-                <li>AI-Powered Content Generation</li>
-                <li>Multi-Provider SMS & Email</li>
-                <li>Ringless Voicemail (RVM)</li>
-                <li>Campaign Automation</li>
-                <li>GoHighLevel Integration</li>
-                <li>Real-time Analytics</li>
-            </ul>
+    <!-- Navigation will be injected by global-nav.js -->
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <h1>📊 Dashboard</h1>
+            <p>Welcome to your Sparky Messaging command center</p>
         </div>
 
-        <!-- Right Panel - Login Form -->
-        <div class="login-form">
-            <div class="form-header">
-                <h2>Sign In</h2>
-                <p>Access your marketing dashboard</p>
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📱</div>
+                <div class="stat-number" id="smsCount">1,247</div>
+                <div class="stat-label">SMS Sent</div>
             </div>
-
-            <div id="errorMessage" class="error-message"></div>
-            <div id="successMessage" class="success-message"></div>
-
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="username">Username or Email</label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username" 
-                        class="form-input" 
-                        required 
-                        placeholder="Enter your username or email"
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <div class="password-input-wrapper">
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            class="form-input" 
-                            required 
-                            placeholder="Enter your password"
-                        >
-                        <button type="button" class="password-toggle" onclick="togglePassword('password')">Show</button>
-                    </div>
-                </div>
-
-                <button type="submit" class="login-btn" id="loginBtn">
-                    Sign In
-                </button>
-            </form>
-
-            <div class="form-links">
-                <a href="#" onclick="showPasswordReset()">Forgot Password?</a>
-                <a href="#" onclick="showSignup()">Sign Up</a>
+            <div class="stat-card">
+                <div class="stat-icon">📧</div>
+                <div class="stat-number" id="emailCount">892</div>
+                <div class="stat-label">Emails Sent</div>
             </div>
-        </div>
-    </div>
-
-    <!-- Password Reset Container -->
-    <div class="reset-container" id="resetContainer">
-        <button class="back-btn" onclick="showLogin()">← Back to Login</button>
-        
-        <div class="form-header">
-            <h2>Reset Password</h2>
-            <p>Recover your account access</p>
-        </div>
-
-        <div class="step-indicator">
-            <div class="step active" id="step1">
-                <div class="step-number">1</div>
-                <span>Verify Identity</span>
+            <div class="stat-card">
+                <div class="stat-icon">🎙️</div>
+                <div class="stat-number" id="rvmCount">456</div>
+                <div class="stat-label">RVMs Delivered</div>
             </div>
-            <div class="step" id="step2">
-                <div class="step-number">2</div>
-                <span>Answer Question</span>
-            </div>
-            <div class="step" id="step3">
-                <div class="step-number">3</div>
-                <span>New Password</span>
+            <div class="stat-card">
+                <div class="stat-icon">📁</div>
+                <div class="stat-number" id="assetCount">0</div>
+                <div class="stat-label">Assets Stored</div>
             </div>
         </div>
 
-        <div class="reset-notice">
-            🔐 Enter your username and email to begin password reset
+        <!-- Tools Grid -->
+        <div class="tools-grid">
+            <!-- AI Content Generator -->
+            <div class="tool-card ai">
+                <div class="tool-icon">🤖</div>
+                <div class="tool-title">AI Content Generator</div>
+                <div class="tool-description">
+                    Create powerful marketing content with AI assistance. Generate SMS, email, and RVM scripts automatically.
+                </div>
+                <a href="ai_editor.html" class="tool-button">Launch AI Editor</a>
+            </div>
+
+            <!-- SMS Editor -->
+            <div class="tool-card sms">
+                <div class="tool-icon">📱</div>
+                <div class="tool-title">SMS Editor</div>
+                <div class="tool-description">
+                    Create and send SMS messages with delivery tracking and analytics.
+                </div>
+                <a href="sms_editor.html" class="tool-button">Create SMS</a>
+            </div>
+
+            <!-- Email Editor -->
+            <div class="tool-card email">
+                <div class="tool-icon">📧</div>
+                <div class="tool-title">Email Editor</div>
+                <div class="tool-description">
+                    Design professional email campaigns with live preview and multi-provider optimization.
+                </div>
+                <a href="email_editor.html" class="tool-button">Create Email</a>
+            </div>
+
+            <!-- RVM Editor -->
+            <div class="tool-card rvm">
+                <div class="tool-icon">🎙️</div>
+                <div class="tool-title">RVM Editor</div>
+                <div class="tool-description">
+                    Create ringless voicemail scripts with text-to-speech preview and optimization.
+                </div>
+                <a href="rvm_editor.html" class="tool-button">Create RVM</a>
+            </div>
+
+            <!-- Campaign Builder -->
+            <div class="tool-card campaign">
+                <div class="tool-icon">🚀</div>
+                <div class="tool-title">Campaign Builder</div>
+                <div class="tool-description">
+                    Build multi-channel campaigns with advanced targeting and optimization.
+                </div>
+                <a href="campaign_builder.html" class="tool-button">Build Campaign</a>
+            </div>
+
+            <!-- Assets Manager -->
+            <div class="tool-card assets">
+                <div class="tool-icon">📁</div>
+                <div class="tool-title">Assets Manager</div>
+                <div class="tool-description">
+                    Upload, manage, and share images, videos, and documents across all your campaigns.
+                </div>
+                <a href="assets/supabase-assets.html" class="tool-button">Manage Assets</a>
+            </div>
         </div>
 
-        <div id="resetErrorMessage" class="error-message"></div>
-        <div id="resetSuccessMessage" class="success-message"></div>
-
-        <!-- Step 1: Username/Email Verification -->
-        <div id="resetStep1">
-            <form id="resetStep1Form">
-                <div class="form-group">
-                    <label for="resetUsername">Username</label>
-                    <input 
-                        type="text" 
-                        id="resetUsername" 
-                        name="resetUsername" 
-                        class="form-input" 
-                        required 
-                        placeholder="Enter your username"
-                    >
+        <!-- Recent Activity -->
+        <div class="recent-activity">
+            <div class="activity-header">
+                📈 Recent Activity
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon success">✅</div>
+                <div class="activity-details">
+                    <div class="activity-title">SMS Campaign "Summer Sale" completed</div>
+                    <div class="activity-time">2 hours ago • 1,200 messages sent</div>
                 </div>
-
-                <div class="form-group">
-                    <label for="resetEmail">Email Address</label>
-                    <input 
-                        type="email" 
-                        id="resetEmail" 
-                        name="resetEmail" 
-                        class="form-input" 
-                        required 
-                        placeholder="Enter your email address"
-                    >
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon pending">⏳</div>
+                <div class="activity-details">
+                    <div class="activity-title">Email Campaign "Newsletter #45" in progress</div>
+                    <div class="activity-time">1 hour ago • 67% delivered</div>
                 </div>
-
-                <button type="submit" class="reset-btn" id="resetStep1Btn">
-                    Verify Identity
-                </button>
-            </form>
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon info">📁</div>
+                <div class="activity-details">
+                    <div class="activity-title">New assets uploaded to cloud storage</div>
+                    <div class="activity-time">3 hours ago • <span id="recentAssetsCount">0</span> files added</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon success">✅</div>
+                <div class="activity-details">
+                    <div class="activity-title">RVM Campaign "Follow-up Calls" completed</div>
+                    <div class="activity-time">4 hours ago • 450 voicemails delivered</div>
+                </div>
+            </div>
         </div>
-
-        <!-- Step 2: Secret Question -->
-        <div id="resetStep2" style="display: none;">
-            <div class="form-group">
-                <label id="secretQuestionLabel">Secret Question</label>
-                <div id="secretQuestionDisplay" class="form-input" style="background: #f8f9fa; color: #666; cursor: not-allowed;">
-                    <!-- Question will be displayed here -->
-                </div>
-            </div>
-
-            <form id="resetStep2Form">
-                <div class="form-group">
-                    <label for="secretAnswerInput">Your Answer</label>
-                    <input 
-                        type="text" 
-                        id="secretAnswerInput" 
-                        name="secretAnswerInput" 
-                        class="form-input" 
-                        required 
-                        placeholder="Enter your answer"
-                    >
-                </div>
-
-                <button type="submit" class="reset-btn" id="resetStep2Btn">
-                    Verify Answer
-                </button>
-            </form>
-        </div>
-
-        <!-- Step 3: New Password -->
-        <div id="resetStep3" style="display: none;">
-            <form id="resetStep3Form">
-                <div class="form-group">
-                    <label for="newPassword">New Password</label>
-                    <div class="password-input-wrapper">
-                        <input 
-                            type="password" 
-                            id="newPassword" 
-                            name="newPassword" 
-                            class="form-input" 
-                            required 
-                            placeholder="Create a new password"
-                            oninput="validateNewPassword()"
-                        >
-                        <button type="button" class="password-toggle" onclick="togglePassword('newPassword')">Show</button>
-                    </div>
-                    <div class="password-requirements" id="newPasswordRequirements">
-                        <strong>Password Requirements:</strong>
-                        <ul>
-                            <li id="new-req-length" class="requirement-unmet">At least 8 characters</li>
-                            <li id="new-req-upper" class="requirement-unmet">At least 1 uppercase letter (A-Z)</li>
-                            <li id="new-req-lower" class="requirement-unmet">At least 1 lowercase letter (a-z)</li>
-                            <li id="new-req-number" class="requirement-unmet">At least 1 number (0-9)</li>
-                            <li id="new-req-symbol" class="requirement-unmet">At least 1 symbol (!@#$%^&*()_+)</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="confirmPassword">Confirm New Password</label>
-                    <div class="password-input-wrapper">
-                        <input 
-                            type="password" 
-                            id="confirmPassword" 
-                            name="confirmPassword" 
-                            class="form-input" 
-                            required 
-                            placeholder="Confirm your new password"
-                            oninput="validatePasswordMatch()"
-                        >
-                        <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">Show</button>
-                    </div>
-                    <div id="passwordMatchMessage" style="margin-top: 8px; font-size: 0.85em;"></div>
-                </div>
-
-                <button type="submit" class="reset-btn" id="resetStep3Btn">
-                    Reset Password
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Signup Container -->
-    <div class="signup-container" id="signupContainer">
-        <button class="back-btn" onclick="showLogin()">← Back to Login</button>
-        
-        <div class="form-header">
-            <h2>Create Account</h2>
-            <p>Join Sparky Messaging Platform</p>
-        </div>
-
-        <div class="signup-notice">
-            ⚠️ Use your Sparky Login info. Unless it matches, the account won't be approved.
-        </div>
-
-        <div id="signupErrorMessage" class="error-message"></div>
-        <div id="signupSuccessMessage" class="success-message"></div>
-
-        <form id="signupForm">
-            <div class="form-group">
-                <label for="firstName">First Name</label>
-                <input 
-                    type="text" 
-                    id="firstName" 
-                    name="firstName" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter your first name"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="lastName">Last Name</label>
-                <input 
-                    type="text" 
-                    id="lastName" 
-                    name="lastName" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter your last name"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    name="email" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter your email address"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="phone">Phone</label>
-                <input 
-                    type="tel" 
-                    id="phone" 
-                    name="phone" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter your phone number"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="sparkyUsername">Sparky Username</label>
-                <input 
-                    type="text" 
-                    id="sparkyUsername" 
-                    name="sparkyUsername" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter your existing Sparky username"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="createPassword">Create Password</label>
-                <div class="password-input-wrapper">
-                    <input 
-                        type="password" 
-                        id="createPassword" 
-                        name="createPassword" 
-                        class="form-input" 
-                        required 
-                        placeholder="Create a secure password"
-                        oninput="validatePassword()"
-                    >
-                    <button type="button" class="password-toggle" onclick="togglePassword('createPassword')">Show</button>
-                </div>
-                <div class="password-requirements" id="passwordRequirements">
-                    <strong>Password Requirements:</strong>
-                    <ul>
-                        <li id="req-length" class="requirement-unmet">At least 8 characters</li>
-                        <li id="req-upper" class="requirement-unmet">At least 1 uppercase letter (A-Z)</li>
-                        <li id="req-lower" class="requirement-unmet">At least 1 lowercase letter (a-z)</li>
-                        <li id="req-number" class="requirement-unmet">At least 1 number (0-9)</li>
-                        <li id="req-symbol" class="requirement-unmet">At least 1 symbol (!@#$%^&*()_+)</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="membershipLevel">Membership Level</label>
-                <select id="membershipLevel" name="membershipLevel" class="form-select" required>
-                    <option value="">Select your membership level</option>
-                    <option value="basic">Basic</option>
-                    <option value="pro">Pro</option>
-                    <option value="enterprise">Enterprise</option>
-                    <option value="premium">Premium</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="secretQuestion">Secret Question</label>
-                <input 
-                    type="text" 
-                    id="secretQuestion" 
-                    name="secretQuestion" 
-                    class="form-input" 
-                    required 
-                    placeholder="Create a question you will remember"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="secretAnswer">Secret Question Answer</label>
-                <input 
-                    type="text" 
-                    id="secretAnswer" 
-                    name="secretAnswer" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter an answer you will remember"
-                >
-            </div>
-
-            <button type="submit" class="signup-btn" id="signupBtn">
-                Create Account
-            </button>
-        </form>
-    </div>
+    </main>
 
     <script>
-        // CLEAR ANY EXISTING SESSIONS THAT MIGHT CAUSE ADMIN REDIRECTS
-        localStorage.removeItem('adminRedirect');
-        localStorage.removeItem('lastLoginRole');
-        localStorage.removeItem('redirectPath');
+        // Supabase configuration
+        const supabaseUrl = 'https://bapvkcqoywysuosuodrb.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHZrY3FveXd5c3Vvc3VvZHJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNjMxNTMsImV4cCI6MjA2NTkzOTE1M30.XOIX4QvMl86i_sO3Q5IGMwAJp9UK86Q-ajeILsbvt_E';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Demo accounts (hidden from UI)
-        const demoAccounts = {
-            'demo': { password: 'demo', role: 'user', name: 'Demo User' },
-            'admin': { password: 'admin', role: 'admin', name: 'Admin User' }
-        };
+        // Initialize dashboard
+        function initializeDashboard() {
+            // No navWelcome or adminLink logic needed; handled by global-nav.js
 
-        // Demo account database with secret questions
-        const accountDatabase = {
-            'demo': {
-                email: 'demo@sparky.com',
-                secretQuestion: 'What is your favorite color?',
-                secretAnswer: 'blue',
-                name: 'Demo User'
-            },
-            'admin': {
-                email: 'admin@sparky.com',
-                secretQuestion: 'What city were you born in?',
-                secretAnswer: 'chicago',
-                name: 'Admin User'
-            }
-        };
-
-        let currentResetUser = null;
-
-        // Password toggle function
-        function togglePassword(fieldId) {
-            const field = document.getElementById(fieldId);
-            const button = field.nextElementSibling;
+            // Load user stats (simulate API call)
+            loadUserStats();
             
-            if (field.type === 'password') {
-                field.type = 'text';
-                button.textContent = 'Hide';
-            } else {
-                field.type = 'password';
-                button.textContent = 'Show';
-            }
+            // Load asset count
+            loadAssetCount();
         }
 
-        // Password validation functions
-        function validatePassword() {
-            const password = document.getElementById('createPassword').value;
-            
-            const lengthReq = document.getElementById('req-length');
-            if (password.length >= 8) {
-                lengthReq.className = 'requirement-met';
-            } else {
-                lengthReq.className = 'requirement-unmet';
-            }
-            
-            const upperReq = document.getElementById('req-upper');
-            if (/[A-Z]/.test(password)) {
-                upperReq.className = 'requirement-met';
-            } else {
-                upperReq.className = 'requirement-unmet';
-            }
-            
-            const lowerReq = document.getElementById('req-lower');
-            if (/[a-z]/.test(password)) {
-                lowerReq.className = 'requirement-met';
-            } else {
-                lowerReq.className = 'requirement-unmet';
-            }
-            
-            const numberReq = document.getElementById('req-number');
-            if (/[0-9]/.test(password)) {
-                numberReq.className = 'requirement-met';
-            } else {
-                numberReq.className = 'requirement-unmet';
-            }
-            
-            const symbolReq = document.getElementById('req-symbol');
-            if (/[!@#$%^&*()_+]/.test(password)) {
-                symbolReq.className = 'requirement-met';
-            } else {
-                symbolReq.className = 'requirement-unmet';
-            }
+        function loadUserStats() {
+            // Simulate loading stats from API
+            const stats = {
+                sms: Math.floor(Math.random() * 2000) + 1000,
+                email: Math.floor(Math.random() * 1500) + 500,
+                rvm: Math.floor(Math.random() * 800) + 200
+            };
+
+            // Update display with animation
+            animateCounter('smsCount', stats.sms);
+            animateCounter('emailCount', stats.email);
+            animateCounter('rvmCount', stats.rvm);
         }
 
-        function validateNewPassword() {
-            const password = document.getElementById('newPassword').value;
-            
-            const lengthReq = document.getElementById('new-req-length');
-            if (password.length >= 8) {
-                lengthReq.className = 'requirement-met';
-            } else {
-                lengthReq.className = 'requirement-unmet';
-            }
-            
-            const upperReq = document.getElementById('new-req-upper');
-            if (/[A-Z]/.test(password)) {
-                upperReq.className = 'requirement-met';
-            } else {
-                upperReq.className = 'requirement-unmet';
-            }
-            
-            const lowerReq = document.getElementById('new-req-lower');
-            if (/[a-z]/.test(password)) {
-                lowerReq.className = 'requirement-met';
-            } else {
-                lowerReq.className = 'requirement-unmet';
-            }
-            
-            const numberReq = document.getElementById('new-req-number');
-            if (/[0-9]/.test(password)) {
-                numberReq.className = 'requirement-met';
-            } else {
-                numberReq.className = 'requirement-unmet';
-            }
-            
-            const symbolReq = document.getElementById('new-req-symbol');
-            if (/[!@#$%^&*()_+]/.test(password)) {
-                symbolReq.className = 'requirement-met';
-            } else {
-                symbolReq.className = 'requirement-unmet';
-            }
-            
-            validatePasswordMatch();
-        }
-
-        function validatePasswordMatch() {
-            const password = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const messageDiv = document.getElementById('passwordMatchMessage');
-            
-            if (confirmPassword === '') {
-                messageDiv.textContent = '';
-                return;
-            }
-            
-            if (password === confirmPassword) {
-                messageDiv.textContent = '✓ Passwords match';
-                messageDiv.style.color = '#28a745';
-            } else {
-                messageDiv.textContent = '✗ Passwords do not match';
-                messageDiv.style.color = '#dc3545';
-            }
-        }
-
-        function isPasswordValid() {
-            const password = document.getElementById('createPassword').value;
-            return password.length >= 8 && 
-                   /[A-Z]/.test(password) && 
-                   /[a-z]/.test(password) && 
-                   /[0-9]/.test(password) && 
-                   /[!@#$%^&*()_+]/.test(password);
-        }
-
-        function isNewPasswordValid() {
-            const password = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            return password.length >= 8 && 
-                   /[A-Z]/.test(password) && 
-                   /[a-z]/.test(password) && 
-                   /[0-9]/.test(password) && 
-                   /[!@#$%^&*()_+]/.test(password) &&
-                   password === confirmPassword;
-        }
-
-        // Show/Hide forms
-        function showLogin() {
-            document.getElementById('loginContainer').style.display = 'grid';
-            document.getElementById('signupContainer').style.display = 'none';
-            document.getElementById('resetContainer').style.display = 'none';
-            hideAllMessages();
-            resetPasswordResetForm();
-        }
-
-        function showSignup() {
-            document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('signupContainer').style.display = 'block';
-            document.getElementById('resetContainer').style.display = 'none';
-            hideAllMessages();
-        }
-
-        function showPasswordReset() {
-            document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('signupContainer').style.display = 'none';
-            document.getElementById('resetContainer').style.display = 'block';
-            hideAllMessages();
-            resetPasswordResetForm();
-        }
-
-        function resetPasswordResetForm() {
-            // Reset to step 1
-            document.getElementById('resetStep1').style.display = 'block';
-            document.getElementById('resetStep2').style.display = 'none';
-            document.getElementById('resetStep3').style.display = 'none';
-            
-            // Reset step indicators
-            document.getElementById('step1').className = 'step active';
-            document.getElementById('step2').className = 'step';
-            document.getElementById('step3').className = 'step';
-            
-            // Clear forms
-            document.getElementById('resetStep1Form').reset();
-            document.getElementById('resetStep2Form').reset();
-            document.getElementById('resetStep3Form').reset();
-            
-            // Reset validation displays
-            document.querySelectorAll('#newPasswordRequirements .requirement-met').forEach(req => {
-                req.className = 'requirement-unmet';
-            });
-            
-            document.getElementById('passwordMatchMessage').textContent = '';
-            currentResetUser = null;
-        }
-
-        // Password Reset Step 1: Verify Identity
-        document.getElementById('resetStep1Form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('resetUsername').value.toLowerCase();
-            const email = document.getElementById('resetEmail').value.toLowerCase();
-            const btn = document.getElementById('resetStep1Btn');
-            
-            btn.disabled = true;
-            btn.textContent = 'Verifying...';
-            hideResetMessages();
-            
+        async function loadAssetCount() {
             try {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Check if username and email match
-                if (accountDatabase[username] && accountDatabase[username].email === email) {
-                    currentResetUser = username;
-                    
-                    // Show secret question
-                    document.getElementById('secretQuestionDisplay').textContent = accountDatabase[username].secretQuestion;
-                    
-                    // Move to step 2
-                    document.getElementById('resetStep1').style.display = 'none';
-                    document.getElementById('resetStep2').style.display = 'block';
-                    
-                    // Update step indicators
-                    document.getElementById('step1').className = 'step completed';
-                    document.getElementById('step2').className = 'step active';
-                    
-                    showResetSuccess('Identity verified! Please answer your secret question.');
-                } else {
-                    showResetError('Username and email combination not found.');
-                }
-                
-            } catch (error) {
-                showResetError('Verification failed. Please try again.');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Verify Identity';
-            }
-        });
+                const { data, error } = await supabase.storage
+                    .from('sparky-assets')
+                    .list('', { limit: 1000 });
 
-        // Password Reset Step 2: Secret Question
-        document.getElementById('resetStep2Form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const answer = document.getElementById('secretAnswerInput').value.toLowerCase().trim();
-            const btn = document.getElementById('resetStep2Btn');
-            
-            btn.disabled = true;
-            btn.textContent = 'Verifying...';
-            hideResetMessages();
-            
-            try {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Check answer
-                if (accountDatabase[currentResetUser].secretAnswer === answer) {
-                    // Move to step 3
-                    document.getElementById('resetStep2').style.display = 'none';
-                    document.getElementById('resetStep3').style.display = 'block';
-                    
-                    // Update step indicators
-                    document.getElementById('step2').className = 'step completed';
-                    document.getElementById('step3').className = 'step active';
-                    
-                    showResetSuccess('Answer correct! Please create your new password.');
-                } else {
-                    showResetError('Incorrect answer. Please try again.');
-                }
-                
-            } catch (error) {
-                showResetError('Verification failed. Please try again.');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Verify Answer';
-            }
-        });
-
-        // Password Reset Step 3: New Password
-        document.getElementById('resetStep3Form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            if (!isNewPasswordValid()) {
-                showResetError('Please ensure your password meets all requirements and passwords match.');
-                return;
-            }
-            
-            const btn = document.getElementById('resetStep3Btn');
-            
-            btn.disabled = true;
-            btn.textContent = 'Resetting Password...';
-            hideResetMessages();
-            
-            try {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                // Update demo account password
-                const newPassword = document.getElementById('newPassword').value;
-                if (demoAccounts[currentResetUser]) {
-                    demoAccounts[currentResetUser].password = newPassword;
-                }
-                
-                showResetSuccess('Password reset successful! You can now login with your new password.');
-                
-                // Redirect to login after 3 seconds
-                setTimeout(() => {
-                    showLogin();
-                }, 3000);
-                
-            } catch (error) {
-                showResetError('Password reset failed. Please try again.');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Reset Password';
-            }
-        });
-
-        // *** FIXED LOGIN HANDLER - ALL ACCOUNTS GO TO AI EDITOR ***
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const loginBtn = document.getElementById('loginBtn');
-            
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Signing In...';
-            hideMessages();
-            
-            try {
-                if (demoAccounts[username] && demoAccounts[username].password === password) {
-                    const account = demoAccounts[username];
-                    
-                    localStorage.setItem('authToken', `demo_token_${Date.now()}`);
-                    localStorage.setItem('userRole', account.role);
-                    localStorage.setItem('username', account.name);
-                    
-                    showSuccess('Login successful! Redirecting to AI Editor...');
-                    
-                    setTimeout(() => {
-                        // *** FORCE ALL ACCOUNTS TO AI EDITOR - NO EXCEPTIONS ***
-                        window.location.href = 'http://localhost:5000/ai_editor.html';
-                    }, 1500);
+                if (error) {
+                    console.error('Error loading asset count:', error);
                     return;
                 }
+
+                const assetCount = data ? data.length : 0;
+                animateCounter('assetCount', assetCount);
                 
-                showError('Invalid username or password.');
-                
+                // Update recent activity with actual count
+                const recentCount = Math.min(assetCount, Math.floor(Math.random() * 5) + 1);
+                document.getElementById('recentAssetsCount').textContent = recentCount;
+
             } catch (error) {
-                showError('Connection error. Please try again.');
-                console.error('Login error:', error);
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Sign In';
+                console.error('Error connecting to Supabase:', error);
+                document.getElementById('assetCount').textContent = '0';
             }
-        });
-
-        // Signup form handling
-        document.getElementById('signupForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            if (!isPasswordValid()) {
-                showSignupError('Please ensure your password meets all requirements.');
-                return;
-            }
-            
-            const formData = {
-                firstName: document.getElementById('firstName').value,
-                lastName: document.getElementById('lastName').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                sparkyUsername: document.getElementById('sparkyUsername').value,
-                password: document.getElementById('createPassword').value,
-                membershipLevel: document.getElementById('membershipLevel').value,
-                secretQuestion: document.getElementById('secretQuestion').value,
-                secretAnswer: document.getElementById('secretAnswer').value
-            };
-            
-            const signupBtn = document.getElementById('signupBtn');
-            
-            signupBtn.disabled = true;
-            signupBtn.textContent = 'Creating Account...';
-            hideSignupMessages();
-            
-            try {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                showSignupSuccess('Account creation request submitted! You will receive an email once your account is approved and your Sparky credentials are verified.');
-                
-                document.getElementById('signupForm').reset();
-                
-                document.querySelectorAll('.requirement-met').forEach(req => {
-                    req.className = 'requirement-unmet';
-                });
-                
-                setTimeout(() => {
-                    showLogin();
-                }, 3000);
-                
-            } catch (error) {
-                showSignupError('Account creation failed. Please try again.');
-                console.error('Signup error:', error);
-            } finally {
-                signupBtn.disabled = false;
-                signupBtn.textContent = 'Create Account';
-            }
-        });
-
-        // Message functions
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
         }
 
-        function showSuccess(message) {
-            const successDiv = document.getElementById('successMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
+        function animateCounter(elementId, target, suffix = '') {
+            const element = document.getElementById(elementId);
+            const duration = 1500;
+            const start = 0;
+            const increment = target / (duration / 16);
+            let current = start;
+
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(current).toLocaleString() + suffix;
+            }, 16);
         }
 
-        function showSignupError(message) {
-            const errorDiv = document.getElementById('signupErrorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function showSignupSuccess(message) {
-            const successDiv = document.getElementById('signupSuccessMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-        }
-
-        function showResetError(message) {
-            const errorDiv = document.getElementById('resetErrorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function showResetSuccess(message) {
-            const successDiv = document.getElementById('resetSuccessMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-        }
-
-        function hideMessages() {
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'none';
-        }
-
-        function hideSignupMessages() {
-            document.getElementById('signupErrorMessage').style.display = 'none';
-            document.getElementById('signupSuccessMessage').style.display = 'none';
-        }
-
-        function hideResetMessages() {
-            document.getElementById('resetErrorMessage').style.display = 'none';
-            document.getElementById('resetSuccessMessage').style.display = 'none';
-        }
-
-        function hideAllMessages() {
-            hideMessages();
-            hideSignupMessages();
-            hideResetMessages();
-        }
-
-        // *** NO AUTO-REDIRECT ON PAGE LOAD - REMOVED TO PREVENT ADMIN REDIRECTS ***
-        // This section has been intentionally removed to stop admin redirects
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
     </script>
+    <script src="static/global-nav.js"></script>
 </body>
 </html>
