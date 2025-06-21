@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact List - Sparky Messaging</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding-top: 80px;
+            margin: 0;
+        }
+        .main-content {
+            padding: 30px 20px;
+        }
+        h2 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+            gap: 16px;
+        }
+        .search-container input[type="text"] {
+            width: 350px;
+            padding: 12px 16px;
+            border-radius: 25px;
+            border: 1px solid #bbb;
+            font-size: 1.08em;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .search-container input[type="text"]:focus {
+            border: 1.5px solid #667eea;
+        }
+        .import-btn, .csv-btn, .csv-format-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 28px;
+            font-size: 1.08em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.12);
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .import-btn:hover, .csv-btn:hover, .csv-format-btn:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            box-shadow: 0 4px 16px rgba(102,126,234,0.18);
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0; top: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.35);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: #fff;
+            border-radius: 18px;
+            padding: 32px 28px 24px 28px;
+            min-width: 320px;
+            max-width: 95vw;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+            position: relative;
+        }
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            font-size: 1.35em;
+            color: #333;
+        }
+        .modal-content label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 500;
+            color: #444;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 18px;
+            border-radius: 7px;
+            border: 1px solid #bbb;
+            font-size: 1em;
+        }
+        .modal-content .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .modal-content button {
+            padding: 8px 20px;
+            border-radius: 7px;
+            border: none;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal-content .close-btn {
+            background: #eee;
+            color: #333;
+        }
+        .modal-content .import-apply-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        .modal-content .import-apply-btn:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+        .modal-content .close-btn:hover {
+            background: #ddd;
+        }
+        .modal-content .modal-close-x {
+            position: absolute;
+            top: 12px;
+            right: 18px;
+            font-size: 1.5em;
+            color: #888;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal-content .import-csv-label {
+            margin-top: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .modal-content .import-csv-input {
+            margin-bottom: 10px;
+        }
+        .csv-format-list {
+            margin: 18px 0 0 0;
+            padding: 0;
+            list-style: none;
+            font-size: 1.08em;
+        }
+        .csv-format-list li {
+            margin-bottom: 6px;
+            padding-left: 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            margin: 0 auto 40px auto;
+            max-width: 1300px;
+        }
+        th, td {
+            border: 1px solid #eee;
+            padding: 12px 16px;
+            text-align: left;
+        }
+        th {
+            background: #f4f4f4;
+            font-size: 1.08em;
+        }
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+        @media (max-width: 1200px) {
+            table, th, td {
+                font-size: 0.98em;
+            }
+            .main-content {
+                padding: 10px 2px;
+            }
+        }
+        @media (max-width: 800px) {
+            table, th, td {
+                font-size: 0.93em;
+                padding: 8px 6px;
+            }
+            h2 {
+                font-size: 1.3em;
+            }
+            .search-container input[type="text"] {
+                width: 200px;
+            }
+        }
+        @media (max-width: 600px) {
+            table, th, td {
+                font-size: 0.88em;
+                padding: 6px 4px;
+            }
+            .search-container input[type="text"] {
+                width: 120px;
+                font-size: 0.95em;
+            }
+            .modal-content {
+                padding: 18px 6px 12px 6px;
+                min-width: 90vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="main-content">
+        <h2>Contact List</h2>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search contacts...">
+            <button class="import-btn" id="importBtn">Import</button>
+            <button class="csv-btn" id="csvBtn">Export CSV</button>
+        </div>
+        <table id="contactTable">
+            <thead>
+                <tr>
+                    <th>Contact Id</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Date Created</th>
+                    <th>NON SMS Phone</th>
+                    <th>User Name</th>
+                    <th>Username</th>
+                    <th>Timezone</th>
+                    <th>Sponsor First Name</th>
+                    <th>Sponsor Last Name</th>
+                    <th>Sponsor Username</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Contacts will be loaded here -->
+            </tbody>
+        </table>
+    </main>
+
+    <!-- Import Modal -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <span class="modal-close-x" id="closeModalBtn">&times;</span>
+            <h3>Import Contacts by Criteria</h3>
+            <form id="importForm" autocomplete="off">
+                <label for="importDateStart">Date Created (Start)</label>
+                <input type="date" id="importDateStart" name="importDateStart">
+
+                <label for="importDateEnd">Date Created (End)</label>
+                <input type="date" id="importDateEnd" name="importDateEnd">
+
+                <label for="importSponsorUsername">Sponsor Username</label>
+                <input type="text" id="importSponsorUsername" name="importSponsorUsername" placeholder="Sponsor Username">
+
+                <label for="importFirstName">First Name</label>
+                <input type="text" id="importFirstName" name="importFirstName" placeholder="First Name">
+
+                <label for="importLastName">Last Name</label>
+                <input type="text" id="importLastName" name="importLastName" placeholder="Last Name">
+
+                <label for="importEmail">Email</label>
+                <input type="text" id="importEmail" name="importEmail" placeholder="Email">
+
+                <button type="button" class="csv-format-btn" id="csvFormatBtn" style="margin-bottom:10px;">CSV Format</button>
+
+                <label class="import-csv-label" for="importCsvInput">Or Import CSV</label>
+                <input class="import-csv-input" type="file" id="importCsvInput" accept=".csv">
+
+                <div class="modal-actions">
+                    <button type="button" class="close-btn" id="cancelImportBtn">Cancel</button>
+                    <button type="submit" class="import-apply-btn">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CSV Format Modal -->
+    <div class="modal" id="csvFormatModal">
+        <div class="modal-content">
+            <span class="modal-close-x" id="closeCsvFormatModalBtn">&times;</span>
+            <h3>CSV Format Required</h3>
+            <p>Your CSV must have these columns exactly in this order:</p>
+            <ul class="csv-format-list">
+                <li>Contact Id</li>
+                <li>First Name</li>
+                <li>Last Name</li>
+                <li>Phone</li>
+                <li>Email</li>
+                <li>Date Created</li>
+                <li>NON SMS Phone</li>
+                <li>User Name</li>
+                <li>Username</li>
+                <li>Timezone</li>
+                <li>Sponsor First Name</li>
+                <li>Sponsor Last Name</li>
+                <li>Sponsor Username</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+    // Simple search filter for all columns
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const filter = this.value.toLowerCase();
+        const table = document.getElementById('contactTable');
+        const trs = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        for (let i = 0; i < trs.length; i++) {
+            let rowText = trs[i].textContent.toLowerCase();
+            trs[i].style.display = rowText.includes(filter) ? '' : 'none';
+        }
+    });
+
+    // Modal logic
+    const importBtn = document.getElementById('importBtn');
+    const importModal = document.getElementById('importModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelImportBtn = document.getElementById('cancelImportBtn');
+    const importForm = document.getElementById('importForm');
+    const importCsvInput = document.getElementById('importCsvInput');
+
+    importBtn.addEventListener('click', () => {
+        importModal.classList.add('active');
+    });
+    closeModalBtn.addEventListener('click', () => {
+        importModal.classList.remove('active');
+    });
+    cancelImportBtn.addEventListener('click', () => {
+        importModal.classList.remove('active');
+    });
+
+    // CSV Format Modal logic
+    const csvFormatBtn = document.getElementById('csvFormatBtn');
+    const csvFormatModal = document.getElementById('csvFormatModal');
+    const closeCsvFormatModalBtn = document.getElementById('closeCsvFormatModalBtn');
+
+    csvFormatBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        csvFormatModal.classList.add('active');
+    });
+    closeCsvFormatModalBtn.addEventListener('click', function() {
+        csvFormatModal.classList.remove('active');
+    });
+
+    // Close CSV Format modal on outside click
+    window.addEventListener('click', function(e) {
+        if (e.target === importModal) {
+            importModal.classList.remove('active');
+        }
+        if (e.target === csvFormatModal) {
+            csvFormatModal.classList.remove('active');
+        }
+    });
+
+    // Import filter logic (filters table based on modal form criteria)
+    importForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // If CSV file is selected, handle CSV import
+        if (importCsvInput.files.length > 0) {
+            const file = importCsvInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const csv = event.target.result;
+                addCsvRowsToTable(csv);
+                importModal.classList.remove('active');
+                importForm.reset();
+            };
+            reader.readAsText(file);
+            return;
+        }
+
+        // Otherwise, filter by criteria
+        const dateStart = document.getElementById('importDateStart').value;
+        const dateEnd = document.getElementById('importDateEnd').value;
+        const sponsorUsername = document.getElementById('importSponsorUsername').value.trim().toLowerCase();
+        const firstName = document.getElementById('importFirstName').value.trim().toLowerCase();
+        const lastName = document.getElementById('importLastName').value.trim().toLowerCase();
+        const email = document.getElementById('importEmail').value.trim().toLowerCase();
+
+        const table = document.getElementById('contactTable');
+        const trs = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+        for (let i = 0; i < trs.length; i++) {
+            const tds = trs[i].getElementsByTagName('td');
+            let show = true;
+
+            // Date range filter (Date Created is column 5)
+            const rowDate = tds[5].textContent.trim();
+            if (dateStart && rowDate < dateStart) show = false;
+            if (dateEnd && rowDate > dateEnd) show = false;
+
+            // Sponsor Username filter (column 12)
+            if (sponsorUsername && !tds[12].textContent.trim().toLowerCase().includes(sponsorUsername)) show = false;
+
+            // First Name filter (column 1)
+            if (firstName && !tds[1].textContent.trim().toLowerCase().includes(firstName)) show = false;
+
+            // Last Name filter (column 2)
+            if (lastName && !tds[2].textContent.trim().toLowerCase().includes(lastName)) show = false;
+
+            // Email filter (column 4)
+            if (email && !tds[4].textContent.trim().toLowerCase().includes(email)) show = false;
+
+            trs[i].style.display = show ? '' : 'none';
+        }
+
+        importModal.classList.remove('active');
+    });
+
+    // CSV import logic
+    function addCsvRowsToTable(csv) {
+        const rows = csv.trim().split('\n');
+        if (rows.length < 2) return; // skip if only header
+
+        const tbody = document.getElementById('contactTable').getElementsByTagName('tbody')[0];
+
+        for (let i = 1; i < rows.length; i++) {
+            const cols = parseCsvRow(rows[i]);
+            if (cols.length < 13) continue; // skip incomplete rows
+
+            const tr = document.createElement('tr');
+            for (let j = 0; j < 13; j++) {
+                const td = document.createElement('td');
+                td.textContent = cols[j];
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+    }
+
+    // Simple CSV row parser (handles quoted commas)
+    function parseCsvRow(row) {
+        const result = [];
+        let inQuotes = false, value = '';
+        for (let i = 0; i < row.length; i++) {
+            const char = row[i];
+            if (char === '"' && row[i + 1] === '"') {
+                value += '"';
+                i++;
+            } else if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(value);
+                value = '';
+            } else {
+                value += char;
+            }
+        }
+        result.push(value);
+        return result;
+    }
+
+    // CSV Export logic
+    document.getElementById('csvBtn').addEventListener('click', function() {
+        const table = document.getElementById('contactTable');
+        let csv = [];
+        const rows = table.querySelectorAll('tr');
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll('th, td');
+            for (let j = 0; j < cols.length; j++) {
+                // Escape quotes and commas
+                let text = cols[j].innerText.replace(/"/g, '""');
+                if (text.indexOf(',') > -1 || text.indexOf('"') > -1) {
+                    text = `"${text}"`;
+                }
+                row.push(text);
+            }
+            csv.push(row.join(','));
+        }
+        const csvContent = csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'contacts.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    });
+    </script>
+</body>
+</html>

@@ -221,7 +221,6 @@
                 </a>
                 <div class="nav-menu">
                     <a href="index.html" class="nav-link ${currentPage === 'index' ? 'active' : ''}">🏠 Home</a>
-                    <a href="dashboard.html" class="nav-link ${currentPage === 'dashboard' ? 'active' : ''}">📊 Dashboard</a>
                     <a href="sms_editor.html" class="nav-link ${currentPage === 'sms_editor' ? 'active' : ''}">📱 SMS</a>
                     <a href="email_editor.html" class="nav-link ${currentPage === 'email_editor' ? 'active' : ''}">📧 Email</a>
                     <a href="rvm_editor.html" class="nav-link ${currentPage === 'rvm_editor' ? 'active' : ''}">📞 RVM</a>
