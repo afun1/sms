@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sparky Messaging</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 500px;
+        }
+        .signup-container, .reset-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+            display: none;
+        }
+        .login-info {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .login-info h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+        .login-info p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .features-list {
+            list-style: none;
+            margin-top: 20px;
+        }
+        .features-list li {
+            padding: 8px 0;
+            opacity: 0.9;
+        }
+        .features-list li:before {
+            content: "✓ ";
+            color: #fff;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .login-form {
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .form-header h2 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .form-header p {
+            color: #666;
+        }
+        .form-group {
+            margin-bottom: 25px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .password-input-wrapper {
+            position: relative;
+        }
+        .form-input, .form-select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.9em;
+            padding: 5px;
+            transition: color 0.3s ease;
+        }
+        .password-toggle:hover {
+            color: #ff6b6b;
+        }
+        .login-btn, .signup-btn, .reset-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .login-btn:hover, .signup-btn:hover, .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+        }
+        .login-btn:disabled, .signup-btn:disabled, .reset-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .form-links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .form-links a {
+            color: #ff6b6b;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+        .form-links a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success-message {
+            background: #e8f5e8;
+            border: 1px solid #c8e6c9;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .back-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .back-btn:hover {
+            background: #5a6268;
+        }
+        .requirement-met {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .requirement-unmet {
+            color: #c62828;
+        }
+        @media (max-width: 768px) {
+            .login-container {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+            }
+            .login-info {
+                padding: 40px 30px;
+                text-align: center;
+            }
+            .login-info h1 {
+                font-size: 2em;
+            }
+            .login-form {
+                padding: 40px 30px;
+            }
+            .signup-container, .reset-container {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Container -->
+    <div class="login-container" id="loginContainer">
+        <!-- Left Panel - Info -->
+        <div class="login-info">
+            <h1>Sparky Messaging</h1>
+            <p>Welcome to the Multi-Channel Marketing Powerhouse</p>
+            <p>Access your comprehensive messaging platform with advanced AI capabilities, multi-provider support, and professional campaign management tools.</p>
+            <ul class="features-list">
+                <li>AI-Powered Content Generation</li>
+                <li>Multi-Provider SMS & Email</li>
+                <li>Ringless Voicemail (RVM)</li>
+                <li>Campaign Automation</li>
+                <li>GoHighLevel Integration</li>
+                <li>Real-time Analytics</li>
+            </ul>
+        </div>
+        <!-- Right Panel - Login Form -->
+        <div class="login-form">
+            <div class="form-header">
+                <h2>Sign In</h2>
+                <p>Access your marketing dashboard</p>
+            </div>
+            <div id="errorMessage" class="error-message"></div>
+            <div id="successMessage" class="success-message"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-input" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="password" name="password" class="form-input" required placeholder="Enter your password" autocomplete="current-password">
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">Show</button>
+                    </div>
+                </div>
+                <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
+            </form>
+            <div class="form-links">
+                <a href="#" onclick="showPasswordReset()">Forgot Password?</a>
+                <a href="#" onclick="showSignup()">Sign Up</a>
+            </div>
+        </div>
+    </div>
+    <!-- Password Reset Container -->
+    <div class="reset-container" id="resetContainer" style="display:none;">
+        <button class="back-btn" onclick="showLogin()">← Back to Login</button>
+        <div class="form-header">
+            <h2>Reset Password</h2>
+            <p>Enter your email to receive a password reset link.</p>
+        </div>
+        <div id="resetErrorMessage" class="error-message"></div>
+        <div id="resetSuccessMessage" class="success-message"></div>
+        <form id="resetForm">
+            <div class="form-group">
+                <label for="resetEmail">Email Address</label>
+                <input type="email" id="resetEmail" name="resetEmail" class="form-input" required placeholder="Enter your email address">
+            </div>
+            <button type="submit" class="reset-btn" id="resetBtn">Send Reset Link</button>
+        </form>
+    </div>
+    <!-- Signup Container -->
+    <div class="signup-container" id="signupContainer" style="display:none;">
+        <button class="back-btn" onclick="showLogin()">← Back to Login</button>
+        <div class="form-header">
+            <h2>Create Account</h2>
+            <p>Join Sparky Messaging Platform</p>
+        </div>
+        <div style="background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; font-size: 1em;">
+            <span style="font-size:1.3em;">⚠️</span>
+            <span>Use your <b>Sparky Login</b> info. Unless it matches, the account won't be approved.</span>
+        </div>
+        <div id="signupErrorMessage" class="error-message"></div>
+        <div id="signupSuccessMessage" class="success-message"></div>
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="signupFirstName">First Name</label>
+                <input type="text" id="signupFirstName" name="signupFirstName" class="form-input" required placeholder="Enter your first name">
+            </div>
+            <div class="form-group">
+                <label for="signupLastName">Last Name</label>
+                <input type="text" id="signupLastName" name="signupLastName" class="form-input" required placeholder="Enter your last name">
+            </div>
+            <div class="form-group">
+                <label for="signupEmail">Email</label>
+                <input type="email" id="signupEmail" name="signupEmail" class="form-input" required placeholder="Enter your email address">
+            </div>
+            <div class="form-group">
+                <label for="signupPhone">Phone</label>
+                <input type="tel" id="signupPhone" name="signupPhone" class="form-input" required placeholder="Enter your phone number">
+            </div>
+            <div class="form-group">
+                <label for="signupUsername">Sparky Username</label>
+                <input type="text" id="signupUsername" name="signupUsername" class="form-input" required placeholder="Username from phghub.ai">
+            </div>
+            <div class="form-group">
+                <label for="signupPassword">Create Password</label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="signupPassword" name="signupPassword" class="form-input" required placeholder="Create a password" minlength="8" autocomplete="new-password">
+                    <button type="button" class="password-toggle" onclick="togglePassword('signupPassword')">Show</button>
+                </div>
+                <div id="passwordRequirements" style="font-size:0.95em; color:#666; margin-top:10px;">
+                    <b>Password Requirements:</b>
+                    <ul style="margin: 8px 0 0 18px; padding: 0;">
+                        <li id="pw-length">At least 8 characters</li>
+                        <li id="pw-upper">At least 1 uppercase letter (A-Z)</li>
+                        <li id="pw-lower">At least 1 lowercase letter (a-z)</li>
+                        <li id="pw-number">At least 1 number (0-9)</li>
+                        <li id="pw-symbol">At least 1 symbol (!@#$%^&*()_+)</li>
+                    </ul>
+                </div>
+            </div>
+            <button type="submit" class="signup-btn" id="signupBtn">Create Account</button>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+    // Initialize Supabase (robust: use window.supabase if available)
+    const supabase = (window.supabase?.createClient || window.supabase.createClient).call(window.supabase, 'https://bapvkcqoywysuosuodrb.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHZrY3FveXd5c3Vvc3VvZHJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNjMxNTMsImV4cCI6MjA2NTkzOTE1M30.XOIX4QvMl86i_sO3Q5IGMwAJp9UK86Q-ajeILsbvt_E');
+
+    // Password toggle function
+    function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const button = field.nextElementSibling;
+        if (field.type === 'password') {
+            field.type = 'text';
+            button.textContent = 'Hide';
+        } else {
+            field.type = 'password';
+            button.textContent = 'Show';
+        }
+    }
+
+    // Show/Hide forms
+    function showLogin() {
+        document.getElementById('loginContainer').style.display = 'grid';
+        document.getElementById('signupContainer').style.display = 'none';
+        document.getElementById('resetContainer').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('resetErrorMessage').style.display = 'none';
+        document.getElementById('resetSuccessMessage').style.display = 'none';
+        document.getElementById('signupErrorMessage').style.display = 'none';
+        document.getElementById('signupSuccessMessage').style.display = 'none';
+    }
+    function showPasswordReset() {
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('signupContainer').style.display = 'none';
+        document.getElementById('resetContainer').style.display = 'block';
+        document.getElementById('resetErrorMessage').style.display = 'none';
+        document.getElementById('resetSuccessMessage').style.display = 'none';
+        document.getElementById('resetForm').reset();
+    }
+    function showSignup() {
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('signupContainer').style.display = 'block';
+        document.getElementById('resetContainer').style.display = 'none';
+        document.getElementById('signupErrorMessage').style.display = 'none';
+        document.getElementById('signupSuccessMessage').style.display = 'none';
+        document.getElementById('signupForm').reset();
+    }
+    // Login form handling (Supabase)
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const loginBtn = document.getElementById('loginBtn');
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Signing In...';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('errorMessage').style.display = 'block';
+            } else {
+                document.getElementById('successMessage').textContent = 'Login successful! Redirecting...';
+                document.getElementById('successMessage').style.display = 'block';
+                // Store session/token as needed
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+            }
+        } catch (err) {
+            document.getElementById('errorMessage').textContent = 'Connection error. Please try again.';
+            document.getElementById('errorMessage').style.display = 'block';
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Sign In';
+        }
+    });
+    // Password Reset form handling (Supabase)
+    document.getElementById('resetForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('resetEmail').value;
+        const resetBtn = document.getElementById('resetBtn');
+        resetBtn.disabled = true;
+        resetBtn.textContent = 'Sending...';
+        document.getElementById('resetErrorMessage').style.display = 'none';
+        document.getElementById('resetSuccessMessage').style.display = 'none';
+        try {
+            const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/loginsb.html'
+            });
+            if (error) {
+                document.getElementById('resetErrorMessage').textContent = error.message;
+                document.getElementById('resetErrorMessage').style.display = 'block';
+            } else {
+                document.getElementById('resetSuccessMessage').textContent = 'Password reset email sent! Check your inbox.';
+                document.getElementById('resetSuccessMessage').style.display = 'block';
+            }
+        } catch (err) {
+            document.getElementById('resetErrorMessage').textContent = 'Error sending reset email. Please try again.';
+            document.getElementById('resetErrorMessage').style.display = 'block';
+        } finally {
+            resetBtn.disabled = false;
+            resetBtn.textContent = 'Send Reset Link';
+        }
+    });
+    // Password strength validation
+    function validateSignupPassword() {
+        const password = document.getElementById('signupPassword').value;
+        document.getElementById('req-length').className = password.length >= 8 ? 'requirement-met' : 'requirement-unmet';
+        document.getElementById('req-upper').className = /[A-Z]/.test(password) ? 'requirement-met' : 'requirement-unmet';
+        document.getElementById('req-lower').className = /[a-z]/.test(password) ? 'requirement-met' : 'requirement-unmet';
+        document.getElementById('req-number').className = /[0-9]/.test(password) ? 'requirement-met' : 'requirement-unmet';
+        document.getElementById('req-symbol').className = /[!@#$%^&*()_+]/.test(password) ? 'requirement-met' : 'requirement-unmet';
+    }
+    function isSignupPasswordValid() {
+        const password = document.getElementById('signupPassword').value;
+        return password.length >= 8 &&
+            /[A-Z]/.test(password) &&
+            /[a-z]/.test(password) &&
+            /[0-9]/.test(password) &&
+            /[!@#$%^&*()_+]/.test(password);
+    }
+    // Signup form handling (Supabase)
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+        const firstName = document.getElementById('signupFirstName').value;
+        const lastName = document.getElementById('signupLastName').value;
+        const phone = document.getElementById('signupPhone').value;
+        const username = document.getElementById('signupUsername').value;
+        const signupBtn = document.getElementById('signupBtn');
+        signupBtn.disabled = true;
+        signupBtn.textContent = 'Creating...';
+        document.getElementById('signupErrorMessage').style.display = 'none';
+        document.getElementById('signupSuccessMessage').style.display = 'none';
+        // Password validation
+        const pw = password;
+        const pwValid = pw.length >= 8 && /[A-Z]/.test(pw) && /[a-z]/.test(pw) && /[0-9]/.test(pw) && /[!@#$%^&*()_+]/.test(pw);
+        if (!pwValid) {
+            document.getElementById('signupErrorMessage').textContent = 'Password does not meet requirements.';
+            document.getElementById('signupErrorMessage').style.display = 'block';
+            signupBtn.disabled = false;
+            signupBtn.textContent = 'Create Account';
+            return;
+        }
+        try {
+            // Pass extra fields as user_metadata (Supabase expects 'user_metadata' not 'data')
+            const { data, error } = await supabase.auth.signUp({
+                email, password, options: {
+                    user_metadata: {
+                        first_name: firstName,
+                        last_name: lastName,
+                        phone: phone,
+                        username: username
+                    }
+                }
+            });
+            // Show full response for debugging
+            if (error) {
+                document.getElementById('signupErrorMessage').innerHTML =
+                    '<b>Supabase error:</b> ' + error.message + '<br><pre>' + JSON.stringify(error, null, 2) + '</pre>';
+                document.getElementById('signupErrorMessage').style.display = 'block';
+            } else {
+                // Insert into custom users table after successful signup
+                if (data && data.user) {
+                    try {
+                        const insertResult = await supabase.from('users').insert([
+                            {
+                                id: data.user.id,
+                                email: email,
+                                first_name: firstName,
+                                last_name: lastName,
+                                phone: phone,
+                                username: username
+                            }
+                        ]);
+                        if (insertResult.error) {
+                            document.getElementById('signupErrorMessage').innerHTML =
+                                '<b>Database error:</b> ' + insertResult.error.message + '<br><pre>' + JSON.stringify(insertResult, null, 2) + '</pre>';
+                            document.getElementById('signupErrorMessage').style.display = 'block';
+                            return;
+                        } else {
+                            document.getElementById('signupSuccessMessage').innerHTML =
+                                'Signup successful!<br><b>Insert result:</b><pre>' + JSON.stringify(insertResult, null, 2) + '</pre>';
+                        }
+                    } catch (dbErr) {
+                        document.getElementById('signupErrorMessage').innerHTML =
+                            '<b>Database insert failed:</b> ' + dbErr.message + '<br><pre>' + JSON.stringify(dbErr, null, 2) + '</pre>';
+                        document.getElementById('signupErrorMessage').style.display = 'block';
+                        return;
+                    }
+                }
+                document.getElementById('signupSuccessMessage').textContent =
+                    'Signup successful! Redirecting to dashboard...';
+                document.getElementById('signupSuccessMessage').style.display = 'block';
+                document.getElementById('signupForm').reset();
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1200);
+            }
+        } catch (err) {
+            document.getElementById('signupErrorMessage').innerHTML =
+                '<b>Signup failed:</b> ' + err.message + '<br><pre>' + JSON.stringify(err, null, 2) + '</pre>';
+            document.getElementById('signupErrorMessage').style.display = 'block';
+        } finally {
+            signupBtn.disabled = false;
+            signupBtn.textContent = 'Create Account';
+        }
+    });
+    // Password requirements live feedback
+    const signupPassword = document.getElementById('signupPassword');
+    signupPassword && signupPassword.addEventListener('input', function() {
+        const pw = signupPassword.value;
+        document.getElementById('pw-length').style.color = pw.length >= 8 ? '#2e7d32' : '#c62828';
+        document.getElementById('pw-upper').style.color = /[A-Z]/.test(pw) ? '#2e7d32' : '#c62828';
+        document.getElementById('pw-lower').style.color = /[a-z]/.test(pw) ? '#2e7d32' : '#c62828';
+        document.getElementById('pw-number').style.color = /[0-9]/.test(pw) ? '#2e7d32' : '#c62828';
+        document.getElementById('pw-symbol').style.color = /[!@#$%^&*()_+]/.test(pw) ? '#2e7d32' : '#c62828';
+    });
+    </script>
+</body>
+</html>

@@ -123,6 +123,13 @@
                 gap: 20px;
             }
         }
+
+        .modal { position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.3); }
+        .modal-content { background: #fff; margin: 60px auto; padding: 24px 24px 12px 24px; border-radius: 8px; box-shadow: 0 2px 12px #0002; position: relative; }
+        .close { position: absolute; right: 18px; top: 10px; font-size: 1.6em; cursor: pointer; color: #888; }
+        .close:hover { color: #e74c3c; }
+        #manager-form label { display:block; margin:10px 0 4px 0; font-weight:500; }
+        #manager-form input, #manager-form select { width:100%; padding:7px 8px; margin-bottom:8px; border:1px solid #ccc; border-radius:4px; }
     </style>
 </head>
 <body>
@@ -135,14 +142,157 @@
         </div>
         
         <div class="admin-content">
-            <!-- Debug Information -->
-            <div class="debug-info">
-                <h4>🔍 Debug Information</h4>
-                <p><strong>Current User:</strong> <span id="debugUser">Loading...</span></p>
-                <p><strong>User Role:</strong> <span id="debugRole">Loading...</span></p>
-                <p><strong>Auth Token:</strong> <span id="debugToken">Loading...</span></p>
+            <!-- User Management Table Section -->
+            <div id="user-management-section" style="margin:0 0 40px 0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                    <h2 style="font-size:1.4em;font-weight:600;">User Management</h2>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table id="user-table" style="width:100%;border-collapse:collapse;min-width:600px;">
+                        <thead>
+                            <tr style="background:#f4f4f4;">
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Name</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Email</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Role</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Status</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body">
+                            <!-- Sample users, replace with dynamic data -->
+                            <tr>
+                                <td style="padding:8px;border:1px solid #eee;">Alice Smith</td>
+                                <td style="padding:8px;border:1px solid #eee;">alice@example.com</td>
+                                <td style="padding:8px;border:1px solid #eee;">admin</td>
+                                <td style="padding:8px;border:1px solid #eee;">Active</td>
+                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-user-btn" style="background:#8f5be8;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-user-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px;border:1px solid #eee;">Bob Jones</td>
+                                <td style="padding:8px;border:1px solid #eee;">bob@example.com</td>
+                                <td style="padding:8px;border:1px solid #eee;">manager</td>
+                                <td style="padding:8px;border:1px solid #eee;">Active</td>
+                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-user-btn" style="background:#8f5be8;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-user-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px;border:1px solid #eee;">Carol Lee</td>
+                                <td style="padding:8px;border:1px solid #eee;">carol@example.com</td>
+                                <td style="padding:8px;border:1px solid #eee;">user</td>
+                                <td style="padding:8px;border:1px solid #eee;">Suspended</td>
+                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-user-btn" style="background:#8f5be8;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-user-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-
+            <!-- Manager Management Table Section -->
+            <div id="manager-management-section" style="margin:0 0 40px 0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                    <h2 style="font-size:1.4em;font-weight:600;">Manager Management</h2>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table id="manager-table" style="width:100%;border-collapse:collapse;min-width:600px;">
+                        <thead>
+                            <tr style="background:#f4f4f4;">
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Name</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Email</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Department</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Status</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manager-table-body">
+                            <!-- Sample managers, replace with dynamic data -->
+                            <tr>
+                                <td style="padding:8px;border:1px solid #eee;">Dana White</td>
+                                <td style="padding:8px;border:1px solid #eee;">dana@company.com</td>
+                                <td style="padding:8px;border:1px solid #eee;">Sales</td>
+                                <td style="padding:8px;border:1px solid #eee;">Active</td>
+                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-manager-btn" style="background:#36b37e;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-manager-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px;border:1px solid #eee;">Eli Brown</td>
+                                <td style="padding:8px;border:1px solid #eee;">eli@company.com</td>
+                                <td style="padding:8px;border:1px solid #eee;">Support</td>
+                                <td style="padding:8px;border:1px solid #eee;">Suspended</td>
+                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-manager-btn" style="background:#36b37e;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-manager-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Supervisor Management Table Section -->
+            <div id="supervisor-management-section" style="margin:0 0 40px 0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                    <h2 style="font-size:1.4em;font-weight:600;">Supervisor Management</h2>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table id="supervisor-table" style="width:100%;border-collapse:collapse;min-width:600px;">
+                        <thead>
+                            <tr style="background:#f4f4f4;">
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Name</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Email</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Team</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Status</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="supervisor-table-body">
+                            <!-- Sample supervisors, replace with dynamic data -->
+                            <tr>
+                                <td style="padding:8px;border:1px solid #eee;">Fiona Green</td>
+                                <td style="padding:8px;border:1px solid #eee;">fiona@company.com</td>
+                                <td style="padding:8px;border:1px solid #eee;">Team Alpha</td>
+                                <td style="padding:8px;border:1px solid #eee;">Active</td>
+                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-supervisor-btn" style="background:#f7b731;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-supervisor-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px;border:1px solid #eee;">George King</td>
+                                <td style="padding:8px;border:1px solid #eee;">george@company.com</td>
+                                <td style="padding:8px;border:1px solid #eee;">Team Beta</td>
+                                <td style="padding:8px;border:1px solid #eee;">Suspended</td>
+                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-supervisor-btn" style="background:#f7b731;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-supervisor-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Admin Management Table Section -->
+            <div id="admin-management-section" style="margin:0 0 40px 0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                    <h2 style="font-size:1.4em;font-weight:600;">Admin Management</h2>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table id="admin-table" style="width:100%;border-collapse:collapse;min-width:600px;">
+                        <thead>
+                            <tr style="background:#f4f4f4;">
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Name</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Email</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Level</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Status</th>
+                                <th style="padding:10px 8px;border:1px solid #ddd;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body">
+                            <!-- Sample admins, replace with dynamic data -->
+                            <tr>
+                                <td style="padding:8px;border:1px solid #eee;">Hannah Lee</td>
+                                <td style="padding:8px;border:1px solid #eee;">hannah@company.com</td>
+                                <td style="padding:8px;border:1px solid #eee;">Super Admin</td>
+                                <td style="padding:8px;border:1px solid #eee;">Active</td>
+                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-admin-btn" style="background:#4e73df;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-admin-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
+                            </tr>
+                            <tr>
+                                <td style="padding:8px;border:1px solid #eee;">Ivan Novak</td>
+                                <td style="padding:8px;border:1px solid #eee;">ivan@company.com</td>
+                                <td style="padding:8px;border:1px solid #eee;">Admin</td>
+                                <td style="padding:8px;border:1px solid #eee;">Suspended</td>
+                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-admin-btn" style="background:#4e73df;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-admin-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             <div class="admin-grid">
                 <!-- User Management -->
                 <div class="admin-card">
@@ -228,6 +378,63 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Debug Information -->
+            <div class="debug-info">
+                <h4>🔍 Debug Information</h4>
+                <p><strong>Current User:</strong> <span id="debugUser">Loading...</span></p>
+                <p><strong>User Role:</strong> <span id="debugRole">Loading...</span></p>
+                <p><strong>Auth Token:</strong> <span id="debugToken">Loading...</span></p>
+            </div>
+
+            <!-- User Modal -->
+            <div id="user-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);z-index:2000;align-items:center;justify-content:center;">
+                <div style="background:#fff;padding:28px 32px;border-radius:10px;min-width:320px;max-width:95vw;max-height:95vh;overflow:auto;box-shadow:0 4px 24px rgba(0,0,0,0.18);">
+                    <h2 id="user-modal-title" style="margin-top:0;font-size:1.2em;">Add User</h2>
+                    <form id="user-form">
+                        <div style="display:flex;flex-direction:column;gap:14px;">
+                            <input name="name" id="user-name" placeholder="Full Name" required style="padding:8px;font-size:1em;border:1px solid #ccc;border-radius:5px;" />
+                            <input name="email" id="user-email" placeholder="Email" type="email" required style="padding:8px;font-size:1em;border:1px solid #ccc;border-radius:5px;" />
+                            <select name="role" id="user-role" required style="padding:8px;font-size:1em;border:1px solid #ccc;border-radius:5px;">
+                                <option value="admin">Admin</option>
+                                <option value="supervisor">Supervisor</option>
+                                <option value="manager">Manager</option>
+                                <option value="user">User</option>
+                            </select>
+                            <select name="status" id="user-status" required style="padding:8px;font-size:1em;border:1px solid #ccc;border-radius:5px;">
+                                <option value="Active">Active</option>
+                                <option value="Suspended">Suspended</option>
+                            </select>
+                        </div>
+                        <div style="margin-top:22px;display:flex;gap:12px;justify-content:flex-end;">
+                            <button type="button" id="cancel-user-modal" style="padding:7px 18px;border:none;border-radius:4px;background:#ccc;color:#222;cursor:pointer;">Cancel</button>
+                            <button type="submit" class="admin-button" style="padding:7px 18px;">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Manager Modal -->
+            <div id="manager-modal" class="modal" style="display:none;">
+                <div class="modal-content" style="max-width:400px;">
+                    <span class="close" id="close-manager-modal">&times;</span>
+                    <h3 id="manager-modal-title">Add Manager</h3>
+                    <form id="manager-form">
+                        <label for="manager-name">Name:</label>
+                        <input type="text" id="manager-name" name="manager-name" required>
+                        <label for="manager-email">Email:</label>
+                        <input type="email" id="manager-email" name="manager-email" required>
+                        <label for="manager-department">Department:</label>
+                        <input type="text" id="manager-department" name="manager-department" required>
+                        <label for="manager-status">Status:</label>
+                        <select id="manager-status" name="manager-status">
+                            <option value="Active">Active</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                        <input type="hidden" id="manager-edit-index">
+                        <button type="submit" class="admin-button" style="background:#36b37e;width:100%;margin-top:16px;">Save</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -295,6 +502,205 @@
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', initializeAdmin);
+
+        // User Management Modal Logic
+        const userModal = document.getElementById('user-modal');
+        const addUserBtn = document.getElementById('add-user-btn');
+        const userForm = document.getElementById('user-form');
+        const userModalTitle = document.getElementById('user-modal-title');
+        const cancelUserModal = document.getElementById('cancel-user-modal');
+        let editingUserRow = null;
+
+        addUserBtn.addEventListener('click', function() {
+            userModalTitle.textContent = 'Add User';
+            userForm.reset();
+            editingUserRow = null;
+            userModal.style.display = 'flex';
+        });
+
+        cancelUserModal.addEventListener('click', function() {
+            userModal.style.display = 'none';
+        });
+
+        userModal.addEventListener('click', function(e) {
+            if (e.target === userModal) userModal.style.display = 'none';
+        });
+
+        // Edit user logic
+        document.querySelectorAll('.edit-user-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const row = btn.closest('tr');
+                editingUserRow = row;
+                userModalTitle.textContent = 'Edit User';
+                document.getElementById('user-name').value = row.children[0].textContent;
+                document.getElementById('user-email').value = row.children[1].textContent;
+                document.getElementById('user-role').value = row.children[2].textContent;
+                document.getElementById('user-status').value = row.children[3].textContent;
+                userModal.style.display = 'flex';
+            });
+        });
+
+        // Delete user logic
+        document.querySelectorAll('.delete-user-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const row = btn.closest('tr');
+                if (confirm('Delete user ' + row.children[0].textContent + '?')) {
+                    row.remove();
+                }
+            });
+        });
+
+        // Save user (add or edit)
+        userForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('user-name').value;
+            const email = document.getElementById('user-email').value;
+            const role = document.getElementById('user-role').value;
+            const status = document.getElementById('user-status').value;
+            if (editingUserRow) {
+                editingUserRow.children[0].textContent = name;
+                editingUserRow.children[1].textContent = email;
+                editingUserRow.children[2].textContent = role;
+                editingUserRow.children[3].textContent = status;
+            } else {
+                const tbody = document.getElementById('user-table-body');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td style='padding:8px;border:1px solid #eee;'>${name}</td><td style='padding:8px;border:1px solid #eee;'>${email}</td><td style='padding:8px;border:1px solid #eee;'>${role}</td><td style='padding:8px;border:1px solid #eee;'>${status}</td><td style='padding:8px;border:1px solid #eee;'><button class='admin-button edit-user-btn' style='background:#8f5be8;padding:4px 12px;font-size:0.95em;'>Edit</button> <button class='admin-button delete-user-btn' style='background:#e74c3c;padding:4px 12px;font-size:0.95em;'>Delete</button></td>`;
+                tbody.appendChild(tr);
+                // Re-attach event listeners for new row
+                tr.querySelector('.edit-user-btn').addEventListener('click', function() {
+                    editingUserRow = tr;
+                    userModalTitle.textContent = 'Edit User';
+                    document.getElementById('user-name').value = tr.children[0].textContent;
+                    document.getElementById('user-email').value = tr.children[1].textContent;
+                    document.getElementById('user-role').value = tr.children[2].textContent;
+                    document.getElementById('user-status').value = tr.children[3].textContent;
+                    userModal.style.display = 'flex';
+                });
+                tr.querySelector('.delete-user-btn').addEventListener('click', function() {
+                    if (confirm('Delete user ' + tr.children[0].textContent + '?')) {
+                        tr.remove();
+                    }
+                });
+            }
+            userModal.style.display = 'none';
+        });
+
+        // Manager Management Modal/Event Logic
+        const managerModal = document.getElementById('manager-modal');
+        const addManagerBtn = document.getElementById('add-manager-btn');
+        const closeManagerModal = document.getElementById('close-manager-modal');
+        const managerForm = document.getElementById('manager-form');
+        const managerTableBody = document.getElementById('manager-table-body');
+        let editingManagerIndex = null;
+
+        // Open Add Manager Modal
+        addManagerBtn.onclick = function() {
+            managerForm.reset();
+            document.getElementById('manager-modal-title').innerText = 'Add Manager';
+            document.getElementById('manager-edit-index').value = '';
+            managerModal.style.display = 'block';
+        };
+        // Close Modal
+        closeManagerModal.onclick = function() { managerModal.style.display = 'none'; };
+        window.onclick = function(event) { if (event.target === managerModal) managerModal.style.display = 'none'; };
+
+        // Edit Manager
+        managerTableBody.addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-manager-btn')) {
+                const row = e.target.closest('tr');
+                editingManagerIndex = Array.from(managerTableBody.children).indexOf(row);
+                document.getElementById('manager-modal-title').innerText = 'Edit Manager';
+                document.getElementById('manager-name').value = row.children[0].innerText;
+                document.getElementById('manager-email').value = row.children[1].innerText;
+                document.getElementById('manager-department').value = row.children[2].innerText;
+                document.getElementById('manager-status').value = row.children[3].innerText;
+                document.getElementById('manager-edit-index').value = editingManagerIndex;
+                managerModal.style.display = 'block';
+            }
+            // Delete Manager
+            if (e.target.classList.contains('delete-manager-btn')) {
+                if (confirm('Are you sure you want to delete this manager?')) {
+                    e.target.closest('tr').remove();
+                }
+            }
+        });
+
+        // Add/Edit Manager Submit
+        managerForm.onsubmit = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('manager-name').value;
+            const email = document.getElementById('manager-email').value;
+            const department = document.getElementById('manager-department').value;
+            const status = document.getElementById('manager-status').value;
+            const editIndex = document.getElementById('manager-edit-index').value;
+            if (editIndex === '') {
+                // Add new manager
+                const newRow = managerTableBody.insertRow();
+                newRow.innerHTML = `<td style='padding:8px;border:1px solid #eee;'>${name}</td><td style='padding:8px;border:1px solid #eee;'>${email}</td><td style='padding:8px;border:1px solid #eee;'>${department}</td><td style='padding:8px;border:1px solid #eee;'>${status}</td><td style='padding:8px;border:1px solid #eee;'><button class='admin-button edit-manager-btn' style='background:#36b37e;padding:4px 12px;font-size:0.95em;'>Edit</button> <button class='admin-button delete-manager-btn' style='background:#e74c3c;padding:4px 12px;font-size:0.95em;'>Delete</button></td>`;
+            } else {
+                // Edit existing manager
+                const row = managerTableBody.children[editIndex];
+                row.children[0].innerText = name;
+                row.children[1].innerText = email;
+                row.children[2].innerText = department;
+                row.children[3].innerText = status;
+            }
+            managerModal.style.display = 'none';
+            managerForm.reset();
+        };
+
+        // Supervisor Management Modal/Event Logic
+        const supervisorTableBody = document.getElementById('supervisor-table-body');
+        let editingSupervisorRow = null;
+        supervisorTableBody.addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-supervisor-btn')) {
+                const row = e.target.closest('tr');
+                editingSupervisorRow = row;
+                // For demo: prompt for new values
+                const name = prompt('Edit Supervisor Name:', row.children[0].innerText);
+                const email = prompt('Edit Supervisor Email:', row.children[1].innerText);
+                const team = prompt('Edit Supervisor Team:', row.children[2].innerText);
+                const status = prompt('Edit Supervisor Status (Active/Suspended):', row.children[3].innerText);
+                if (name && email && team && status) {
+                    row.children[0].innerText = name;
+                    row.children[1].innerText = email;
+                    row.children[2].innerText = team;
+                    row.children[3].innerText = status;
+                }
+            }
+            if (e.target.classList.contains('delete-supervisor-btn')) {
+                if (confirm('Delete supervisor ' + e.target.closest('tr').children[0].innerText + '?')) {
+                    e.target.closest('tr').remove();
+                }
+            }
+        });
+
+        // Admin Management Modal/Event Logic
+        const adminTableBody = document.getElementById('admin-table-body');
+        let editingAdminRow = null;
+        adminTableBody.addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-admin-btn')) {
+                const row = e.target.closest('tr');
+                editingAdminRow = row;
+                // For demo: prompt for new values
+                const name = prompt('Edit Admin Name:', row.children[0].innerText);
+                const email = prompt('Edit Admin Email:', row.children[1].innerText);
+                const level = prompt('Edit Admin Level:', row.children[2].innerText);
+                const status = prompt('Edit Admin Status (Active/Suspended):', row.children[3].innerText);
+                if (name && email && level && status) {
+                    row.children[0].innerText = name;
+                    row.children[1].innerText = email;
+                    row.children[2].innerText = level;
+                    row.children[3].innerText = status;
+                }
+            }
+            if (e.target.classList.contains('delete-admin-btn')) {
+                if (confirm('Delete admin ' + e.target.closest('tr').children[0].innerText + '?')) {
+                    e.target.closest('tr').remove();
+                }
+            }
+        });
     </script>
     <script src="static/global-nav.js"></script>
 </body>

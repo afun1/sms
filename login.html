@@ -5,12 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sparky Messaging</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,7 +14,6 @@
             justify-content: center;
             padding: 20px;
         }
-
         .login-container {
             background: white;
             border-radius: 20px;
@@ -32,18 +25,6 @@
             grid-template-columns: 1fr 1fr;
             min-height: 500px;
         }
-
-        .signup-container, .reset-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            overflow: hidden;
-            width: 100%;
-            max-width: 600px;
-            padding: 40px;
-            display: none;
-        }
-
         .login-info {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: white;
@@ -52,75 +33,60 @@
             flex-direction: column;
             justify-content: center;
         }
-
         .login-info h1 {
             font-size: 2.5em;
             margin-bottom: 20px;
             font-weight: 300;
         }
-
         .login-info p {
             font-size: 1.1em;
             opacity: 0.9;
             line-height: 1.6;
             margin-bottom: 20px;
         }
-
         .features-list {
             list-style: none;
             margin-top: 20px;
+            padding-left: 0;
         }
-
         .features-list li {
             padding: 8px 0;
-            opacity: 0.9;
+            opacity: 0.95;
         }
-
         .features-list li:before {
             content: "✓ ";
             color: #fff;
             font-weight: bold;
             margin-right: 10px;
         }
-
         .login-form {
             padding: 60px 40px;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
-
         .form-header {
             text-align: center;
             margin-bottom: 40px;
         }
-
         .form-header h2 {
             font-size: 2em;
             color: #333;
             margin-bottom: 10px;
         }
-
         .form-header p {
             color: #666;
         }
-
         .form-group {
             margin-bottom: 25px;
         }
-
         .form-group label {
             display: block;
             margin-bottom: 8px;
             color: #333;
             font-weight: 500;
         }
-
-        .password-input-wrapper {
-            position: relative;
-        }
-
-        .form-input, .form-select {
+        .form-input {
             width: 100%;
             padding: 15px;
             border: 2px solid #e1e5e9;
@@ -129,59 +95,13 @@
             transition: all 0.3s ease;
             background: #f8f9fa;
         }
-
-        .form-input:focus, .form-select:focus {
+        .form-input:focus {
             outline: none;
             border-color: #ff6b6b;
             background: white;
             box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
         }
-
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #666;
-            cursor: pointer;
-            font-size: 0.9em;
-            padding: 5px;
-            transition: color 0.3s ease;
-        }
-
-        .password-toggle:hover {
-            color: #ff6b6b;
-        }
-
-        .password-requirements {
-            background: #f8f9fa;
-            border: 1px solid #e1e5e9;
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 8px;
-            font-size: 0.85em;
-            color: #666;
-        }
-
-        .password-requirements ul {
-            margin: 8px 0 0 20px;
-        }
-
-        .password-requirements li {
-            margin: 4px 0;
-        }
-
-        .requirement-met {
-            color: #28a745;
-        }
-
-        .requirement-unmet {
-            color: #dc3545;
-        }
-
-        .login-btn, .signup-btn, .reset-btn {
+        .login-btn {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: white;
             border: none;
@@ -193,985 +113,539 @@
             transition: all 0.3s ease;
             margin-bottom: 20px;
         }
-
-        .login-btn:hover, .signup-btn:hover, .reset-btn:hover {
+        .login-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
         }
-
-        .login-btn:disabled, .signup-btn:disabled, .reset-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
         .form-links {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 10px;
         }
-
         .form-links a {
             color: #ff6b6b;
             text-decoration: none;
-            margin: 0 15px;
+            margin: 0 10px;
+            font-weight: 500;
         }
-
         .form-links a:hover {
             text-decoration: underline;
         }
-
-        .error-message {
-            background: #ffebee;
-            border: 1px solid #ffcdd2;
-            color: #c62828;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .success-message {
-            background: #e8f5e8;
-            border: 1px solid #c8e6c9;
-            color: #2e7d32;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .signup-notice, .reset-notice {
-            background: #e3f2fd;
-            border: 1px solid #bbdefb;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 25px;
-            color: #1976d2;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .back-btn {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .back-btn:hover {
-            background: #5a6268;
-        }
-
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
-
-        .step {
-            display: flex;
-            align-items: center;
-            margin: 0 10px;
-        }
-
-        .step-number {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: #e1e5e9;
-            color: #666;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            margin-right: 8px;
-        }
-
-        .step.active .step-number {
-            background: #ff6b6b;
-            color: white;
-        }
-
-        .step.completed .step-number {
-            background: #28a745;
-            color: white;
-        }
-
         @media (max-width: 768px) {
             .login-container {
                 grid-template-columns: 1fr;
                 max-width: 500px;
             }
-            
             .login-info {
                 padding: 40px 30px;
                 text-align: center;
             }
-            
             .login-info h1 {
                 font-size: 2em;
             }
-            
             .login-form {
                 padding: 40px 30px;
-            }
-
-            .signup-container, .reset-container {
-                padding: 30px 20px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Login Container -->
-    <div class="login-container" id="loginContainer">
-        <!-- Left Panel - Info -->
+    <div class="login-container">
         <div class="login-info">
             <h1>Sparky Messaging</h1>
             <p>Welcome to the Multi-Channel Marketing Powerhouse</p>
             <p>Access your comprehensive messaging platform with advanced AI capabilities, multi-provider support, and professional campaign management tools.</p>
-            
             <ul class="features-list">
-                <li>AI-Powered Content Generation</li>
+                <li>Sparky-Powered content Generation</li>
                 <li>Multi-Provider SMS & Email</li>
                 <li>Ringless Voicemail (RVM)</li>
                 <li>Campaign Automation</li>
-                <li>GoHighLevel Integration</li>
+                <li>Sparky AI Systems Integration</li>
                 <li>Real-time Analytics</li>
             </ul>
         </div>
-
-        <!-- Right Panel - Login Form -->
-        <div class="login-form">
+        <div class="login-form" id="loginFormPanel">
             <div class="form-header">
-                <h2>Sign In</h2>
-                <p>Access your marketing dashboard</p>
+                <h2>Log In</h2>
             </div>
-
-            <div id="errorMessage" class="error-message"></div>
-            <div id="successMessage" class="success-message"></div>
-
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="username">Username or Email</label>
-                    <input 
-                        type="text" 
-                        id="username" 
-                        name="username" 
-                        class="form-input" 
-                        required 
-                        placeholder="Enter your username or email"
-                    >
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-input" required placeholder="Enter your email">
                 </div>
-
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <div class="password-input-wrapper">
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            class="form-input" 
-                            required 
-                            placeholder="Enter your password"
-                        >
-                        <button type="button" class="password-toggle" onclick="togglePassword('password')">Show</button>
-                    </div>
+                    <input type="password" id="password" name="password" class="form-input" required placeholder="Enter your password">
                 </div>
-
-                <button type="submit" class="login-btn" id="loginBtn">
-                    Sign In
-                </button>
+                <button type="submit" class="login-btn">Log In</button>
             </form>
-
             <div class="form-links">
-                <a href="#" onclick="showPasswordReset()">Forgot Password?</a>
-                <a href="#" onclick="showSignup()">Sign Up</a>
+                <a href="#" id="showForgot">Forgot Password?</a>
+                <a href="#" id="showSignup">Sign Up</a>
             </div>
         </div>
-    </div>
-
-    <!-- Password Reset Container -->
-    <div class="reset-container" id="resetContainer">
-        <button class="back-btn" onclick="showLogin()">← Back to Login</button>
-        
-        <div class="form-header">
-            <h2>Reset Password</h2>
-            <p>Recover your account access</p>
-        </div>
-
-        <div class="step-indicator">
-            <div class="step active" id="step1">
-                <div class="step-number">1</div>
-                <span>Verify Identity</span>
+        <div class="login-form" id="signupFormPanel" style="display:none; flex-direction:column;">
+            <div style="background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 1em; text-align:center; font-weight:600;">
+                ⚠️ All login data must match Sparky AI or account will not be approved.
             </div>
-            <div class="step" id="step2">
-                <div class="step-number">2</div>
-                <span>Answer Question</span>
+            <div class="form-header">
+                <h2>Sign Up</h2>
             </div>
-            <div class="step" id="step3">
-                <div class="step-number">3</div>
-                <span>New Password</span>
-            </div>
-        </div>
-
-        <div class="reset-notice">
-            🔐 Enter your username and email to begin password reset
-        </div>
-
-        <div id="resetErrorMessage" class="error-message"></div>
-        <div id="resetSuccessMessage" class="success-message"></div>
-
-        <!-- Step 1: Username/Email Verification -->
-        <div id="resetStep1">
-            <form id="resetStep1Form">
+            <form id="signupForm">
                 <div class="form-group">
-                    <label for="resetUsername">Username</label>
-                    <input 
-                        type="text" 
-                        id="resetUsername" 
-                        name="resetUsername" 
-                        class="form-input" 
-                        required 
-                        placeholder="Enter your username"
-                    >
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" name="firstName" class="form-input" required placeholder="Enter your first name">
                 </div>
-
                 <div class="form-group">
-                    <label for="resetEmail">Email Address</label>
-                    <input 
-                        type="email" 
-                        id="resetEmail" 
-                        name="resetEmail" 
-                        class="form-input" 
-                        required 
-                        placeholder="Enter your email address"
-                    >
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" name="lastName" class="form-input" required placeholder="Enter your last name">
                 </div>
-
-                <button type="submit" class="reset-btn" id="resetStep1Btn">
-                    Verify Identity
-                </button>
-            </form>
-        </div>
-
-        <!-- Step 2: Secret Question -->
-        <div id="resetStep2" style="display: none;">
-            <div class="form-group">
-                <label id="secretQuestionLabel">Secret Question</label>
-                <div id="secretQuestionDisplay" class="form-input" style="background: #f8f9fa; color: #666; cursor: not-allowed;">
-                    <!-- Question will be displayed here -->
-                </div>
-            </div>
-
-            <form id="resetStep2Form">
                 <div class="form-group">
-                    <label for="secretAnswerInput">Your Answer</label>
-                    <input 
-                        type="text" 
-                        id="secretAnswerInput" 
-                        name="secretAnswerInput" 
-                        class="form-input" 
-                        required 
-                        placeholder="Enter your answer"
-                    >
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" name="signupEmail" class="form-input" required placeholder="john@tpnlife.com">
                 </div>
-
-                <button type="submit" class="reset-btn" id="resetStep2Btn">
-                    Verify Answer
-                </button>
-            </form>
-        </div>
-
-        <!-- Step 3: New Password -->
-        <div id="resetStep3" style="display: none;">
-            <form id="resetStep3Form">
                 <div class="form-group">
-                    <label for="newPassword">New Password</label>
-                    <div class="password-input-wrapper">
-                        <input 
-                            type="password" 
-                            id="newPassword" 
-                            name="newPassword" 
-                            class="form-input" 
-                            required 
-                            placeholder="Create a new password"
-                            oninput="validateNewPassword()"
-                        >
-                        <button type="button" class="password-toggle" onclick="togglePassword('newPassword')">Show</button>
-                    </div>
-                    <div class="password-requirements" id="newPasswordRequirements">
-                        <strong>Password Requirements:</strong>
-                        <ul>
-                            <li id="new-req-length" class="requirement-unmet">At least 8 characters</li>
-                            <li id="new-req-upper" class="requirement-unmet">At least 1 uppercase letter (A-Z)</li>
-                            <li id="new-req-lower" class="requirement-unmet">At least 1 lowercase letter (a-z)</li>
-                            <li id="new-req-number" class="requirement-unmet">At least 1 number (0-9)</li>
-                            <li id="new-req-symbol" class="requirement-unmet">At least 1 symbol (!@#$%^&*()_+)</li>
-                        </ul>
+                    <label for="signupPhone">Phone</label>
+                    <input type="tel" id="signupPhone" name="signupPhone" class="form-input" required placeholder="Enter your phone number">
+                </div>
+                <div class="form-group">
+                    <label for="plainTextField" style="position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;">Do not fill</label>
+                    <span style="display:block; color:#333; font-weight:500; margin-bottom:8px;">Sparky Username</span>
+                    <input type="text" id="plainTextField" name="plainTextField" class="form-input" required placeholder="Your username from Phghub.ai" autocomplete="off" inputmode="text" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <div style="position:relative;">
+                        <input type="password" id="signupPassword" name="signupPassword" class="form-input" required placeholder="Create a password" minlength="8" style="padding-right:40px;">
+                        <button type="button" id="toggleSignupPassword" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#888; font-size:1.1em;">Show</button>
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="confirmPassword">Confirm New Password</label>
-                    <div class="password-input-wrapper">
-                        <input 
-                            type="password" 
-                            id="confirmPassword" 
-                            name="confirmPassword" 
-                            class="form-input" 
-                            required 
-                            placeholder="Confirm your new password"
-                            oninput="validatePasswordMatch()"
-                        >
-                        <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">Show</button>
-                    </div>
-                    <div id="passwordMatchMessage" style="margin-top: 8px; font-size: 0.85em;"></div>
-                </div>
-
-                <button type="submit" class="reset-btn" id="resetStep3Btn">
-                    Reset Password
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Signup Container -->
-    <div class="signup-container" id="signupContainer">
-        <button class="back-btn" onclick="showLogin()">← Back to Login</button>
-        
-        <div class="form-header">
-            <h2>Create Account</h2>
-            <p>Join Sparky Messaging Platform</p>
-        </div>
-
-        <div class="signup-notice">
-            ⚠️ Use your Sparky Login info. Unless it matches, the account won't be approved.
-        </div>
-
-        <div id="signupErrorMessage" class="error-message"></div>
-        <div id="signupSuccessMessage" class="success-message"></div>
-
-        <form id="signupForm">
-            <div class="form-group">
-                <label for="firstName">First Name</label>
-                <input 
-                    type="text" 
-                    id="firstName" 
-                    name="firstName" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter your first name"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="lastName">Last Name</label>
-                <input 
-                    type="text" 
-                    id="lastName" 
-                    name="lastName" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter your last name"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    name="email" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter your email address"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="phone">Phone</label>
-                <input 
-                    type="tel" 
-                    id="phone" 
-                    name="phone" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter your phone number"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="sparkyUsername">Sparky Username</label>
-                <input 
-                    type="text" 
-                    id="sparkyUsername" 
-                    name="sparkyUsername" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter your existing Sparky username"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="createPassword">Create Password</label>
-                <div class="password-input-wrapper">
-                    <input 
-                        type="password" 
-                        id="createPassword" 
-                        name="createPassword" 
-                        class="form-input" 
-                        required 
-                        placeholder="Create a secure password"
-                        oninput="validatePassword()"
-                    >
-                    <button type="button" class="password-toggle" onclick="togglePassword('createPassword')">Show</button>
-                </div>
-                <div class="password-requirements" id="passwordRequirements">
-                    <strong>Password Requirements:</strong>
-                    <ul>
-                        <li id="req-length" class="requirement-unmet">At least 8 characters</li>
-                        <li id="req-upper" class="requirement-unmet">At least 1 uppercase letter (A-Z)</li>
-                        <li id="req-lower" class="requirement-unmet">At least 1 lowercase letter (a-z)</li>
-                        <li id="req-number" class="requirement-unmet">At least 1 number (0-9)</li>
-                        <li id="req-symbol" class="requirement-unmet">At least 1 symbol (!@#$%^&*()_+)</li>
+                <div style="font-size:0.98em; color:#666; margin-bottom:18px;">
+                    <b>Password Format:</b>
+                    <ul style="margin: 8px 0 0 18px; padding: 0;">
+                        <li>At least 8 characters</li>
+                        <li>At least 1 CAPITAL letter</li>
+                        <li>At least 1 lower case letter</li>
+                        <li>At least 1 number (0-9)</li>
+                        <li>At least 1 special character ~!@#$%^&*()_+</li>
                     </ul>
                 </div>
+                <button type="submit" class="login-btn" id="signupBtn">Create Account</button>
+                <div class="form-links" style="margin-top:10px;">
+                    <a href="#" id="showLogin">Back to Log In</a>
+                </div>
+            </form>
+        </div>
+        <div class="login-form" id="resetPasswordPanel" style="display:none; flex-direction:column;">
+            <div class="form-header">
+                <h2>Reset Password</h2>
             </div>
-
-            <div class="form-group">
-                <label for="membershipLevel">Membership Level</label>
-                <select id="membershipLevel" name="membershipLevel" class="form-select" required>
-                    <option value="">Select your membership level</option>
-                    <option value="basic">Basic</option>
-                    <option value="pro">Pro</option>
-                    <option value="enterprise">Enterprise</option>
-                    <option value="premium">Premium</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="secretQuestion">Secret Question</label>
-                <input 
-                    type="text" 
-                    id="secretQuestion" 
-                    name="secretQuestion" 
-                    class="form-input" 
-                    required 
-                    placeholder="Create a question you will remember"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="secretAnswer">Secret Question Answer</label>
-                <input 
-                    type="text" 
-                    id="secretAnswer" 
-                    name="secretAnswer" 
-                    class="form-input" 
-                    required 
-                    placeholder="Enter an answer you will remember"
-                >
-            </div>
-
-            <button type="submit" class="signup-btn" id="signupBtn">
-                Create Account
-            </button>
-        </form>
+            <form id="resetPasswordForm">
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <div style="position:relative;">
+                        <input type="password" id="newPassword" name="newPassword" class="form-input" required placeholder="Enter new password" minlength="8" style="padding-right:40px;">
+                        <button type="button" id="toggleNewPassword" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#888; font-size:1.1em;">Show</button>
+                    </div>
+                </div>
+                <button type="submit" class="login-btn">Set New Password</button>
+            </form>
+        </div>
     </div>
-
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:9999;">
+        <div style="background:#fff; padding:36px 32px; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center; max-width:400px; min-width:300px;">
+            <h2 style="color:#1976ff; margin-bottom:18px;">Check Your Email</h2>
+            <p style="color:#333; font-size:1.1em; margin-bottom:18px;">
+                If you don't see the link in your inbox, please check spam.<br><br>
+                If you want to have the link resent click the button below after <span id="confirmationCountdown">60</span> seconds.
+            </p>
+            <button id="resendConfirmationBtn" style="background:#1976ff; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:1em; cursor:pointer; margin-bottom:12px;" disabled>Resend Confirmation Email</button><br>
+            <span id="confirmationResendStatus" style="display:block; margin-bottom:12px; color:#28a745; font-size:0.98em;"></span>
+            <button id="closeConfirmationModal" style="background:#eee; color:#333; border:none; border-radius:8px; padding:8px 20px; font-size:1em; cursor:pointer;">Close</button>
+        </div>
+    </div>
+    <!-- Password Reset Modal -->
+    <div id="resetModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:9999;">
+        <div style="background:#fff; padding:36px 32px; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center; max-width:400px; min-width:300px;">
+            <h2 style="color:#1976ff; margin-bottom:18px;">Reset Link Sent</h2>
+            <p id="resetModalText" style="color:#333; font-size:1.1em; margin-bottom:18px;">
+                If you don't see the link in your inbox, please check spam.<br><br>
+                If you want to have the link resent click the button below after <span id="resetCountdown">60</span> seconds.
+            </p>
+            <button id="resendResetBtn" style="background:#1976ff; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:1em; cursor:pointer; margin-bottom:12px;" disabled>Resend Reset Email</button><br>
+            <span id="resetResendStatus" style="display:block; margin-bottom:12px; color:#28a745; font-size:0.98em;"></span>
+            <button id="closeResetModal" style="background:#eee; color:#333; border:none; border-radius:8px; padding:8px 20px; font-size:1em; cursor:pointer;">Close</button>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.6/dist/umd/supabase.min.js"></script>
     <script>
-        // Demo accounts (hidden from UI)
-        const demoAccounts = {
-            'demo': { password: 'demo', role: 'user', name: 'Demo User' },
-            'admin': { password: 'admin', role: 'admin', name: 'Admin User' }
+    // Supabase credentials
+    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Confirmation Modal logic
+    function showConfirmationModal(email) {
+        const modal = document.getElementById('confirmationModal');
+        const btn = document.getElementById('resendConfirmationBtn');
+        const status = document.getElementById('confirmationResendStatus');
+        const countdownSpan = document.getElementById('confirmationCountdown');
+        let countdown = 60;
+        btn.disabled = true;
+        status.textContent = '';
+        btn.style.display = '';
+        countdownSpan.style.display = '';
+        modal.style.display = 'flex';
+        countdownSpan.textContent = countdown;
+        let timer = setInterval(() => {
+            countdown--;
+            countdownSpan.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(timer);
+                btn.disabled = false;
+            }
+        }, 1000);
+        btn.onclick = async function() {
+            btn.disabled = true;
+            btn.textContent = 'Resending...';
+            const { error } = await supabase.auth.resend({ type: 'signup', email });
+            if (error) {
+                status.textContent = 'Error: ' + error.message;
+                status.style.color = '#d33';
+            } else {
+                status.textContent = 'Confirmation email sent!';
+                status.style.color = '#28a745';
+            }
+            btn.textContent = 'Resend Confirmation Email';
+            countdown = 60;
+            countdownSpan.textContent = countdown;
+            let timer2 = setInterval(() => {
+                countdown--;
+                countdownSpan.textContent = countdown;
+                if (countdown <= 0) {
+                    clearInterval(timer2);
+                    btn.disabled = false;
+                }
+            }, 1000);
         };
-
-        // Demo account database with secret questions
-        const accountDatabase = {
-            'demo': {
-                email: 'demo@sparky.com',
-                secretQuestion: 'What is your favorite color?',
-                secretAnswer: 'blue',
-                name: 'Demo User'
-            },
-            'admin': {
-                email: 'admin@sparky.com',
-                secretQuestion: 'What city were you born in?',
-                secretAnswer: 'chicago',
-                name: 'Admin User'
-            }
+        document.getElementById('closeConfirmationModal').onclick = function() {
+            modal.style.display = 'none';
         };
-
-        let currentResetUser = null;
-
-        // Password toggle function
-        function togglePassword(fieldId) {
-            const field = document.getElementById(fieldId);
-            const button = field.nextElementSibling;
-            
-            if (field.type === 'password') {
-                field.type = 'text';
-                button.textContent = 'Hide';
-            } else {
-                field.type = 'password';
-                button.textContent = 'Show';
+    }
+    // Reset Modal logic
+    function showResetModal(email) {
+        const modal = document.getElementById('resetModal');
+        const btn = document.getElementById('resendResetBtn');
+        const status = document.getElementById('resetResendStatus');
+        const countdownSpan = document.getElementById('resetCountdown');
+        let countdown = 60;
+        btn.disabled = true;
+        status.textContent = '';
+        btn.style.display = '';
+        countdownSpan.style.display = '';
+        modal.style.display = 'flex';
+        countdownSpan.textContent = countdown;
+        let timer = setInterval(() => {
+            countdown--;
+            countdownSpan.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(timer);
+                btn.disabled = false;
             }
-        }
-
-        // Password validation functions
-        function validatePassword() {
-            const password = document.getElementById('createPassword').value;
-            
-            const lengthReq = document.getElementById('req-length');
-            if (password.length >= 8) {
-                lengthReq.className = 'requirement-met';
-            } else {
-                lengthReq.className = 'requirement-unmet';
-            }
-            
-            const upperReq = document.getElementById('req-upper');
-            if (/[A-Z]/.test(password)) {
-                upperReq.className = 'requirement-met';
-            } else {
-                upperReq.className = 'requirement-unmet';
-            }
-            
-            const lowerReq = document.getElementById('req-lower');
-            if (/[a-z]/.test(password)) {
-                lowerReq.className = 'requirement-met';
-            } else {
-                lowerReq.className = 'requirement-unmet';
-            }
-            
-            const numberReq = document.getElementById('req-number');
-            if (/[0-9]/.test(password)) {
-                numberReq.className = 'requirement-met';
-            } else {
-                numberReq.className = 'requirement-unmet';
-            }
-            
-            const symbolReq = document.getElementById('req-symbol');
-            if (/[!@#$%^&*()_+]/.test(password)) {
-                symbolReq.className = 'requirement-met';
-            } else {
-                symbolReq.className = 'requirement-unmet';
-            }
-        }
-
-        function validateNewPassword() {
-            const password = document.getElementById('newPassword').value;
-            
-            const lengthReq = document.getElementById('new-req-length');
-            if (password.length >= 8) {
-                lengthReq.className = 'requirement-met';
-            } else {
-                lengthReq.className = 'requirement-unmet';
-            }
-            
-            const upperReq = document.getElementById('new-req-upper');
-            if (/[A-Z]/.test(password)) {
-                upperReq.className = 'requirement-met';
-            } else {
-                upperReq.className = 'requirement-unmet';
-            }
-            
-            const lowerReq = document.getElementById('new-req-lower');
-            if (/[a-z]/.test(password)) {
-                lowerReq.className = 'requirement-met';
-            } else {
-                lowerReq.className = 'requirement-unmet';
-            }
-            
-            const numberReq = document.getElementById('new-req-number');
-            if (/[0-9]/.test(password)) {
-                numberReq.className = 'requirement-met';
-            } else {
-                numberReq.className = 'requirement-unmet';
-            }
-            
-            const symbolReq = document.getElementById('new-req-symbol');
-            if (/[!@#$%^&*()_+]/.test(password)) {
-                symbolReq.className = 'requirement-met';
-            } else {
-                symbolReq.className = 'requirement-unmet';
-            }
-            
-            validatePasswordMatch();
-        }
-
-        function validatePasswordMatch() {
-            const password = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const messageDiv = document.getElementById('passwordMatchMessage');
-            
-            if (confirmPassword === '') {
-                messageDiv.textContent = '';
-                return;
-            }
-            
-            if (password === confirmPassword) {
-                messageDiv.textContent = '✓ Passwords match';
-                messageDiv.style.color = '#28a745';
-            } else {
-                messageDiv.textContent = '✗ Passwords do not match';
-                messageDiv.style.color = '#dc3545';
-            }
-        }
-
-        function isPasswordValid() {
-            const password = document.getElementById('createPassword').value;
-            return password.length >= 8 && 
-                   /[A-Z]/.test(password) && 
-                   /[a-z]/.test(password) && 
-                   /[0-9]/.test(password) && 
-                   /[!@#$%^&*()_+]/.test(password);
-        }
-
-        function isNewPasswordValid() {
-            const password = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            return password.length >= 8 && 
-                   /[A-Z]/.test(password) && 
-                   /[a-z]/.test(password) && 
-                   /[0-9]/.test(password) && 
-                   /[!@#$%^&*()_+]/.test(password) &&
-                   password === confirmPassword;
-        }
-
-        // Show/Hide forms
-        function showLogin() {
-            document.getElementById('loginContainer').style.display = 'grid';
-            document.getElementById('signupContainer').style.display = 'none';
-            document.getElementById('resetContainer').style.display = 'none';
-            hideAllMessages();
-            resetPasswordResetForm();
-        }
-
-        function showSignup() {
-            document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('signupContainer').style.display = 'block';
-            document.getElementById('resetContainer').style.display = 'none';
-            hideAllMessages();
-        }
-
-        function showPasswordReset() {
-            document.getElementById('loginContainer').style.display = 'none';
-            document.getElementById('signupContainer').style.display = 'none';
-            document.getElementById('resetContainer').style.display = 'block';
-            hideAllMessages();
-            resetPasswordResetForm();
-        }
-
-        function resetPasswordResetForm() {
-            // Reset to step 1
-            document.getElementById('resetStep1').style.display = 'block';
-            document.getElementById('resetStep2').style.display = 'none';
-            document.getElementById('resetStep3').style.display = 'none';
-            
-            // Reset step indicators
-            document.getElementById('step1').className = 'step active';
-            document.getElementById('step2').className = 'step';
-            document.getElementById('step3').className = 'step';
-            
-            // Clear forms
-            document.getElementById('resetStep1Form').reset();
-            document.getElementById('resetStep2Form').reset();
-            document.getElementById('resetStep3Form').reset();
-            
-            // Reset validation displays
-            document.querySelectorAll('#newPasswordRequirements .requirement-met').forEach(req => {
-                req.className = 'requirement-unmet';
+        }, 1000);
+        btn.onclick = async function() {
+            btn.disabled = true;
+            btn.textContent = 'Resending...';
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/login.html'
             });
-            
-            document.getElementById('passwordMatchMessage').textContent = '';
-            currentResetUser = null;
-        }
-
-        // Password Reset Step 1: Verify Identity
-        document.getElementById('resetStep1Form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('resetUsername').value.toLowerCase();
-            const email = document.getElementById('resetEmail').value.toLowerCase();
-            const btn = document.getElementById('resetStep1Btn');
-            
-            btn.disabled = true;
-            btn.textContent = 'Verifying...';
-            hideResetMessages();
-            
-            try {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Check if username and email match
-                if (accountDatabase[username] && accountDatabase[username].email === email) {
-                    currentResetUser = username;
-                    
-                    // Show secret question
-                    document.getElementById('secretQuestionDisplay').textContent = accountDatabase[username].secretQuestion;
-                    
-                    // Move to step 2
-                    document.getElementById('resetStep1').style.display = 'none';
-                    document.getElementById('resetStep2').style.display = 'block';
-                    
-                    // Update step indicators
-                    document.getElementById('step1').className = 'step completed';
-                    document.getElementById('step2').className = 'step active';
-                    
-                    showResetSuccess('Identity verified! Please answer your secret question.');
-                } else {
-                    showResetError('Username and email combination not found.');
-                }
-                
-            } catch (error) {
-                showResetError('Verification failed. Please try again.');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Verify Identity';
-            }
-        });
-
-        // Password Reset Step 2: Secret Question
-        document.getElementById('resetStep2Form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const answer = document.getElementById('secretAnswerInput').value.toLowerCase().trim();
-            const btn = document.getElementById('resetStep2Btn');
-            
-            btn.disabled = true;
-            btn.textContent = 'Verifying...';
-            hideResetMessages();
-            
-            try {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Check answer
-                if (accountDatabase[currentResetUser].secretAnswer === answer) {
-                    // Move to step 3
-                    document.getElementById('resetStep2').style.display = 'none';
-                    document.getElementById('resetStep3').style.display = 'block';
-                    
-                    // Update step indicators
-                    document.getElementById('step2').className = 'step completed';
-                    document.getElementById('step3').className = 'step active';
-                    
-                    showResetSuccess('Answer correct! Please create your new password.');
-                } else {
-                    showResetError('Incorrect answer. Please try again.');
-                }
-                
-            } catch (error) {
-                showResetError('Verification failed. Please try again.');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Verify Answer';
-            }
-        });
-
-        // Password Reset Step 3: New Password
-        document.getElementById('resetStep3Form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            if (!isNewPasswordValid()) {
-                showResetError('Please ensure your password meets all requirements and passwords match.');
-                return;
-            }
-            
-            const btn = document.getElementById('resetStep3Btn');
-            
-            btn.disabled = true;
-            btn.textContent = 'Resetting Password...';
-            hideResetMessages();
-            
-            try {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                // Update demo account password
-                const newPassword = document.getElementById('newPassword').value;
-                if (demoAccounts[currentResetUser]) {
-                    demoAccounts[currentResetUser].password = newPassword;
-                }
-                
-                showResetSuccess('Password reset successful! You can now login with your new password.');
-                
-                // Redirect to login after 3 seconds
-                setTimeout(() => {
-                    showLogin();
-                }, 3000);
-                
-            } catch (error) {
-                showResetError('Password reset failed. Please try again.');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Reset Password';
-            }
-        });
-
-        // Login form handling
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const loginBtn = document.getElementById('loginBtn');
-            
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Signing In...';
-            hideMessages();
-            
-            try {
-                if (demoAccounts[username] && demoAccounts[username].password === password) {
-                    const account = demoAccounts[username];
-                    
-                    localStorage.setItem('authToken', `demo_token_${Date.now()}`);
-                    localStorage.setItem('userRole', account.role);
-                    localStorage.setItem('username', account.name);
-                    
-                    showSuccess('Login successful! Redirecting...');
-                    
-                    setTimeout(() => {
-                        if (account.role === 'admin') {
-                            window.location.href = 'admin.html';
-                        } else {
-                            window.location.href = 'ai_editor.html';
-                        }
-                    }, 1500);
-                    return;
-                }
-                
-                showError('Invalid username or password.');
-                
-            } catch (error) {
-                showError('Connection error. Please try again.');
-                console.error('Login error:', error);
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Sign In';
-            }
-        });
-
-        // Signup form handling
-        document.getElementById('signupForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            if (!isPasswordValid()) {
-                showSignupError('Please ensure your password meets all requirements.');
-                return;
-            }
-            
-            const formData = {
-                firstName: document.getElementById('firstName').value,
-                lastName: document.getElementById('lastName').value,
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
-                sparkyUsername: document.getElementById('sparkyUsername').value,
-                password: document.getElementById('createPassword').value,
-                membershipLevel: document.getElementById('membershipLevel').value,
-                secretQuestion: document.getElementById('secretQuestion').value,
-                secretAnswer: document.getElementById('secretAnswer').value
-            };
-            
-            const signupBtn = document.getElementById('signupBtn');
-            
-            signupBtn.disabled = true;
-            signupBtn.textContent = 'Creating Account...';
-            hideSignupMessages();
-            
-            try {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                showSignupSuccess('Account creation request submitted! You will receive an email once your account is approved and your Sparky credentials are verified.');
-                
-                document.getElementById('signupForm').reset();
-                
-                document.querySelectorAll('.requirement-met').forEach(req => {
-                    req.className = 'requirement-unmet';
-                });
-                
-                setTimeout(() => {
-                    showLogin();
-                }, 3000);
-                
-            } catch (error) {
-                showSignupError('Account creation failed. Please try again.');
-                console.error('Signup error:', error);
-            } finally {
-                signupBtn.disabled = false;
-                signupBtn.textContent = 'Create Account';
-            }
-        });
-
-        // Message functions
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function showSuccess(message) {
-            const successDiv = document.getElementById('successMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-        }
-
-        function showSignupError(message) {
-            const errorDiv = document.getElementById('signupErrorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function showSignupSuccess(message) {
-            const successDiv = document.getElementById('signupSuccessMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-        }
-
-        function showResetError(message) {
-            const errorDiv = document.getElementById('resetErrorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function showResetSuccess(message) {
-            const successDiv = document.getElementById('resetSuccessMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-        }
-
-        function hideMessages() {
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'none';
-        }
-
-        function hideSignupMessages() {
-            document.getElementById('signupErrorMessage').style.display = 'none';
-            document.getElementById('signupSuccessMessage').style.display = 'none';
-        }
-
-        function hideResetMessages() {
-            document.getElementById('resetErrorMessage').style.display = 'none';
-            document.getElementById('resetSuccessMessage').style.display = 'none';
-        }
-
-        function hideAllMessages() {
-            hideMessages();
-            hideSignupMessages();
-            hideResetMessages();
-        }
-
-        // Check if user is already logged in
-        if (localStorage.getItem('authToken')) {
-            const role = localStorage.getItem('userRole');
-            if (role === 'admin') {
-                window.location.href = 'admin.html';
+            if (error) {
+                status.textContent = 'Error: ' + error.message;
+                status.style.color = '#d33';
             } else {
-                window.location.href = 'ai_editor.html';
+                status.textContent = 'Reset email sent!';
+                status.style.color = '#28a745';
+            }
+            btn.textContent = 'Resend Reset Email';
+            countdown = 60;
+            countdownSpan.textContent = countdown;
+            let timer2 = setInterval(() => {
+                countdown--;
+                countdownSpan.textContent = countdown;
+                if (countdown <= 0) {
+                    clearInterval(timer2);
+                    btn.disabled = false;
+                }
+            }, 1000);
+        };
+        document.getElementById('closeResetModal').onclick = function() {
+            modal.style.display = 'none';
+        };
+    }
+    // Signup form handler
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+        const phone = document.getElementById('signupPhone').value;
+        const sparkyUsername = document.getElementById('plainTextField').value;
+
+        // Hide any previous error
+        const modal = document.getElementById('confirmationModal');
+        const status = document.getElementById('confirmationResendStatus');
+        status.textContent = '';
+        status.style.color = '#28a745';
+
+        // Sign up with Supabase Auth, store extra fields in user_metadata
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    first_name: firstName,
+                    last_name: lastName,
+                    display_name: `${firstName} ${lastName}`,
+                    phone,
+                    sparky_username: sparkyUsername
+                }
+            }
+        });
+        if (error) {
+            // Show error in confirmation modal
+            modal.style.display = 'flex';
+            modal.querySelector('h2').textContent = 'Sign Up Error';
+            modal.querySelector('p').innerHTML = `<span style='color:#d33;'>${error.message}</span>`;
+            document.getElementById('resendConfirmationBtn').style.display = 'none';
+            document.getElementById('confirmationCountdown').style.display = 'none';
+            status.textContent = '';
+            return;
+        }
+        // Restore modal to normal state for success
+        modal.querySelector('h2').textContent = 'Check Your Email';
+        modal.querySelector('p').innerHTML = `A confirmation link has been sent to your email.<br><br>If you don't see it, check your spam folder.<br><br>To resend the link, click below after <span id="confirmationCountdown">15</span> seconds.`;
+        document.getElementById('resendConfirmationBtn').style.display = '';
+        document.getElementById('confirmationCountdown').style.display = '';
+        showConfirmationModal(email);
+        document.getElementById('signupFormPanel').style.display = 'none';
+        document.getElementById('loginFormPanel').style.display = 'flex';
+    });
+
+    // Login form handler
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            alert('Login error: ' + error.message);
+            return;
+        }
+        // After successful login, check if profile exists, create if missing
+        const user = data.user;
+        if (user) {
+            // Check if profile exists
+            const { data: profileRows, error: profileError } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', user.id)
+                .maybeSingle();
+            if (!profileRows && !profileError) {
+                // Get user metadata for profile fields
+                const meta = user.user_metadata || {};
+                const { error: insertError } = await supabase.from('profiles').insert([
+                    {
+                        id: user.id,
+                        created_at: new Date().toISOString(),
+                        first_name: meta.first_name || '',
+                        last_name: meta.last_name || '',
+                        email: user.email,
+                        display_name: meta.display_name || '',
+                        role: 'user',
+                        manager_id: null,
+                        supervisor_id: null,
+                        login_record: null,
+                        sparky_username: meta.sparky_username || '',
+                        phone: meta.phone || ''
+                    }
+                ]);
+                if (insertError) {
+                    alert('Profile creation error: ' + insertError.message);
+                }
             }
         }
+        window.location.href = 'index.html';
+    });
+
+    // Password reset handler
+    document.getElementById('showForgot').addEventListener('click', async function(e) {
+        e.preventDefault();
+        // Show a modal to collect email instead of prompt
+        const emailModal = document.createElement('div');
+        emailModal.style.position = 'fixed';
+        emailModal.style.top = '0';
+        emailModal.style.left = '0';
+        emailModal.style.width = '100vw';
+        emailModal.style.height = '100vh';
+        emailModal.style.background = 'rgba(0,0,0,0.4)';
+        emailModal.style.display = 'flex';
+        emailModal.style.alignItems = 'center';
+        emailModal.style.justifyContent = 'center';
+        emailModal.style.zIndex = '10000';
+        emailModal.innerHTML = `
+            <div style="background:#fff; padding:32px 28px; border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center; max-width:350px; min-width:260px;">
+                <h2 style="color:#1976ff; margin-bottom:16px;">Reset Password</h2>
+                <p style="color:#333; font-size:1.05em; margin-bottom:18px;">Enter your email address to receive a password reset link.</p>
+                <input type="email" id="modalResetEmail" class="form-input" style="margin-bottom:18px; width:90%;" placeholder="Enter your email" required autofocus />
+                <div id="modalResetError" style="color:#d33; font-size:0.98em; min-height:20px; margin-bottom:10px;"></div>
+                <button id="modalResetSendBtn" style="background:#1976ff; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:1em; cursor:pointer; margin-bottom:8px;">Send Reset Link</button><br>
+                <button id="modalResetCancelBtn" style="background:#eee; color:#333; border:none; border-radius:8px; padding:8px 20px; font-size:1em; cursor:pointer;">Cancel</button>
+            </div>
+        `;
+        document.body.appendChild(emailModal);
+        document.getElementById('modalResetEmail').focus();
+        document.getElementById('modalResetCancelBtn').onclick = function() {
+            document.body.removeChild(emailModal);
+        };
+        document.getElementById('modalResetSendBtn').onclick = async function() {
+            const email = document.getElementById('modalResetEmail').value.trim();
+            const errorDiv = document.getElementById('modalResetError');
+            if (!email) {
+                errorDiv.textContent = 'Please enter your email address.';
+                return;
+            }
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + '/login.html'
+            });
+            if (error) {
+                errorDiv.textContent = error.message;
+            } else {
+                document.body.removeChild(emailModal);
+                showResetModal(email);
+            }
+        };
+        document.getElementById('modalResetEmail').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('modalResetSendBtn').click();
+            }
+        });
+    });
+
+    // Show/hide password toggle for signup
+    document.addEventListener('DOMContentLoaded', function() {
+        var toggle = document.getElementById('toggleSignupPassword');
+        if (toggle) {
+            toggle.addEventListener('click', function() {
+                var pwd = document.getElementById('signupPassword');
+                if (pwd.type === 'password') {
+                    pwd.type = 'text';
+                    this.textContent = 'Hide';
+                } else {
+                    pwd.type = 'password';
+                    this.textContent = 'Show';
+                }
+            });
+        }
+        // Switch to signup
+        var showSignup = document.getElementById('showSignup');
+        if (showSignup) {
+            showSignup.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('loginFormPanel').style.display = 'none';
+                document.getElementById('signupFormPanel').style.display = 'flex';
+            });
+        }
+        // Switch to login
+        var showLogin = document.getElementById('showLogin');
+        if (showLogin) {
+            showLogin.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('loginFormPanel').style.display = 'flex';
+            });
+        }
+        // Show/hide password toggle for reset
+        var toggleReset = document.getElementById('toggleNewPassword');
+        if (toggleReset) {
+            toggleReset.addEventListener('click', function() {
+                var pwd = document.getElementById('newPassword');
+                if (pwd.type === 'password') {
+                    pwd.type = 'text';
+                    this.textContent = 'Hide';
+                } else {
+                    pwd.type = 'password';
+                    this.textContent = 'Show';
+                }
+            });
+        }
+    });
+
+    // Password reset flow detection (support query string and hash)
+    function getSupabaseTokenParam(name) {
+        const url = new URL(window.location.href);
+        // Check query string
+        let value = url.searchParams.get(name);
+        if (value) return value;
+        // Check hash fragment
+        if (window.location.hash) {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            return hashParams.get(name);
+        }
+        return null;
+    }
+    async function handlePasswordReset() {
+        const accessToken = getSupabaseTokenParam('access_token');
+        const type = getSupabaseTokenParam('type');
+        // Only show reset form if type is 'recovery' (password reset), not 'signup' or 'email_change'
+        if (accessToken && type === 'recovery') {
+            document.getElementById('loginFormPanel').style.display = 'none';
+            document.getElementById('signupFormPanel').style.display = 'none';
+            document.getElementById('resetPasswordPanel').style.display = 'flex';
+            await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: getSupabaseTokenParam('refresh_token')
+            });
+        } else {
+            // Always show login form if not a password recovery
+            document.getElementById('loginFormPanel').style.display = 'flex';
+            document.getElementById('signupFormPanel').style.display = 'none';
+            document.getElementById('resetPasswordPanel').style.display = 'none';
+        }
+    }
+    document.getElementById('resetPasswordForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const newPassword = document.getElementById('newPassword').value;
+        const modal = document.getElementById('resetModal');
+        const status = document.getElementById('resetResendStatus');
+        status.textContent = '';
+        status.style.color = '#28a745';
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) {
+            // Show error in reset modal
+            modal.style.display = 'flex';
+            modal.querySelector('h2').textContent = 'Password Reset Error';
+            modal.querySelector('p').innerHTML = `<span style='color:#d33;'>${error.message}</span>`;
+            document.getElementById('resendResetBtn').style.display = 'none';
+            document.getElementById('resetCountdown').style.display = 'none';
+            status.textContent = '';
+            return;
+        } else {
+            // Show success in reset modal
+            modal.style.display = 'flex';
+            modal.querySelector('h2').textContent = 'Password Updated!';
+            modal.querySelector('p').innerHTML = `Your password has been updated.<br><br>You can now log in with your new password.`;
+            document.getElementById('resendResetBtn').style.display = 'none';
+            document.getElementById('resetCountdown').style.display = 'none';
+            status.textContent = '';
+            // Optionally, redirect after a short delay
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+        }
+    });
+    // Run on page load
+    handlePasswordReset();
     </script>
 </body>
 </html>

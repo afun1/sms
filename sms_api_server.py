@@ -291,6 +291,15 @@ def list_page():
         except FileNotFoundError:
             return "List page not found", 404
 
+@app.route('/assets.html')
+def serve_assets():
+    """Serve the assets page from the root directory"""
+    try:
+        with open('assets.html', 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        return "Assets page not found", 404
+
 @app.route('/api/usage', methods=['GET'])
 def get_usage_stats():
     """Get SMS usage statistics"""
@@ -326,6 +335,13 @@ def health_check():
         'timestamp': datetime.now().isoformat(),
         'twilio_configured': twilio_client is not None
     })
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    # Always serve .js files with correct MIME type
+    if filename.endswith('.js'):
+        return send_from_directory('static', filename, mimetype='application/javascript')
+    return send_from_directory('static', filename)
 
 # ...rest of your API and HTML routes remain unchanged...
 
