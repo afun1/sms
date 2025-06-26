@@ -1,3 +1,6 @@
+// This file should only contain JavaScript for the navigation bar.
+// All HTML and any reference to global-nav.js have been removed.
+
 console.log('[DEBUG] global-nav-v2.js script loaded');
 
 // --- DIAGNOSTIC BLOCK ---
@@ -57,14 +60,25 @@ document.querySelectorAll('script').forEach(s => console.log(s.src));
     }
 
     function renderNav(displayName) {
-        return `\
-        <div style="display:grid;grid-template-columns:auto 1fr 0.5fr;align-items:center;width:100vw;margin:0;">
-            <div style="background:#f3f3f3;display:flex;align-items:center;justify-content:flex-start;height:60px;padding:0;margin:0;">
+        return `
+        <div style="display:grid;grid-template-columns:auto 1fr 0.5fr;align-items:center;width:calc(100vw - 20px);margin:0 auto;">
+            <div style="display:flex;align-items:center;justify-content:flex-start;height:60px;padding:0;margin:0;">
                 <img src='https://yggfiuqxfxsoyesqgpyt.supabase.co/storage/v1/object/sign/assetts/Sparky%20AI.gif?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV82NDZjMzIxYy05NDgwLTQ0NDgtYTYxYy0yZTBiYmIzYjA2N2MiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHRzL1NwYXJreSBBSS5naWYiLCJpYXQiOjE3NTA4MjY0ODksImV4cCI6NDkwNDQyNjQ4OX0.EvAry9yafzSiWUPneOSv3RgPQzHcKbvpNhel_XcP_Og' alt='Logo' style='height:60px;width:60px;object-fit:cover;display:block;padding:0;margin:0;border-radius:0;'>
                 <span style="font-weight:700;letter-spacing:1px;font-size:1.8em;color:#1976ff;margin-left:0;">Sparky Messaging</span>
             </div>
-            <div style="background:#e0e0e0;display:flex;align-items:center;justify-content:center;height:60px;"></div>
-            <div style="background:#cccccc;display:flex;align-items:center;justify-content:flex-end;height:60px;padding:0;margin:0;">
+            <div style="display:flex;align-items:center;justify-content:center;height:60px;padding-left:10px;">
+                <nav style="display:flex;gap:22px;">
+                  <a href="index.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">Home</a>
+                  <a href="ai_editor.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">Sparky AI</a>
+                  <a href="sms_editor.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">SMS</a>
+                  <a href="rvm_editor.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">RVM</a>
+                  <a href="email_editor.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">Email</a>
+                  <a href="list.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">List</a>
+                  <a href="campaign_builder.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">Campaign</a>
+                  <a href="assets.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">Profile</a>
+                </nav>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:flex-end;height:60px;padding:0;margin:0;">
                 <span style="color:#1976ff;font-weight:600;font-size:1.08em;margin-right:18px;">Welcome,${displayName ? ' ' + displayName : ''}</span>
                 <button style="background:none;border:none;color:#e53935;font-weight:700;font-size:1.08em;cursor:pointer;padding:8px 0;">Log Out</button>
             </div>
@@ -80,16 +94,24 @@ document.querySelectorAll('script').forEach(s => console.log(s.src));
             nav.id = 'global-nav';
             document.body.prepend(nav);
         }
-        nav.style.position = 'sticky';
+        nav.style.position = 'fixed';
         nav.style.top = '0';
         nav.style.left = '0';
         nav.style.width = '100%';
-        nav.style.zIndex = '1000';
+        nav.style.zIndex = '9999';
         nav.style.background = '#fff';
         nav.style.color = '#2a3f7c';
         nav.style.boxShadow = '0 2px 8px rgba(42,63,124,0.08)';
         nav.style.padding = '0';
         nav.style.margin = '0';
+        nav.style.borderBottom = '1px solid rgba(42,63,124,0.1)';
+        nav.style.backdropFilter = 'blur(10px)';
+        nav.style.webkitBackdropFilter = 'blur(10px)';
+        
+        // Ensure body has top padding to account for fixed nav
+        if (!document.body.style.paddingTop) {
+            document.body.style.paddingTop = '20px';
+        }
         let displayName = '';
         try {
             console.log('[DEBUG] window.supabase:', window.supabase);
@@ -139,7 +161,7 @@ document.querySelectorAll('script').forEach(s => console.log(s.src));
             if (!window.supabaseClient) {
                 window.supabaseClient = window.supabase.createClient(
                     'https://yggfiuqxfxsoyesqgpyt.supabase.co',
-                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9zZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q'
+                    'sb_publishable_P4joo9i6y5PmtDM4bIznNg_Wrv5Cjew'
                 );
                 window.supabase = window.supabaseClient;
                 console.log('[DEBUG] Supabase client initialized');
@@ -153,16 +175,24 @@ document.querySelectorAll('script').forEach(s => console.log(s.src));
                 nav.id = 'global-nav';
                 document.body.prepend(nav);
             }
-            nav.style.position = 'sticky';
+            nav.style.position = 'fixed';
             nav.style.top = '0';
             nav.style.left = '0';
             nav.style.width = '100%';
-            nav.style.zIndex = '1000';
+            nav.style.zIndex = '9999';
             nav.style.background = '#fff';
             nav.style.color = '#2a3f7c';
             nav.style.boxShadow = '0 2px 8px rgba(42,63,124,0.08)';
             nav.style.padding = '0';
             nav.style.margin = '0';
+            nav.style.borderBottom = '1px solid rgba(42,63,124,0.1)';
+            nav.style.backdropFilter = 'blur(10px)';
+            nav.style.webkitBackdropFilter = 'blur(10px)';
+            
+            // Ensure body has top padding to account for fixed nav
+            if (!document.body.style.paddingTop) {
+                document.body.style.paddingTop = '80px';
+            }
             nav.innerHTML = renderNav('');
             console.error('[ERROR] Supabase UMD not found. Header will be static.');
         }

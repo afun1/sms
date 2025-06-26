@@ -146,6 +146,19 @@
                 padding: 40px 30px;
             }
         }
+        /* Show/Hide password button inside input */
+        .show-hide-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #888;
+            font-size: 1.1em;
+            padding: 0 8px;
+        }
     </style>
 </head>
 <body>
@@ -170,11 +183,14 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" class="form-input" required placeholder="Enter your email">
+                    <input type="email" id="email" name="email" class="form-input" required placeholder="Enter your email" autocomplete="username">
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" class="form-input" required placeholder="Enter your password">
+                    <div style="position:relative;">
+                        <input type="password" id="password" name="password" class="form-input" required placeholder="Enter your password" autocomplete="current-password">
+                        <button type="button" id="toggleLoginPassword" class="show-hide-btn">Show</button>
+                    </div>
                 </div>
                 <button type="submit" class="login-btn">Log In</button>
             </form>
@@ -201,7 +217,7 @@
                 </div>
                 <div class="form-group">
                     <label for="signupEmail">Email</label>
-                    <input type="email" id="signupEmail" name="signupEmail" class="form-input" required placeholder="john@tpnlife.com">
+                    <input type="email" id="signupEmail" name="signupEmail" class="form-input" required placeholder="john@tpnlife.com" autocomplete="username">
                 </div>
                 <div class="form-group">
                     <label for="signupPhone">Phone</label>
@@ -215,8 +231,8 @@
                 <div class="form-group">
                     <label for="signupPassword">Password</label>
                     <div style="position:relative;">
-                        <input type="password" id="signupPassword" name="signupPassword" class="form-input" required placeholder="Create a password" minlength="8" style="padding-right:40px;">
-                        <button type="button" id="toggleSignupPassword" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#888; font-size:1.1em;">Show</button>
+                        <input type="password" id="signupPassword" name="signupPassword" class="form-input" required placeholder="Create a password" minlength="8" style="padding-right:40px;" autocomplete="new-password">
+                        <button type="button" id="toggleSignupPassword" class="show-hide-btn">Show</button>
                     </div>
                 </div>
                 <div style="font-size:0.98em; color:#666; margin-bottom:18px;">
@@ -240,11 +256,12 @@
                 <h2>Reset Password</h2>
             </div>
             <form id="resetPasswordForm">
+                <input type="email" name="email" id="resetEmail" style="display:none;" autocomplete="username">
                 <div class="form-group">
                     <label for="newPassword">New Password</label>
                     <div style="position:relative;">
-                        <input type="password" id="newPassword" name="newPassword" class="form-input" required placeholder="Enter new password" minlength="8" style="padding-right:40px;">
-                        <button type="button" id="toggleNewPassword" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#888; font-size:1.1em;">Show</button>
+                        <input type="password" id="newPassword" name="newPassword" class="form-input" required placeholder="Enter new password" minlength="8" style="padding-right:40px;" autocomplete="new-password">
+                        <button type="button" id="toggleNewPassword" class="show-hide-btn">Show</button>
                     </div>
                 </div>
                 <button type="submit" class="login-btn">Set New Password</button>
@@ -279,265 +296,20 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.6/dist/umd/supabase.min.js"></script>
     <script>
-    // Supabase credentials
-    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Confirmation Modal logic
-    function showConfirmationModal(email) {
-        const modal = document.getElementById('confirmationModal');
-        const btn = document.getElementById('resendConfirmationBtn');
-        const status = document.getElementById('confirmationResendStatus');
-        const countdownSpan = document.getElementById('confirmationCountdown');
-        let countdown = 60;
-        btn.disabled = true;
-        status.textContent = '';
-        btn.style.display = '';
-        countdownSpan.style.display = '';
-        modal.style.display = 'flex';
-        countdownSpan.textContent = countdown;
-        let timer = setInterval(() => {
-            countdown--;
-            countdownSpan.textContent = countdown;
-            if (countdown <= 0) {
-                clearInterval(timer);
-                btn.disabled = false;
-            }
-        }, 1000);
-        btn.onclick = async function() {
-            btn.disabled = true;
-            btn.textContent = 'Resending...';
-            const { error } = await supabase.auth.resend({ type: 'signup', email });
-            if (error) {
-                status.textContent = 'Error: ' + error.message;
-                status.style.color = '#d33';
-            } else {
-                status.textContent = 'Confirmation email sent!';
-                status.style.color = '#28a745';
-            }
-            btn.textContent = 'Resend Confirmation Email';
-            countdown = 60;
-            countdownSpan.textContent = countdown;
-            let timer2 = setInterval(() => {
-                countdown--;
-                countdownSpan.textContent = countdown;
-                if (countdown <= 0) {
-                    clearInterval(timer2);
-                    btn.disabled = false;
-                }
-            }, 1000);
-        };
-        document.getElementById('closeConfirmationModal').onclick = function() {
-            modal.style.display = 'none';
-        };
-    }
-    // Reset Modal logic
-    function showResetModal(email) {
-        const modal = document.getElementById('resetModal');
-        const btn = document.getElementById('resendResetBtn');
-        const status = document.getElementById('resetResendStatus');
-        const countdownSpan = document.getElementById('resetCountdown');
-        let countdown = 60;
-        btn.disabled = true;
-        status.textContent = '';
-        btn.style.display = '';
-        countdownSpan.style.display = '';
-        modal.style.display = 'flex';
-        countdownSpan.textContent = countdown;
-        let timer = setInterval(() => {
-            countdown--;
-            countdownSpan.textContent = countdown;
-            if (countdown <= 0) {
-                clearInterval(timer);
-                btn.disabled = false;
-            }
-        }, 1000);
-        btn.onclick = async function() {
-            btn.disabled = true;
-            btn.textContent = 'Resending...';
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin + '/login.html'
-            });
-            if (error) {
-                status.textContent = 'Error: ' + error.message;
-                status.style.color = '#d33';
-            } else {
-                status.textContent = 'Reset email sent!';
-                status.style.color = '#28a745';
-            }
-            btn.textContent = 'Resend Reset Email';
-            countdown = 60;
-            countdownSpan.textContent = countdown;
-            let timer2 = setInterval(() => {
-                countdown--;
-                countdownSpan.textContent = countdown;
-                if (countdown <= 0) {
-                    clearInterval(timer2);
-                    btn.disabled = false;
-                }
-            }, 1000);
-        };
-        document.getElementById('closeResetModal').onclick = function() {
-            modal.style.display = 'none';
-        };
-    }
-    // Signup form handler
-    document.getElementById('signupForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const email = document.getElementById('signupEmail').value;
-        const password = document.getElementById('signupPassword').value;
-        const firstName = document.getElementById('firstName').value;
-        const lastName = document.getElementById('lastName').value;
-        const phone = document.getElementById('signupPhone').value;
-        const sparkyUsername = document.getElementById('plainTextField').value;
-
-        // Hide any previous error
-        const modal = document.getElementById('confirmationModal');
-        const status = document.getElementById('confirmationResendStatus');
-        status.textContent = '';
-        status.style.color = '#28a745';
-
-        // Sign up with Supabase Auth, store extra fields in user_metadata
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    first_name: firstName,
-                    last_name: lastName,
-                    display_name: `${firstName} ${lastName}`,
-                    phone,
-                    sparky_username: sparkyUsername
-                }
-            }
-        });
-        if (error) {
-            // Show error in confirmation modal
-            modal.style.display = 'flex';
-            modal.querySelector('h2').textContent = 'Sign Up Error';
-            modal.querySelector('p').innerHTML = `<span style='color:#d33;'>${error.message}</span>`;
-            document.getElementById('resendConfirmationBtn').style.display = 'none';
-            document.getElementById('confirmationCountdown').style.display = 'none';
-            status.textContent = '';
-            return;
-        }
-        // Restore modal to normal state for success
-        modal.querySelector('h2').textContent = 'Check Your Email';
-        modal.querySelector('p').innerHTML = `A confirmation link has been sent to your email.<br><br>If you don't see it, check your spam folder.<br><br>To resend the link, click below after <span id="confirmationCountdown">15</span> seconds.`;
-        document.getElementById('resendConfirmationBtn').style.display = '';
-        document.getElementById('confirmationCountdown').style.display = '';
-        showConfirmationModal(email);
-        document.getElementById('signupFormPanel').style.display = 'none';
-        document.getElementById('loginFormPanel').style.display = 'flex';
-    });
-
-    // Login form handler
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-            alert('Login error: ' + error.message);
-            return;
-        }
-        // After successful login, check if profile exists, create if missing
-        const user = data.user;
-        if (user) {
-            // Check if profile exists
-            const { data: profileRows, error: profileError } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('id', user.id)
-                .maybeSingle();
-            if (!profileRows && !profileError) {
-                // Get user metadata for profile fields
-                const meta = user.user_metadata || {};
-                const { error: insertError } = await supabase.from('profiles').insert([
-                    {
-                        id: user.id,
-                        created_at: new Date().toISOString(),
-                        first_name: meta.first_name || '',
-                        last_name: meta.last_name || '',
-                        email: user.email,
-                        display_name: meta.display_name || '',
-                        role: 'user',
-                        manager_id: null,
-                        supervisor_id: null,
-                        login_record: null,
-                        sparky_username: meta.sparky_username || '',
-                        phone: meta.phone || ''
-                    }
-                ]);
-                if (insertError) {
-                    alert('Profile creation error: ' + insertError.message);
-                }
-            }
-        }
-        window.location.href = 'index.html';
-    });
-
-    // Password reset handler
-    document.getElementById('showForgot').addEventListener('click', async function(e) {
-        e.preventDefault();
-        // Show a modal to collect email instead of prompt
-        const emailModal = document.createElement('div');
-        emailModal.style.position = 'fixed';
-        emailModal.style.top = '0';
-        emailModal.style.left = '0';
-        emailModal.style.width = '100vw';
-        emailModal.style.height = '100vh';
-        emailModal.style.background = 'rgba(0,0,0,0.4)';
-        emailModal.style.display = 'flex';
-        emailModal.style.alignItems = 'center';
-        emailModal.style.justifyContent = 'center';
-        emailModal.style.zIndex = '10000';
-        emailModal.innerHTML = `
-            <div style="background:#fff; padding:32px 28px; border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center; max-width:350px; min-width:260px;">
-                <h2 style="color:#1976ff; margin-bottom:16px;">Reset Password</h2>
-                <p style="color:#333; font-size:1.05em; margin-bottom:18px;">Enter your email address to receive a password reset link.</p>
-                <input type="email" id="modalResetEmail" class="form-input" style="margin-bottom:18px; width:90%;" placeholder="Enter your email" required autofocus />
-                <div id="modalResetError" style="color:#d33; font-size:0.98em; min-height:20px; margin-bottom:10px;"></div>
-                <button id="modalResetSendBtn" style="background:#1976ff; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:1em; cursor:pointer; margin-bottom:8px;">Send Reset Link</button><br>
-                <button id="modalResetCancelBtn" style="background:#eee; color:#333; border:none; border-radius:8px; padding:8px 20px; font-size:1em; cursor:pointer;">Cancel</button>
-            </div>
-        `;
-        document.body.appendChild(emailModal);
-        document.getElementById('modalResetEmail').focus();
-        document.getElementById('modalResetCancelBtn').onclick = function() {
-            document.body.removeChild(emailModal);
-        };
-        document.getElementById('modalResetSendBtn').onclick = async function() {
-            const email = document.getElementById('modalResetEmail').value.trim();
-            const errorDiv = document.getElementById('modalResetError');
-            if (!email) {
-                errorDiv.textContent = 'Please enter your email address.';
-                return;
-            }
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin + '/login.html'
-            });
-            if (error) {
-                errorDiv.textContent = error.message;
-            } else {
-                document.body.removeChild(emailModal);
-                showResetModal(email);
-            }
-        };
-        document.getElementById('modalResetEmail').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('modalResetSendBtn').click();
-            }
-        });
-    });
-
-    // Show/hide password toggle for signup
     document.addEventListener('DOMContentLoaded', function() {
-        var toggle = document.getElementById('toggleSignupPassword');
-        if (toggle) {
-            toggle.addEventListener('click', function() {
-                var pwd = document.getElementById('signupPassword');
+        if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+            alert('Supabase library failed to load.');
+            return;
+        }
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Show/hide password for login
+        const toggleLoginPassword = document.getElementById('toggleLoginPassword');
+        if (toggleLoginPassword) {
+            toggleLoginPassword.addEventListener('click', function() {
+                const pwd = document.getElementById('password');
                 if (pwd.type === 'password') {
                     pwd.type = 'text';
                     this.textContent = 'Hide';
@@ -547,8 +319,89 @@
                 }
             });
         }
+        // Show/hide password for signup
+        const toggleSignupPassword = document.getElementById('toggleSignupPassword');
+        if (toggleSignupPassword) {
+            toggleSignupPassword.addEventListener('click', function() {
+                const pwd = document.getElementById('signupPassword');
+                if (pwd.type === 'password') {
+                    pwd.type = 'text';
+                    this.textContent = 'Hide';
+                } else {
+                    pwd.type = 'password';
+                    this.textContent = 'Show';
+                }
+            });
+        }
+        // Show/hide password for reset
+        const toggleNewPassword = document.getElementById('toggleNewPassword');
+        if (toggleNewPassword) {
+            toggleNewPassword.addEventListener('click', function() {
+                const pwd = document.getElementById('newPassword');
+                if (pwd.type === 'password') {
+                    pwd.type = 'text';
+                    this.textContent = 'Hide';
+                } else {
+                    pwd.type = 'password';
+                    this.textContent = 'Show';
+                }
+            });
+        }
+
+        // Signup form handler
+        const signupForm = document.getElementById('signupForm');
+        if (signupForm) {
+            signupForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const email = document.getElementById('signupEmail').value;
+                const password = document.getElementById('signupPassword').value;
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const phone = document.getElementById('signupPhone').value;
+                const sparkyUsername = document.getElementById('plainTextField').value;
+
+                // Sign up with Supabase Auth, store extra fields in user_metadata
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            display_name: `${firstName} ${lastName}`,
+                            phone,
+                            sparky_username: sparkyUsername
+                        }
+                    }
+                });
+                if (error) {
+                    alert('Sign up error: ' + error.message);
+                    return;
+                }
+                alert('Sign up successful! Please check your email to confirm your account.');
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('loginFormPanel').style.display = 'flex';
+            });
+        }
+
+        // Login form handler
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) {
+                    alert('Login error: ' + error.message);
+                    return;
+                }
+                window.location.href = 'index.html';
+            });
+        }
+
         // Switch to signup
-        var showSignup = document.getElementById('showSignup');
+        const showSignup = document.getElementById('showSignup');
         if (showSignup) {
             showSignup.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -557,7 +410,7 @@
             });
         }
         // Switch to login
-        var showLogin = document.getElementById('showLogin');
+        const showLogin = document.getElementById('showLogin');
         if (showLogin) {
             showLogin.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -565,87 +418,93 @@
                 document.getElementById('loginFormPanel').style.display = 'flex';
             });
         }
-        // Show/hide password toggle for reset
-        var toggleReset = document.getElementById('toggleNewPassword');
-        if (toggleReset) {
-            toggleReset.addEventListener('click', function() {
-                var pwd = document.getElementById('newPassword');
-                if (pwd.type === 'password') {
-                    pwd.type = 'text';
-                    this.textContent = 'Hide';
-                } else {
-                    pwd.type = 'password';
-                    this.textContent = 'Show';
-                }
-            });
-        }
-    });
 
-    // Password reset flow detection (support query string and hash)
-    function getSupabaseTokenParam(name) {
-        const url = new URL(window.location.href);
-        // Check query string
-        let value = url.searchParams.get(name);
-        if (value) return value;
-        // Check hash fragment
-        if (window.location.hash) {
-            const hashParams = new URLSearchParams(window.location.hash.substring(1));
-            return hashParams.get(name);
-        }
-        return null;
-    }
-    async function handlePasswordReset() {
-        const accessToken = getSupabaseTokenParam('access_token');
-        const type = getSupabaseTokenParam('type');
-        // Only show reset form if type is 'recovery' (password reset), not 'signup' or 'email_change'
-        if (accessToken && type === 'recovery') {
-            document.getElementById('loginFormPanel').style.display = 'none';
-            document.getElementById('signupFormPanel').style.display = 'none';
-            document.getElementById('resetPasswordPanel').style.display = 'flex';
-            await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: getSupabaseTokenParam('refresh_token')
+        // Password reset handler (show modal to collect email)
+        const showForgot = document.getElementById('showForgot');
+        if (showForgot) {
+            showForgot.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const emailModal = document.createElement('div');
+                emailModal.style.position = 'fixed';
+                emailModal.style.top = '0';
+                emailModal.style.left = '0';
+                emailModal.style.width = '100vw';
+                emailModal.style.height = '100vh';
+                emailModal.style.background = 'rgba(0,0,0,0.4)';
+                emailModal.style.display = 'flex';
+                emailModal.style.alignItems = 'center';
+                emailModal.style.justifyContent = 'center';
+                emailModal.style.zIndex = '10000';
+                emailModal.innerHTML = `
+                    <div style="background:#fff; padding:32px 28px; border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center; max-width:350px; min-width:260px;">
+                        <h2 style="color:#1976ff; margin-bottom:16px;">Reset Password</h2>
+                        <p style="color:#333; font-size:1.05em; margin-bottom:18px;">Enter your email address to receive a password reset link.</p>
+                        <input type="email" id="modalResetEmail" class="form-input" style="margin-bottom:18px; width:90%;" placeholder="Enter your email" required autofocus />
+                        <div id="modalResetError" style="color:#d33; font-size:0.98em; min-height:20px; margin-bottom:10px;"></div>
+                        <button id="modalResetSendBtn" style="background:#1976ff; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:1em; cursor:pointer; margin-bottom:8px;">Send Reset Link</button><br>
+                        <button id="modalResetCancelBtn" style="background:#eee; color:#333; border:none; border-radius:8px; padding:8px 20px; font-size:1em; cursor:pointer;">Cancel</button>
+                    </div>
+                `;
+                document.body.appendChild(emailModal);
+                document.getElementById('modalResetEmail').focus();
+                document.getElementById('modalResetCancelBtn').onclick = function() {
+                    document.body.removeChild(emailModal);
+                };
+                document.getElementById('modalResetSendBtn').onclick = async function() {
+                    const email = document.getElementById('modalResetEmail').value.trim();
+                    const errorDiv = document.getElementById('modalResetError');
+                    if (!email) {
+                        errorDiv.textContent = 'Please enter your email address.';
+                        return;
+                    }
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: window.location.origin + '/login.html'
+                    });
+                    if (error) {
+                        errorDiv.textContent = error.message;
+                    } else {
+                        document.body.removeChild(emailModal);
+                        alert('Reset link sent! Please check your email.');
+                    }
+                };
+                document.getElementById('modalResetEmail').addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        document.getElementById('modalResetSendBtn').click();
+                    }
+                });
             });
-        } else {
-            // Always show login form if not a password recovery
-            document.getElementById('loginFormPanel').style.display = 'flex';
-            document.getElementById('signupFormPanel').style.display = 'none';
-            document.getElementById('resetPasswordPanel').style.display = 'none';
         }
-    }
-    document.getElementById('resetPasswordForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const newPassword = document.getElementById('newPassword').value;
-        const modal = document.getElementById('resetModal');
-        const status = document.getElementById('resetResendStatus');
-        status.textContent = '';
-        status.style.color = '#28a745';
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
-        if (error) {
-            // Show error in reset modal
-            modal.style.display = 'flex';
-            modal.querySelector('h2').textContent = 'Password Reset Error';
-            modal.querySelector('p').innerHTML = `<span style='color:#d33;'>${error.message}</span>`;
-            document.getElementById('resendResetBtn').style.display = 'none';
-            document.getElementById('resetCountdown').style.display = 'none';
-            status.textContent = '';
-            return;
-        } else {
-            // Show success in reset modal
-            modal.style.display = 'flex';
-            modal.querySelector('h2').textContent = 'Password Updated!';
-            modal.querySelector('p').innerHTML = `Your password has been updated.<br><br>You can now log in with your new password.`;
-            document.getElementById('resendResetBtn').style.display = 'none';
-            document.getElementById('resetCountdown').style.display = 'none';
-            status.textContent = '';
-            // Optionally, redirect after a short delay
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 2000);
+
+        // Password reset flow detection (support query string and hash)
+        function getSupabaseTokenParam(name) {
+            const url = new URL(window.location.href);
+            let value = url.searchParams.get(name);
+            if (value) return value;
+            if (window.location.hash) {
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                return hashParams.get(name);
+            }
+            return null;
         }
+        async function handlePasswordReset() {
+            const accessToken = getSupabaseTokenParam('access_token');
+            const type = getSupabaseTokenParam('type');
+            if (accessToken && type === 'recovery') {
+                document.getElementById('loginFormPanel').style.display = 'none';
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('resetPasswordPanel').style.display = 'flex';
+                await supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: getSupabaseTokenParam('refresh_token')
+                });
+            } else {
+                document.getElementById('loginFormPanel').style.display = 'flex';
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('resetPasswordPanel').style.display = 'none';
+            }
+        }
+        handlePasswordReset();
     });
-    // Run on page load
-    handlePasswordReset();
     </script>
 </body>
 </html>
