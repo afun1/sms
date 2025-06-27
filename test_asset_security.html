@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Security Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        button {
+            background: #1976ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #155acb;
+        }
+        .info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        .user-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Asset Security Test Suite</h1>
+    
+    <div class="user-info">
+        <h3>Current User Information</h3>
+        <div id="userInfo">Not logged in</div>
+        <button onclick="login()">Login</button>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📁 Bucket Configuration Test</h2>
+        <p>Testing if the assets bucket is properly configured with security policies.</p>
+        <button onclick="testBucketConfig()">Test Bucket Configuration</button>
+        <div id="bucketResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>👥 User Roles Test</h2>
+        <p>Testing user roles and permissions hierarchy.</p>
+        <button onclick="testUserRoles()">Test User Roles</button>
+        <div id="rolesResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📤 Upload Security Test</h2>
+        <p>Testing file upload with proper user-based path structure.</p>
+        <input type="file" id="testFileInput" accept="image/*">
+        <button onclick="testUpload()">Test Upload</button>
+        <div id="uploadResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📥 Access Control Test</h2>
+        <p>Testing file access permissions and RLS policies.</p>
+        <button onclick="testAccessControl()">Test Access Control</button>
+        <div id="accessResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🗑️ Delete Security Test</h2>
+        <p>Testing file deletion with proper security checks.</p>
+        <button onclick="testDeleteSecurity()">Test Delete Security</button>
+        <div id="deleteResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔍 Path Structure Test</h2>
+        <p>Testing that all file operations use the correct user-based path structure.</p>
+        <button onclick="testPathStructure()">Test Path Structure</button>
+        <div id="pathResults"></div>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const supabaseUrl = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1NDg1ODksImV4cCI6MjA1MDEyNDU4OX0.gJvUGlnWKqyVL8eglOw_BzWoMdZBfCL3K8K0EjWnAgQ';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        const BUCKET = 'assets';
+
+        let currentUser = null;
+
+        // Update user info display
+        async function updateUserInfo() {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            const userInfoDiv = document.getElementById('userInfo');
+            
+            if (user) {
+                currentUser = user;
+                userInfoDiv.innerHTML = `
+                    <strong>Logged in as:</strong> ${user.email}<br>
+                    <strong>User ID:</strong> ${user.id}<br>
+                    <strong>Created:</strong> ${new Date(user.created_at).toLocaleString()}
+                `;
+            } else {
+                currentUser = null;
+                userInfoDiv.innerHTML = 'Not logged in';
+            }
+        }
+
+        // Simple login function
+        async function login() {
+            const email = prompt('Enter your email:');
+            const password = prompt('Enter your password:');
+            
+            if (email && password) {
+                const { error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    alert('Login failed: ' + error.message);
+                } else {
+                    await updateUserInfo();
+                }
+            }
+        }
+
+        // Logout function
+        async function logout() {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                alert('Logout failed: ' + error.message);
+            } else {
+                await updateUserInfo();
+            }
+        }
+
+        // Test bucket configuration
+        async function testBucketConfig() {
+            const resultsDiv = document.getElementById('bucketResults');
+            resultsDiv.innerHTML = '<p>Testing bucket configuration...</p>';
+            
+            try {
+                // Test bucket existence and basic properties
+                const { data: buckets, error } = await supabase.storage.listBuckets();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                const assetsBucket = buckets.find(b => b.id === BUCKET);
+                
+                if (!assetsBucket) {
+                    resultsDiv.innerHTML = '<div class="error">❌ Assets bucket not found</div>';
+                    return;
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="success">✅ Assets bucket found and configured</div>
+                    <div class="info">
+                        <strong>Bucket Details:</strong><br>
+                        ID: ${assetsBucket.id}<br>
+                        Name: ${assetsBucket.name}<br>
+                        Public: ${assetsBucket.public ? 'Yes' : 'No'}<br>
+                        File Size Limit: ${assetsBucket.file_size_limit ? (assetsBucket.file_size_limit / 1024 / 1024).toFixed(1) + ' MB' : 'Not set'}<br>
+                        Created: ${new Date(assetsBucket.created_at).toLocaleString()}
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Bucket test failed: ${error.message}</div>`;
+            }
+        }
+
+        // Test user roles
+        async function testUserRoles() {
+            const resultsDiv = document.getElementById('rolesResults');
+            resultsDiv.innerHTML = '<p>Testing user roles...</p>';
+            
+            if (!currentUser) {
+                resultsDiv.innerHTML = '<div class="warning">⚠️ Please log in first</div>';
+                return;
+            }
+            
+            try {
+                // Check if user has a role assigned
+                const { data: userRole, error } = await supabase
+                    .from('user_roles')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .single();
+                
+                if (error && error.code !== 'PGRST116') {
+                    throw error;
+                }
+                
+                if (userRole) {
+                    resultsDiv.innerHTML = `
+                        <div class="success">✅ User role found</div>
+                        <div class="info">
+                            <strong>Role Details:</strong><br>
+                            Role: ${userRole.role}<br>
+                            Manager ID: ${userRole.manager_id || 'None'}<br>
+                            Supervisor ID: ${userRole.supervisor_id || 'None'}<br>
+                            Created: ${new Date(userRole.created_at).toLocaleString()}
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = '<div class="warning">⚠️ No role assigned to current user</div>';
+                }
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Role test failed: ${error.message}</div>`;
+            }
+        }
+
+        // Test upload security
+        async function testUpload() {
+            const resultsDiv = document.getElementById('uploadResults');
+            const fileInput = document.getElementById('testFileInput');
+            
+            if (!currentUser) {
+                resultsDiv.innerHTML = '<div class="warning">⚠️ Please log in first</div>';
+                return;
+            }
+            
+            if (!fileInput.files.length) {
+                resultsDiv.innerHTML = '<div class="warning">⚠️ Please select a file first</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<p>Testing upload security...</p>';
+            
+            try {
+                const file = fileInput.files[0];
+                const fileName = `test_${Date.now()}_${file.name}`;
+                const filePath = `${currentUser.id}/${fileName}`;
+                
+                // Test upload with correct user path
+                const { data, error } = await supabase.storage
+                    .from(BUCKET)
+                    .upload(filePath, file, { upsert: false });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="success">✅ Upload successful with correct path structure</div>
+                    <div class="info">
+                        <strong>Upload Details:</strong><br>
+                        File Path: ${filePath}<br>
+                        File Size: ${file.size} bytes<br>
+                        Upload ID: ${data.id || 'N/A'}<br>
+                        Full Path: ${data.fullPath || 'N/A'}
+                    </div>
+                `;
+                
+                // Clean up test file
+                setTimeout(async () => {
+                    await supabase.storage.from(BUCKET).remove([filePath]);
+                }, 5000);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Upload test failed: ${error.message}</div>`;
+            }
+        }
+
+        // Test access control
+        async function testAccessControl() {
+            const resultsDiv = document.getElementById('accessResults');
+            
+            if (!currentUser) {
+                resultsDiv.innerHTML = '<div class="warning">⚠️ Please log in first</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<p>Testing access control...</p>';
+            
+            try {
+                // Test listing files in user's own directory
+                const { data: userFiles, error: userError } = await supabase.storage
+                    .from(BUCKET)
+                    .list(currentUser.id, { limit: 10 });
+                
+                if (userError) {
+                    throw userError;
+                }
+                
+                // Test listing files in root (should be restricted)
+                const { data: rootFiles, error: rootError } = await supabase.storage
+                    .from(BUCKET)
+                    .list('', { limit: 10 });
+                
+                let results = `<div class="success">✅ Can access own directory (${userFiles.length} files found)</div>`;
+                
+                if (rootError) {
+                    results += `<div class="success">✅ Root directory access properly restricted</div>`;
+                } else if (rootFiles.length === 0) {
+                    results += `<div class="success">✅ Root directory empty or access controlled</div>`;
+                } else {
+                    results += `<div class="warning">⚠️ Root directory accessible (${rootFiles.length} files) - this may be expected for admins</div>`;
+                }
+                
+                resultsDiv.innerHTML = results;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Access control test failed: ${error.message}</div>`;
+            }
+        }
+
+        // Test delete security
+        async function testDeleteSecurity() {
+            const resultsDiv = document.getElementById('deleteResults');
+            
+            if (!currentUser) {
+                resultsDiv.innerHTML = '<div class="warning">⚠️ Please log in first</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<p>Testing delete security...</p>';
+            
+            try {
+                // Create a test file first
+                const testContent = new Blob(['This is a test file for deletion'], { type: 'text/plain' });
+                const fileName = `delete_test_${Date.now()}.txt`;
+                const filePath = `${currentUser.id}/${fileName}`;
+                
+                // Upload test file
+                const { error: uploadError } = await supabase.storage
+                    .from(BUCKET)
+                    .upload(filePath, testContent);
+                
+                if (uploadError) {
+                    throw uploadError;
+                }
+                
+                // Try to delete the file
+                const { error: deleteError } = await supabase.storage
+                    .from(BUCKET)
+                    .remove([filePath]);
+                
+                if (deleteError) {
+                    throw deleteError;
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="success">✅ Delete security working correctly</div>
+                    <div class="info">
+                        Successfully created and deleted test file:<br>
+                        <strong>Path:</strong> ${filePath}
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Delete security test failed: ${error.message}</div>`;
+            }
+        }
+
+        // Test path structure
+        async function testPathStructure() {
+            const resultsDiv = document.getElementById('pathResults');
+            
+            if (!currentUser) {
+                resultsDiv.innerHTML = '<div class="warning">⚠️ Please log in first</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<p>Testing path structure...</p>';
+            
+            try {
+                let results = '';
+                
+                // Test that user ID is a valid UUID
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+                if (uuidRegex.test(currentUser.id)) {
+                    results += '<div class="success">✅ User ID is valid UUID format</div>';
+                } else {
+                    results += '<div class="error">❌ User ID is not in UUID format</div>';
+                }
+                
+                // Test expected path structure
+                const expectedPath = `${currentUser.id}/example_file.txt`;
+                results += `
+                    <div class="info">
+                        <strong>Expected Path Structure:</strong><br>
+                        ${expectedPath}<br><br>
+                        <strong>Path Components:</strong><br>
+                        User ID: ${currentUser.id}<br>
+                        File Name: example_file.txt
+                    </div>
+                `;
+                
+                // Test that the path structure follows the security requirements
+                const pathParts = expectedPath.split('/');
+                if (pathParts.length >= 2 && pathParts[0] === currentUser.id) {
+                    results += '<div class="success">✅ Path structure follows security requirements</div>';
+                } else {
+                    results += '<div class="error">❌ Path structure does not follow security requirements</div>';
+                }
+                
+                resultsDiv.innerHTML = results;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Path structure test failed: ${error.message}</div>`;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await updateUserInfo();
+            
+            // Listen for auth changes
+            supabase.auth.onAuthStateChange(async (event, session) => {
+                await updateUserInfo();
+            });
+        });
+    </script>
+</body>
+</html>

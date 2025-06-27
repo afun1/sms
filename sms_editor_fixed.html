@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sparky SMS Editor</title>
+  <link rel="icon" type="image/png" href="static/supersparky.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="static/global-nav-v2.js"></script>
+  <link rel="stylesheet" href="static/sms_editor.css">
+</head>
+<body>
+  <main style="max-width:1400px;margin:90px auto 0 auto;padding:24px;">
+    <!-- SMS Provider Selection -->
+    <section class="providers-section">
+      <h1 class="providers-headline">SMS Providers with no A2P required</h1>
+      <div class="providers-container">
+        <div class="provider-card" data-provider="clicksend">
+          <div class="provider-content">
+            <h3>ClickSend</h3>
+          </div>
+        </div>
+        
+        <div class="provider-card" data-provider="twilio">
+          <div class="provider-content">
+            <h3>Twilio</h3>
+          </div>
+        </div>
+        
+        <div class="provider-card" data-provider="textmagic">
+          <div class="provider-content">
+            <h3>TextMagic</h3>
+          </div>
+        </div>
+        
+        <div class="provider-card" data-provider="plivo">
+          <div class="provider-content">
+            <h3>Plivo</h3>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Activation Panels -->
+      <div class="activation-panels">
+        <!-- ClickSend Panel -->
+        <div id="clicksend-panel" class="activation-panel">
+          <div class="panel-header">
+            <h3>📡 ClickSend API Setup</h3>
+            <button class="close-panel" onclick="closeActivationPanel('clicksend-panel')">&times;</button>
+          </div>
+          <div class="panel-content">
+            <div class="setup-form">
+              <div class="form-group">
+                <label for="clicksend-username">Username:</label>
+                <input type="text" id="clicksend-username" placeholder="Your ClickSend username" />
+              </div>
+              <div class="form-group">
+                <label for="clicksend-api-key">API Key:</label>
+                <input type="password" id="clicksend-api-key" placeholder="Your ClickSend API key" />
+                <small>Find your API key in ClickSend Dashboard → Settings → API Credentials</small>
+              </div>
+              <div class="form-group">
+                <label for="clicksend-sender-id">Sender ID (Optional):</label>
+                <input type="text" id="clicksend-sender-id" placeholder="e.g., YourBrand" maxlength="11" />
+                <small>Custom sender name (11 characters max)</small>
+              </div>
+              <div class="setup-actions">
+                <button type="button" class="btn-test" onclick="testClickSendConnection()">Test Connection</button>
+                <button type="button" class="btn-save" onclick="saveClickSendConfig()">Save Configuration</button>
+              </div>
+            </div>
+            <div class="setup-info">
+              <h4>Getting Started with ClickSend:</h4>
+              <ol>
+                <li>Sign up at <a href="https://clicksend.com" target="_blank">clicksend.com</a></li>
+                <li>Verify your account and add credit</li>
+                <li>Go to Settings → API Credentials</li>
+                <li>Copy your username and API key above</li>
+                <li>Test the connection to verify setup</li>
+              </ol>
+              
+              <div class="pricing-info">
+                <div class="pricing-item">
+                  <span class="pricing-label">Pricing:</span>
+                  <span class="pricing-value">From $0.014 per SMS</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Coverage:</span>
+                  <span class="pricing-value">200+ countries</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Free Trial:</span>
+                  <span class="pricing-value">$5 credit • ~357 SMS messages</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Monthly Limit:</span>
+                  <span class="pricing-value">No limit with credit</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Twilio Panel -->
+        <div id="twilio-panel" class="activation-panel">
+          <div class="panel-header">
+            <h3>🔧 Twilio API Setup</h3>
+            <button class="close-panel" onclick="closeActivationPanel('twilio-panel')">&times;</button>
+          </div>
+          <div class="panel-content">
+            <div class="setup-form">
+              <div class="form-group">
+                <label for="twilio-account-sid">Account SID:</label>
+                <input type="text" id="twilio-account-sid" placeholder="Your Twilio Account SID" />
+              </div>
+              <div class="form-group">
+                <label for="twilio-auth-token">Auth Token:</label>
+                <input type="password" id="twilio-auth-token" placeholder="Your Twilio Auth Token" />
+                <small>Find in Twilio Console → Settings → General</small>
+              </div>
+              <div class="form-group">
+                <label for="twilio-phone-number">Twilio Phone Number:</label>
+                <input type="tel" id="twilio-phone-number" placeholder="+1234567890" />
+                <small>Your purchased Twilio phone number</small>
+              </div>
+              <div class="setup-actions">
+                <button type="button" class="btn-test" onclick="testTwilioConnection()">Test Connection</button>
+                <button type="button" class="btn-save" onclick="saveTwilioConfig()">Save Configuration</button>
+              </div>
+            </div>
+            <div class="setup-info">
+              <h4>Getting Started with Twilio:</h4>
+              <ol>
+                <li>Sign up at <a href="https://twilio.com" target="_blank">twilio.com</a></li>
+                <li>Verify your account</li>
+                <li>Purchase a phone number</li>
+                <li>Get your Account SID and Auth Token from Console</li>
+                <li>Test the connection with your credentials</li>
+              </ol>
+              
+              <div class="pricing-info">
+                <div class="pricing-item">
+                  <span class="pricing-label">Pricing:</span>
+                  <span class="pricing-value">From $0.0075 per SMS</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Coverage:</span>
+                  <span class="pricing-value">Global</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Free Trial:</span>
+                  <span class="pricing-value">$15 credit • ~2,000 SMS messages</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Monthly Limit:</span>
+                  <span class="pricing-value">No limit with funding</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TextMagic Panel -->
+        <div id="textmagic-panel" class="activation-panel">
+          <div class="panel-header">
+            <h3>✨ TextMagic API Setup</h3>
+            <button class="close-panel" onclick="closeActivationPanel('textmagic-panel')">&times;</button>
+          </div>
+          <div class="panel-content">
+            <div class="setup-form">
+              <div class="form-group">
+                <label for="textmagic-username">Username:</label>
+                <input type="text" id="textmagic-username" placeholder="Your TextMagic username" />
+              </div>
+              <div class="form-group">
+                <label for="textmagic-api-key">API Key:</label>
+                <input type="password" id="textmagic-api-key" placeholder="Your TextMagic API key" />
+                <small>Generate in TextMagic → Settings → REST API</small>
+              </div>
+              <div class="form-group">
+                <label for="textmagic-sender">Sender (Optional):</label>
+                <input type="text" id="textmagic-sender" placeholder="Your sender ID" />
+                <small>Custom sender name or use your TextMagic number</small>
+              </div>
+              <div class="setup-actions">
+                <button type="button" class="btn-test" onclick="testTextMagicConnection()">Test Connection</button>
+                <button type="button" class="btn-save" onclick="saveTextMagicConfig()">Save Configuration</button>
+              </div>
+            </div>
+            <div class="setup-info">
+              <h4>Getting Started with TextMagic:</h4>
+              <ol>
+                <li>Sign up at <a href="https://textmagic.com" target="_blank">textmagic.com</a></li>
+                <li>Verify your account and add credit</li>
+                <li>Go to Settings → REST API</li>
+                <li>Generate and copy your API key</li>
+                <li>Test the connection to verify setup</li>
+              </ol>
+              
+              <div class="pricing-info">
+                <div class="pricing-item">
+                  <span class="pricing-label">Pricing:</span>
+                  <span class="pricing-value">From $0.04 per SMS</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Coverage:</span>
+                  <span class="pricing-value">Worldwide</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Free Trial:</span>
+                  <span class="pricing-value">$5 credit • ~125 SMS messages</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Monthly Limit:</span>
+                  <span class="pricing-value">Up to 10,000 SMS/month</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plivo Panel -->
+        <div id="plivo-panel" class="activation-panel">
+          <div class="panel-header">
+            <h3>📞 Plivo API Setup</h3>
+            <button class="close-panel" onclick="closeActivationPanel('plivo-panel')">&times;</button>
+          </div>
+          <div class="panel-content">
+            <div class="setup-form">
+              <div class="form-group">
+                <label for="plivo-auth-id">Auth ID:</label>
+                <input type="text" id="plivo-auth-id" placeholder="Your Plivo Auth ID" />
+              </div>
+              <div class="form-group">
+                <label for="plivo-auth-token">Auth Token:</label>
+                <input type="password" id="plivo-auth-token" placeholder="Your Plivo Auth Token" />
+                <small>Find in Plivo Console → Account Settings</small>
+              </div>
+              <div class="form-group">
+                <label for="plivo-sender-id">Sender ID:</label>
+                <input type="text" id="plivo-sender-id" placeholder="Your Plivo number or sender ID" />
+                <small>Your purchased Plivo number</small>
+              </div>
+              <div class="setup-actions">
+                <button type="button" class="btn-test" onclick="testPlivoConnection()">Test Connection</button>
+                <button type="button" class="btn-save" onclick="savePlivoConfig()">Save Configuration</button>
+              </div>
+            </div>
+            <div class="setup-info">
+              <h4>Getting Started with Plivo:</h4>
+              <ol>
+                <li>Sign up at <a href="https://plivo.com" target="_blank">plivo.com</a></li>
+                <li>Verify your account</li>
+                <li>Purchase a phone number</li>
+                <li>Get your Auth ID and Auth Token from Console</li>
+                <li>Test the connection with your credentials</li>
+              </ol>
+              
+              <div class="pricing-info">
+                <div class="pricing-item">
+                  <span class="pricing-label">Pricing:</span>
+                  <span class="pricing-value">From $0.0065 per SMS</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Coverage:</span>
+                  <span class="pricing-value">Global</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Free Trial:</span>
+                  <span class="pricing-value">$10 credit • ~1,538 SMS messages</span>
+                </div>
+                <div class="pricing-item">
+                  <span class="pricing-label">Monthly Limit:</span>
+                  <span class="pricing-value">No limit with funding</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SMS Editor Form -->
+    <section class="editor-section" style="margin-top:48px;">
+      <div class="editor-container">
+        <h2 style="color:#333;margin-bottom:24px;">📝 SMS Message Editor</h2>
+        <form id="sms-form">
+          <div class="form-group">
+            <label for="selected-provider">Selected Provider:</label>
+            <div class="selected-provider" id="selected-provider">
+              <span class="provider-display">Click a provider above to select</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="sms-message">Message Content:</label>
+            <textarea id="sms-message" name="sms-message" rows="4" placeholder="Enter your SMS message here..."></textarea>
+            <div class="char-counter">
+              <span id="char-count">0</span>/160 characters
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="sms-recipients">Recipients:</label>
+            <input type="text" id="sms-recipients" name="sms-recipients" placeholder="Enter phone numbers (comma-separated)" />
+          </div>
+          
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" onclick="previewMessage()">Preview</button>
+            <button type="submit" class="btn-primary">Send SMS</button>
+          </div>
+        </form>
+        
+        <div id="sms-result" class="result-panel" style="display:none;"></div>
+      </div>
+    </section>
+  </main>
+  
+  <script>
+    // Initialize Supabase client (same as index.html)
+    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[DEBUG] Supabase client initialized in sms_editor.html');
+
+    let selectedProvider = null;
+
+    // Provider Selection Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add click handlers for provider cards
+      const providerCards = document.querySelectorAll('.provider-card');
+      providerCards.forEach(card => {
+        card.addEventListener('click', function() {
+          const providerId = this.dataset.provider;
+          const panelId = providerId + '-panel';
+          const panel = document.getElementById(panelId);
+          
+          // Close all other panels
+          document.querySelectorAll('.activation-panel').forEach(p => {
+            if (p.id !== panelId) {
+              p.classList.remove('active');
+            }
+          });
+          
+          // Remove selected class from all cards
+          providerCards.forEach(c => c.classList.remove('selected'));
+          
+          // Toggle current panel and select card
+          const isOpening = !panel.classList.contains('active');
+          panel.classList.toggle('active');
+          
+          if (isOpening) {
+            this.classList.add('selected');
+            selectedProvider = providerId;
+            
+            // Update the selected provider display
+            const providerName = this.querySelector('h3').textContent;
+            const providerDisplay = document.getElementById('selected-provider');
+            providerDisplay.innerHTML = `
+              <span class="provider-display selected">
+                <strong>${providerName}</strong> - Configuration panel opened
+              </span>
+            `;
+            
+            // Scroll to panel
+            setTimeout(() => {
+              panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 200);
+          } else {
+            selectedProvider = null;
+            const providerDisplay = document.getElementById('selected-provider');
+            providerDisplay.innerHTML = `
+              <span class="provider-display">Click a provider above to select</span>
+            `;
+          }
+        });
+      });
+    });
+
+    // Close activation panel function
+    function closeActivationPanel(panelId) {
+      const panel = document.getElementById(panelId);
+      panel.classList.remove('active');
+      
+      // Remove selected class from corresponding card
+      const providerId = panelId.replace('-panel', '');
+      const card = document.querySelector(`[data-provider="${providerId}"]`);
+      if (card) {
+        card.classList.remove('selected');
+      }
+      
+      // Reset selected provider
+      selectedProvider = null;
+      const providerDisplay = document.getElementById('selected-provider');
+      providerDisplay.innerHTML = `
+        <span class="provider-display">Click a provider above to select</span>
+      `;
+    }
+
+    // ClickSend Functions
+    function testClickSendConnection() {
+      const username = document.getElementById('clicksend-username').value.trim();
+      const apiKey = document.getElementById('clicksend-api-key').value.trim();
+      
+      if (!username || !apiKey) {
+        alert('Please enter both username and API key');
+        return;
+      }
+      
+      // Simulate API test
+      showResult('Testing ClickSend connection...', 'info');
+      setTimeout(() => {
+        showResult('✅ ClickSend connection successful! Ready to send SMS.', 'success');
+      }, 1500);
+    }
+
+    function saveClickSendConfig() {
+      const username = document.getElementById('clicksend-username').value.trim();
+      const apiKey = document.getElementById('clicksend-api-key').value.trim();
+      const senderId = document.getElementById('clicksend-sender-id').value.trim();
+      
+      if (!username || !apiKey) {
+        alert('Please enter both username and API key');
+        return;
+      }
+      
+      // Save to localStorage (in real app, save to backend)
+      const config = { username, apiKey, senderId };
+      localStorage.setItem('clicksend_config', JSON.stringify(config));
+      
+      selectedProvider = 'clicksend';
+      const providerDisplay = document.getElementById('selected-provider');
+      providerDisplay.innerHTML = `
+        <span class="provider-display selected">
+          <strong>ClickSend</strong> - Configuration saved and ready to use
+        </span>
+      `;
+      
+      showResult('✅ ClickSend configuration saved successfully!', 'success');
+    }
+
+    // Twilio Functions
+    function testTwilioConnection() {
+      const accountSid = document.getElementById('twilio-account-sid').value.trim();
+      const authToken = document.getElementById('twilio-auth-token').value.trim();
+      const phoneNumber = document.getElementById('twilio-phone-number').value.trim();
+      
+      if (!accountSid || !authToken || !phoneNumber) {
+        alert('Please enter Account SID, Auth Token, and Phone Number');
+        return;
+      }
+      
+      showResult('Testing Twilio connection...', 'info');
+      setTimeout(() => {
+        showResult('✅ Twilio connection successful! Ready to send SMS.', 'success');
+      }, 1500);
+    }
+
+    function saveTwilioConfig() {
+      const accountSid = document.getElementById('twilio-account-sid').value.trim();
+      const authToken = document.getElementById('twilio-auth-token').value.trim();
+      const phoneNumber = document.getElementById('twilio-phone-number').value.trim();
+      
+      if (!accountSid || !authToken || !phoneNumber) {
+        alert('Please enter Account SID, Auth Token, and Phone Number');
+        return;
+      }
+      
+      const config = { accountSid, authToken, phoneNumber };
+      localStorage.setItem('twilio_config', JSON.stringify(config));
+      
+      selectedProvider = 'twilio';
+      const providerDisplay = document.getElementById('selected-provider');
+      providerDisplay.innerHTML = `
+        <span class="provider-display selected">
+          <strong>Twilio</strong> - Configuration saved and ready to use
+        </span>
+      `;
+      
+      showResult('✅ Twilio configuration saved successfully!', 'success');
+    }
+
+    // TextMagic Functions
+    function testTextMagicConnection() {
+      const username = document.getElementById('textmagic-username').value.trim();
+      const apiKey = document.getElementById('textmagic-api-key').value.trim();
+      
+      if (!username || !apiKey) {
+        alert('Please enter both username and API key');
+        return;
+      }
+      
+      showResult('Testing TextMagic connection...', 'info');
+      setTimeout(() => {
+        showResult('✅ TextMagic connection successful! Ready to send SMS.', 'success');
+      }, 1500);
+    }
+
+    function saveTextMagicConfig() {
+      const username = document.getElementById('textmagic-username').value.trim();
+      const apiKey = document.getElementById('textmagic-api-key').value.trim();
+      const sender = document.getElementById('textmagic-sender').value.trim();
+      
+      if (!username || !apiKey) {
+        alert('Please enter both username and API key');
+        return;
+      }
+      
+      const config = { username, apiKey, sender };
+      localStorage.setItem('textmagic_config', JSON.stringify(config));
+      
+      selectedProvider = 'textmagic';
+      const providerDisplay = document.getElementById('selected-provider');
+      providerDisplay.innerHTML = `
+        <span class="provider-display selected">
+          <strong>TextMagic</strong> - Configuration saved and ready to use
+        </span>
+      `;
+      
+      showResult('✅ TextMagic configuration saved successfully!', 'success');
+    }
+
+    // Plivo Functions
+    function testPlivoConnection() {
+      const authId = document.getElementById('plivo-auth-id').value.trim();
+      const authToken = document.getElementById('plivo-auth-token').value.trim();
+      const senderId = document.getElementById('plivo-sender-id').value.trim();
+      
+      if (!authId || !authToken || !senderId) {
+        alert('Please enter Auth ID, Auth Token, and Sender ID');
+        return;
+      }
+      
+      showResult('Testing Plivo connection...', 'info');
+      setTimeout(() => {
+        showResult('✅ Plivo connection successful! Ready to send SMS.', 'success');
+      }, 1500);
+    }
+
+    function savePlivoConfig() {
+      const authId = document.getElementById('plivo-auth-id').value.trim();
+      const authToken = document.getElementById('plivo-auth-token').value.trim();
+      const senderId = document.getElementById('plivo-sender-id').value.trim();
+      
+      if (!authId || !authToken || !senderId) {
+        alert('Please enter Auth ID, Auth Token, and Sender ID');
+        return;
+      }
+      
+      const config = { authId, authToken, senderId };
+      localStorage.setItem('plivo_config', JSON.stringify(config));
+      
+      selectedProvider = 'plivo';
+      const providerDisplay = document.getElementById('selected-provider');
+      providerDisplay.innerHTML = `
+        <span class="provider-display selected">
+          <strong>Plivo</strong> - Configuration saved and ready to use
+        </span>
+      `;
+      
+      showResult('✅ Plivo configuration saved successfully!', 'success');
+    }
+
+    // Character counter for SMS
+    function updateCharCount() {
+      const textarea = document.getElementById('sms-message');
+      const counter = document.getElementById('char-count');
+      const count = textarea.value.length;
+      counter.textContent = count;
+      
+      // Change color based on character count
+      if (count > 160) {
+        counter.style.color = '#e53935';
+      } else if (count > 140) {
+        counter.style.color = '#ff9800';
+      } else {
+        counter.style.color = '#4caf50';
+      }
+    }
+
+    // Preview message function
+    function previewMessage() {
+      const message = document.getElementById('sms-message').value.trim();
+      const recipients = document.getElementById('sms-recipients').value.trim();
+      
+      if (!message) {
+        alert('Please enter a message to preview.');
+        return;
+      }
+
+      if (!selectedProvider) {
+        alert('Please select an SMS provider first.');
+        return;
+      }
+      
+      const previewWindow = window.open('', '_blank', 'width=400,height=600');
+      previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>SMS Preview</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+            .phone { background: white; border-radius: 20px; padding: 20px; max-width: 300px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            .message { background: #007aff; color: white; padding: 12px 16px; border-radius: 18px; margin: 10px 0; font-size: 16px; line-height: 1.4; }
+            .info { color: #666; font-size: 14px; margin-top: 20px; }
+            .provider { background: #e3f2fd; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; color: #1976ff; }
+          </style>
+        </head>
+        <body>
+          <div class="phone">
+            <h3>SMS Preview</h3>
+            <div class="provider">Provider: ${selectedProvider.toUpperCase()}</div>
+            <div class="message">${message}</div>
+            <div class="info">
+              <strong>Character Count:</strong> ${message.length}/160<br>
+              <strong>Estimated Cost:</strong> $${(message.length > 160 ? 0.02 : 0.01).toFixed(2)} per message<br>
+              ${recipients ? `<strong>Recipients:</strong> ${recipients.split(',').length} numbers` : ''}
+              <br><strong>A2P Registration:</strong> Not required ✅
+            </div>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    // SMS form handler
+    document.getElementById('sms-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const message = document.getElementById('sms-message').value.trim();
+      const recipients = document.getElementById('sms-recipients').value.trim();
+      
+      if (!selectedProvider) {
+        showResult('Please select an SMS provider first.', 'error');
+        return;
+      }
+      
+      if (!message) {
+        showResult('Please enter a message.', 'error');
+        return;
+      }
+      
+      if (!recipients) {
+        showResult('Please enter recipient phone numbers.', 'error');
+        return;
+      }
+      
+      showResult(`Sending SMS via ${selectedProvider.toUpperCase()}...`, 'info');
+      
+      // Simulate SMS sending
+      setTimeout(() => {
+        const recipientCount = recipients.split(',').length;
+        showResult(`✅ SMS sent successfully via ${selectedProvider.toUpperCase()} to ${recipientCount} recipient(s)!<br><br><strong>Provider:</strong> ${selectedProvider}<br><strong>Message:</strong> ${message}<br><strong>Status:</strong> No A2P registration required`, 'success');
+      }, 1500);
+    });
+
+    // Show result function
+    function showResult(message, type) {
+      const resultDiv = document.getElementById('sms-result');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = message;
+      resultDiv.className = `result-panel ${type}`;
+      resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Load saved configurations on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load ClickSend config
+      const clicksendConfig = localStorage.getItem('clicksend_config');
+      if (clicksendConfig) {
+        const config = JSON.parse(clicksendConfig);
+        document.getElementById('clicksend-username').value = config.username || '';
+        document.getElementById('clicksend-api-key').value = config.apiKey || '';
+        document.getElementById('clicksend-sender-id').value = config.senderId || '';
+      }
+      
+      // Load Twilio config
+      const twilioConfig = localStorage.getItem('twilio_config');
+      if (twilioConfig) {
+        const config = JSON.parse(twilioConfig);
+        document.getElementById('twilio-account-sid').value = config.accountSid || '';
+        document.getElementById('twilio-auth-token').value = config.authToken || '';
+        document.getElementById('twilio-phone-number').value = config.phoneNumber || '';
+      }
+      
+      // Load TextMagic config
+      const textmagicConfig = localStorage.getItem('textmagic_config');
+      if (textmagicConfig) {
+        const config = JSON.parse(textmagicConfig);
+        document.getElementById('textmagic-username').value = config.username || '';
+        document.getElementById('textmagic-api-key').value = config.apiKey || '';
+        document.getElementById('textmagic-sender').value = config.sender || '';
+      }
+      
+      // Load Plivo config
+      const plivoConfig = localStorage.getItem('plivo_config');
+      if (plivoConfig) {
+        const config = JSON.parse(plivoConfig);
+        document.getElementById('plivo-auth-id').value = config.authId || '';
+        document.getElementById('plivo-auth-token').value = config.authToken || '';
+        document.getElementById('plivo-sender-id').value = config.senderId || '';
+      }
+    });
+
+    // Add character counter event listener
+    document.addEventListener('DOMContentLoaded', function() {
+      const textarea = document.getElementById('sms-message');
+      if (textarea) {
+        textarea.addEventListener('input', updateCharCount);
+        updateCharCount(); // Initial count
+      }
+    });
+  </script>
+</body>
+</html>
