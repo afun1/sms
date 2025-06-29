@@ -189,6 +189,41 @@
             margin-top: 10px;
         }
         
+        /* Play Button Animation Styles */
+        #playBtn {
+            transition: all 0.3s ease !important;
+        }
+        
+        #playBtn:hover {
+            transform: scale(1.1) rotate(5deg) !important;
+            box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3) !important;
+            filter: brightness(1.1) !important;
+        }
+        
+        #playBtn:active {
+            transform: scale(0.95) rotate(-2deg) !important;
+            box-shadow: 0 2px 6px rgba(155, 89, 182, 0.5) !important;
+        }
+        
+        #playBtn.playing {
+            animation: playPulse 1.5s ease-in-out infinite !important;
+        }
+        
+        @keyframes playPulse {
+            0% { 
+                transform: scale(1) rotate(0deg);
+                box-shadow: 0 0 0 0 rgba(155, 89, 182, 0.7);
+            }
+            50% { 
+                transform: scale(1.05) rotate(2deg);
+                box-shadow: 0 0 0 8px rgba(155, 89, 182, 0.1);
+            }
+            100% { 
+                transform: scale(1) rotate(0deg);
+                box-shadow: 0 0 0 0 rgba(155, 89, 182, 0);
+            }
+        }
+        
         .script-tips {
             background: #e8f4f8;
             border: 1px solid #bee5eb;
@@ -510,9 +545,9 @@ Thanks, and have a great day!</textarea>
                     
                     <div class="audio-controls">
                         <h3>Text-to-Speech Preview</h3>
-                        <img src="static/icon128.png" alt="Play Audio" onclick="playPreview()" id="playBtn" style="width: 60px; height: 60px; cursor: pointer; border-radius: 50%; transition: all 0.3s ease; margin: 10px;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                            ▶️
-                        </button>
+                        <img src="static/icon128.png" alt="Sparky Icon" style="width: 60px; height: 60px; border-radius: 50%; margin: 10px;">
+                        <br>
+                        <img src="static/Play-Button.png" alt="Play Button" id="playBtn" onclick="playPreview()" style="width: 40px; height: 40px; margin: 10px; cursor: pointer; transition: all 0.3s ease; border-radius: 8px;" onmouseover="this.style.transform='scale(1.1) rotate(5deg)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='scale(1) rotate(0deg)'; this.style.boxShadow='none'">
                         <br>
                         <div class="timer-display" id="timerDisplay">0:00 / 0:30</div>
                         <div style="margin-top: 15px;">
@@ -587,6 +622,14 @@ Thanks, and have a great day!</textarea>
     </div>
 
     <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        // Use global Supabase client if available, otherwise create one
+        const supabase = window.globalSupabase || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('[DEBUG] Supabase client initialized in RVM editor');
+
         // SIMPLIFIED - NO AUTH CHECKS
         function initializePage() {
             // No navWelcome or adminLink logic needed; handled by global-nav-v2.js
@@ -648,6 +691,11 @@ Thanks, and have a great day!</textarea>
             const script = document.getElementById('rvmScript').value;
             const playBtn = document.getElementById('playBtn');
             
+            if (!script.trim()) {
+                alert('Please enter a script to preview!');
+                return;
+            }
+            
             if ('speechSynthesis' in window) {
                 // Stop any existing speech
                 speechSynthesis.cancel();
@@ -659,14 +707,20 @@ Thanks, and have a great day!</textarea>
                     
                     utterance.onstart = () => {
                         playBtn.dataset.playing = 'true';
-                        playBtn.style.opacity = '0.7';
-                        playBtn.style.filter = 'brightness(0.8)';
+                        playBtn.classList.add('playing');
+                        playBtn.style.opacity = '0.8';
                     };
                     
                     utterance.onend = () => {
                         playBtn.dataset.playing = 'false';
+                        playBtn.classList.remove('playing');
                         playBtn.style.opacity = '1';
-                        playBtn.style.filter = 'brightness(1)';
+                    };
+                    
+                    utterance.onerror = () => {
+                        playBtn.dataset.playing = 'false';
+                        playBtn.classList.remove('playing');
+                        playBtn.style.opacity = '1';
                     };
                     
                     speechSynthesis.speak(utterance);
@@ -674,8 +728,8 @@ Thanks, and have a great day!</textarea>
                     // Stop playing
                     speechSynthesis.cancel();
                     playBtn.dataset.playing = 'false';
+                    playBtn.classList.remove('playing');
                     playBtn.style.opacity = '1';
-                    playBtn.style.filter = 'brightness(1)';
                 }
             } else {
                 alert('Text-to-speech preview not supported in this browser.');
@@ -870,9 +924,22 @@ Thanks, and have a great day!</textarea>
         // Load user settings and contact variables
         async function loadVariables() {
             try {
-                // Get current user
-                const { data: { user }, error: userError } = await supabase.auth.getUser();
-                if (userError || !user) {
+                // Get current user (with impersonation support)
+                let user = null;
+                
+                // Try to use global helper first
+                if (typeof window.getAuthenticatedUserGlobal === 'function') {
+                    user = await window.getAuthenticatedUserGlobal();
+                } else {
+                    // Fallback to direct Supabase call if global helper not available
+                    console.log('Global helper not available, using direct auth');
+                    const { data: { user: directUser }, error } = await supabase.auth.getUser();
+                    if (!error && directUser) {
+                        user = directUser;
+                    }
+                }
+                
+                if (!user) {
                     console.log('User not logged in, using sample data for variables');
                     loadSampleVariables();
                     return;

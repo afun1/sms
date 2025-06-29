@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Account Switcher</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .account-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0; cursor: pointer; transition: all 0.2s; }
+        .account-card:hover { background: #e9ecef; transform: translateY(-2px); }
+        .account-card.current { background: #d4edda; border-color: #c3e6cb; }
+        .account-header { display: flex; justify-content: between; align-items: center; }
+        .account-info { flex-grow: 1; }
+        .switch-btn { background: #007cba; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        .switch-btn:hover { background: #005a8b; }
+        .current-badge { background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .login-form { background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #007cba; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Simple Account Switcher</h1>
+        
+        <!-- Login Section -->
+        <div id="login-section" class="login-form">
+            <h3>Login as Admin/Manager</h3>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="admin@example.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" placeholder="Password">
+            </div>
+            <button onclick="adminLogin()">Login</button>
+        </div>
+        
+        <!-- Account Switching Section -->
+        <div id="switching-section" style="display: none;">
+            <h3>🎭 Switch to User Account</h3>
+            <p>Select an account to switch to:</p>
+            <div id="accounts-list"></div>
+            
+            <div style="margin-top: 20px;">
+                <button onclick="logout()" style="background: #dc3545;">Logout</button>
+                <button onclick="goToDashboard()" style="margin-left: 10px;">Go to Dashboard</button>
+                <button onclick="exitImpersonation()" style="background: #fd7e14; margin-left: 10px;">🔙 Switch Back to My Account</button>
+            </div>
+        </div>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let adminUser = null;
+        let currentSwitchedUser = null;
+        let availableAccounts = [];
+        
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        async function adminLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showStatus('Please enter email and password', 'error');
+                return;
+            }
+            
+            try {
+                showStatus('Logging in...', 'info');
+                
+                // Sign in
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (authError) {
+                    showStatus(`Login failed: ${authError.message}`, 'error');
+                    return;
+                }
+                
+                // Get profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', authData.user.id)
+                    .single();
+                
+                if (profileError) {
+                    showStatus(`Profile error: ${profileError.message}`, 'error');
+                    return;
+                }
+                
+                adminUser = { ...authData.user, ...profile };
+                
+                // Debug: Show current role
+                console.log('User profile:', profile);
+                console.log('Current role:', adminUser.role);
+                
+                // Check if user has switching privileges
+                if (!['admin', 'super_admin', 'manager'].includes(adminUser.role)) {
+                    showStatus(`❌ Permission denied. Your current role is: "${adminUser.role || 'null/undefined'}". You need role: admin, super_admin, or manager. <br><br>
+                        <button onclick="fixRole('admin')" style="background: #28a745; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
+                            🔧 Set Role to Admin
+                        </button>
+                        <button onclick="fixRole('super_admin')" style="background: #17a2b8; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
+                            🔧 Set Role to Super Admin
+                        </button>`, 'error');
+                    return;
+                }
+                
+                showStatus(`✅ Logged in as ${adminUser.display_name || adminUser.email}`, 'success');
+                
+                // Load available accounts
+                await loadAvailableAccounts();
+                
+                // Show switching interface
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('switching-section').style.display = 'block';
+                
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadAvailableAccounts() {
+            try {
+                console.log('Loading accounts for admin:', adminUser);
+                
+                let query = supabase.from('profiles').select('*');
+                
+                // Filter based on admin role
+                if (adminUser.role === 'manager') {
+                    // Managers can only switch to users in their organization
+                    console.log('Manager mode: filtering by organization_id:', adminUser.organization_id);
+                    query = query.eq('organization_id', adminUser.organization_id);
+                } else {
+                    // Super admins and admins can switch to any account
+                    console.log('Admin mode: excluding self ID:', adminUser.id);
+                    query = query.neq('id', adminUser.id); // Don't include self
+                }
+                
+                const { data: accounts, error } = await query.order('email'); // Use email instead of display_name
+                
+                if (error) {
+                    showStatus(`Failed to load accounts: ${error.message}`, 'error');
+                    return;
+                }
+                
+                console.log('Raw accounts from database:', accounts);
+                console.log('Total accounts found:', accounts ? accounts.length : 0);
+                
+                // Debug: Show what we're filtering out
+                if (accounts) {
+                    accounts.forEach(account => {
+                        console.log('Account:', {
+                            id: account.id,
+                            email: account.email,
+                            role: account.role,
+                            display_name: account.display_name,
+                            organization_id: account.organization_id
+                        });
+                    });
+                }
+                
+                availableAccounts = accounts || [];
+                
+                // Show debug info to user
+                showStatus(`📊 Debug Info: Found ${availableAccounts.length} accounts total. Admin role: ${adminUser.role}. Check console for details.`, 'warning');
+                
+                displayAccounts();
+                
+            } catch (error) {
+                showStatus(`Error loading accounts: ${error.message}`, 'error');
+                console.error('Load accounts error:', error);
+            }
+        }
+        
+        function displayAccounts() {
+            const accountsList = document.getElementById('accounts-list');
+            
+            console.log('Displaying accounts:', availableAccounts);
+            
+            if (availableAccounts.length === 0) {
+                accountsList.innerHTML = '<p>No accounts available for switching.</p>';
+                return;
+            }
+            
+            // Force clear any existing content
+            accountsList.innerHTML = '';
+            
+            // Add each account one by one to ensure they all render
+            availableAccounts.forEach((account, index) => {
+                const isCurrent = currentSwitchedUser && currentSwitchedUser.id === account.id;
+                
+                const accountDiv = document.createElement('div');
+                accountDiv.className = `account-card ${isCurrent ? 'current' : ''}`;
+                accountDiv.onclick = () => switchToAccount(account.id);
+                
+                accountDiv.innerHTML = `
+                    <div class="account-header">
+                        <div class="account-info">
+                            <strong>${account.display_name || account.email}</strong><br>
+                            <small>${account.email} • ${account.role || 'user'}</small>
+                            ${account.organization_id ? `<br><small>Org: ${account.organization_id}</small>` : ''}
+                        </div>
+                        ${isCurrent ? '<span class="current-badge">CURRENT</span>' : '<button class="switch-btn" onclick="event.stopPropagation(); switchToAccount(\'' + account.id + '\')">Switch</button>'}
+                    </div>
+                `;
+                
+                accountsList.appendChild(accountDiv);
+                console.log(`Added account ${index + 1}:`, account.email);
+            });
+            
+            // Add debug info
+            const debugDiv = document.createElement('div');
+            debugDiv.style.cssText = 'background: #e3f2fd; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px;';
+            debugDiv.innerHTML = `Debug: Displaying ${availableAccounts.length} accounts total`;
+            accountsList.appendChild(debugDiv);
+        }
+        
+        async function switchToAccount(accountId) {
+            try {
+                showStatus('Switching account...', 'info');
+                
+                const targetAccount = availableAccounts.find(acc => acc.id === accountId);
+                if (!targetAccount) {
+                    showStatus('Account not found', 'error');
+                    return;
+                }
+                
+                // Store current switched user
+                currentSwitchedUser = targetAccount;
+                
+                // Store admin context for switching back
+                const switchingData = {
+                    adminUser: {
+                        id: adminUser.id,
+                        email: adminUser.email,
+                        role: adminUser.role,
+                        display_name: adminUser.display_name
+                    },
+                    switchedUser: targetAccount,
+                    switchTime: new Date().toISOString()
+                };
+                
+                localStorage.setItem('accountSwitchData', JSON.stringify(switchingData));
+                
+                // Set current session to target user
+                localStorage.setItem('userId', targetAccount.id);
+                localStorage.setItem('userEmail', targetAccount.email);
+                localStorage.setItem('userRole', targetAccount.role || 'user');
+                localStorage.setItem('displayName', targetAccount.display_name || targetAccount.email);
+                
+                showStatus(`✅ Switched to ${targetAccount.display_name || targetAccount.email}`, 'success');
+                
+                // Update display
+                displayAccounts();
+                
+            } catch (error) {
+                showStatus(`Switch failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function goToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+        
+        async function logout() {
+            try {
+                await supabase.auth.signOut();
+                localStorage.clear();
+                window.location.reload();
+            } catch (error) {
+                showStatus(`Logout error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function fixRole(newRole) {
+            if (!adminUser) {
+                showStatus('❌ Please login first', 'error');
+                return;
+            }
+            
+            try {
+                showStatus('🔧 Updating your role...', 'warning');
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .update({ role: newRole })
+                    .eq('id', adminUser.id)
+                    .select();
+                
+                if (error) {
+                    showStatus(`❌ Failed to update role: ${error.message}<br><br>
+                        <strong>Possible solutions:</strong><br>
+                        1. Make sure you have a 'profiles' table<br>
+                        2. Make sure the 'role' column exists<br>
+                        3. Check RLS policies allow updates`, 'error');
+                    return;
+                }
+                
+                // Update the user object
+                adminUser.role = newRole;
+                
+                showStatus(`✅ Role updated to "${newRole}"! Now trying to load accounts...`, 'success');
+                
+                // Try to proceed with loading accounts
+                setTimeout(async () => {
+                    try {
+                        await loadAvailableAccounts();
+                        document.getElementById('login-section').style.display = 'none';
+                        document.getElementById('switching-section').style.display = 'block';
+                    } catch (error) {
+                        showStatus(`❌ Error loading accounts: ${error.message}`, 'error');
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                showStatus(`❌ Error updating role: ${error.message}`, 'error');
+            }
+        }
+        
+        let autoRedirectTimer = null; // Add timer variable
+        
+        async function exitImpersonation() {
+            try {
+                showStatus('Exiting impersonation...', 'info');
+                
+                // Check if there's account switch data
+                const switchData = localStorage.getItem('accountSwitchData');
+                const impersonationData = localStorage.getItem('impersonationData');
+                
+                if (switchData) {
+                    // Account switcher impersonation
+                    const data = JSON.parse(switchData);
+                    const originalAdmin = data.adminUser;
+                    
+                    // Restore admin session
+                    localStorage.setItem('userId', originalAdmin.id);
+                    localStorage.setItem('userEmail', originalAdmin.email);
+                    localStorage.setItem('userRole', originalAdmin.role);
+                    localStorage.setItem('displayName', originalAdmin.display_name || originalAdmin.email);
+                    
+                    // Clear switching data
+                    localStorage.removeItem('accountSwitchData');
+                    
+                    showStatus(`✅ Switched back to ${originalAdmin.display_name || originalAdmin.email}<br><br>
+                        <button onclick="window.location.href='admin.html'" style="background: #007cba; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
+                            👑 Go to Admin Panel
+                        </button>
+                        <button onclick="showSwitchingInterface()" style="background: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
+                            🔄 Switch to Another User
+                        </button>`, 'success');
+                    
+                } else if (impersonationData) {
+                    // Original impersonation system
+                    const data = JSON.parse(impersonationData);
+                    const originalUser = data.originalUser;
+                    
+                    // Restore original user session
+                    localStorage.setItem('userId', originalUser.id);
+                    localStorage.setItem('userEmail', originalUser.email);
+                    localStorage.setItem('userRole', originalUser.role);
+                    localStorage.setItem('displayName', originalUser.display_name || originalUser.email);
+                    
+                    // Clear impersonation data
+                    localStorage.removeItem('impersonationData');
+                    
+                    showStatus(`✅ Exited impersonation, back to ${originalUser.display_name || originalUser.email}<br><br>
+                        <button onclick="window.location.href='admin.html'" style="background: #007cba; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
+                            👑 Go to Admin Panel
+                        </button>
+                        <button onclick="showSwitchingInterface()" style="background: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; margin: 5px;">
+                            🔄 Switch to Another User
+                        </button>`, 'success');
+                    
+                } else {
+                    showStatus('❌ No active impersonation found', 'error');
+                    return;
+                }
+                
+                // Clear any switched user state
+                currentSwitchedUser = null;
+                
+                // Update adminUser to current user for immediate use
+                const currentUserId = localStorage.getItem('userId');
+                const currentUserEmail = localStorage.getItem('userEmail');
+                const currentUserRole = localStorage.getItem('userRole');
+                const currentDisplayName = localStorage.getItem('displayName');
+                
+                adminUser = {
+                    id: currentUserId,
+                    email: currentUserEmail,
+                    role: currentUserRole,
+                    display_name: currentDisplayName
+                };
+                
+                // Auto-redirect to admin panel after 3 seconds (can be cancelled)
+                autoRedirectTimer = setTimeout(() => {
+                    window.location.href = 'admin.html';
+                }, 3000);
+                
+            } catch (error) {
+                showStatus(`❌ Error exiting impersonation: ${error.message}`, 'error');
+            }
+        }
+        
+        async function showSwitchingInterface() {
+            try {
+                // Cancel auto-redirect timer if user chooses to switch accounts
+                if (autoRedirectTimer) {
+                    clearTimeout(autoRedirectTimer);
+                    autoRedirectTimer = null;
+                }
+                
+                showStatus('Loading account switcher...', 'info');
+                
+                // Make sure we have the admin user set
+                if (!adminUser) {
+                    const currentUserId = localStorage.getItem('userId');
+                    const currentUserEmail = localStorage.getItem('userEmail');
+                    const currentUserRole = localStorage.getItem('userRole');
+                    const currentDisplayName = localStorage.getItem('displayName');
+                    
+                    adminUser = {
+                        id: currentUserId,
+                        email: currentUserEmail,
+                        role: currentUserRole,
+                        display_name: currentDisplayName
+                    };
+                }
+                
+                // Load available accounts
+                await loadAvailableAccounts();
+                
+                // Show switching interface
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('switching-section').style.display = 'block';
+                
+                showStatus(`Ready to switch accounts as ${adminUser.display_name || adminUser.email}`, 'success');
+                
+            } catch (error) {
+                showStatus(`Error loading switcher: ${error.message}`, 'error');
+            }
+        }
+        
+        // Check if already logged in
+        window.addEventListener('load', async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                // Auto-fill email if logged in
+                document.getElementById('email').value = session.user.email;
+            }
+            
+            // Check if there's account switch data or impersonation
+            const switchData = localStorage.getItem('accountSwitchData');
+            const impersonationData = localStorage.getItem('impersonationData');
+            
+            if (switchData) {
+                try {
+                    const data = JSON.parse(switchData);
+                    showStatus(`⚠️ Currently switched to: ${data.switchedUser.display_name || data.switchedUser.email}. 
+                        <button onclick="exitImpersonation()" style="background: #fd7e14; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                            🔙 Switch Back to My Account
+                        </button>`, 'warning');
+                } catch (e) {
+                    localStorage.removeItem('accountSwitchData');
+                }
+            } else if (impersonationData) {
+                try {
+                    const data = JSON.parse(impersonationData);
+                    showStatus(`⚠️ Currently impersonating: ${data.impersonatedUser?.display_name || data.impersonatedUser?.email}. 
+                        <button onclick="exitImpersonation()" style="background: #fd7e14; color: white; padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                            🔙 Exit Impersonation
+                        </button>`, 'warning');
+                } catch (e) {
+                    localStorage.removeItem('impersonationData');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

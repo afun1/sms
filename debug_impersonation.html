@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Debug - Impersonation</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <script src="static/user_impersonation.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 80px 20px 20px; background: #f5f5f5; }
+        .debug-container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .debug-title { font-weight: bold; color: #333; margin-bottom: 10px; }
+        .debug-output { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+        .test-btn { background: #007cba; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 5px; }
+        .test-btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔍 Navigation & Impersonation Debug</h1>
+        
+        <div class="debug-section">
+            <div class="debug-title">Current Location & Session</div>
+            <div class="debug-output" id="location-info">Loading...</div>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">Navigation Structure</div>
+            <button class="test-btn" onclick="analyzeNavigation()">Analyze Navigation</button>
+            <div class="debug-output" id="nav-analysis">Click button to analyze</div>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">Impersonation State</div>
+            <div class="debug-output" id="impersonation-state">Loading...</div>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">Test Impersonation</div>
+            <button class="test-btn" onclick="testImpersonation()">Test Impersonation (No Navigation)</button>
+            <button class="test-btn" onclick="testImpersonationWithNav()">Test Impersonation (With Navigation)</button>
+            <button class="test-btn" onclick="exitImpersonation()">Exit Impersonation</button>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">Navigation Redirect Test</div>
+            <button class="test-btn" onclick="testDashboardRedirect()">Test Dashboard.html Direct</button>
+            <button class="test-btn" onclick="testIndexRedirect()">Test Index.html Direct</button>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">Console Output</div>
+            <div class="debug-output" id="console-output">Console logs will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        // Capture console logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        let consoleOutput = '';
+        
+        function addToConsoleOutput(type, ...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ');
+            consoleOutput += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            document.getElementById('console-output').textContent = consoleOutput;
+            document.getElementById('console-output').scrollTop = document.getElementById('console-output').scrollHeight;
+        }
+        
+        console.log = (...args) => {
+            originalLog(...args);
+            addToConsoleOutput('log', ...args);
+        };
+        
+        console.error = (...args) => {
+            originalError(...args);
+            addToConsoleOutput('error', ...args);
+        };
+        
+        console.warn = (...args) => {
+            originalWarn(...args);
+            addToConsoleOutput('warn', ...args);
+        };
+
+        function updateLocationInfo() {
+            const locationDiv = document.getElementById('location-info');
+            const userId = localStorage.getItem('userId') || 'Not set';
+            const userEmail = localStorage.getItem('userEmail') || 'Not set';
+            const userRole = localStorage.getItem('userRole') || 'Not set';
+            const displayName = localStorage.getItem('displayName') || 'Not set';
+            
+            locationDiv.textContent = `
+Current URL: ${window.location.href}
+User ID: ${userId}
+Email: ${userEmail}
+Role: ${userRole}
+Display Name: ${displayName}
+            `.trim();
+        }
+        
+        function updateImpersonationState() {
+            const stateDiv = document.getElementById('impersonation-state');
+            const impersonationData = localStorage.getItem('impersonationData');
+            
+            if (impersonationData) {
+                try {
+                    const data = JSON.parse(impersonationData);
+                    stateDiv.textContent = `
+IMPERSONATING: YES
+Original User: ${data.originalUser?.email || 'Unknown'}
+Impersonated User: ${data.impersonatedUser?.email || 'Unknown'}
+Impersonated Display Name: ${data.impersonatedUser?.display_name || 'Unknown'}
+Timestamp: ${new Date(data.timestamp).toLocaleString()}
+                    `.trim();
+                } catch (e) {
+                    stateDiv.textContent = `Error parsing impersonation data: ${e.message}`;
+                }
+            } else {
+                stateDiv.textContent = 'IMPERSONATING: NO';
+            }
+        }
+        
+        function analyzeNavigation() {
+            const result = window.debugNavigation();
+            const analysisDiv = document.getElementById('nav-analysis');
+            
+            if (result) {
+                let analysis = `Navigation Elements Found: ${result.allElements}\n`;
+                analysis += `Text Elements: ${result.textElements.length}\n`;
+                analysis += `Potential Name Elements: ${result.potentialNames.length}\n\n`;
+                
+                analysis += "Text Elements:\n";
+                result.textElements.forEach((item, index) => {
+                    analysis += `${index + 1}. <${item.tag}> "${item.text}" (classes: ${item.classes}, id: ${item.id})\n`;
+                });
+                
+                analysis += "\nPotential Name Elements:\n";
+                result.potentialNames.forEach((item, index) => {
+                    analysis += `${index + 1}. <${item.tag}> "${item.text}" (classes: ${item.classes}, id: ${item.id})\n`;
+                });
+                
+                analysisDiv.textContent = analysis;
+            } else {
+                analysisDiv.textContent = 'No navigation found or debug function failed';
+            }
+        }
+        
+        function testImpersonation() {
+            const testUser = {
+                id: 'test-001',
+                email: 'test@example.com',
+                first_name: 'Test',
+                last_name: 'User',
+                display_name: 'Test User',
+                role: 'user'
+            };
+            
+            console.log('🧪 Testing impersonation without navigation...');
+            
+            // Start impersonation but prevent navigation
+            if (window.userImpersonation) {
+                window.userImpersonation.startImpersonation(testUser, null);
+            }
+        }
+        
+        function testImpersonationWithNav() {
+            const testUser = {
+                id: 'test-002',
+                email: 'navtest@example.com',
+                first_name: 'Navigation',
+                last_name: 'Test',
+                display_name: 'Navigation Test',
+                role: 'user'
+            };
+            
+            console.log('🧪 Testing impersonation with navigation...');
+            window.startUserImpersonation(testUser);
+        }
+        
+        function exitImpersonation() {
+            console.log('🧪 Testing exit impersonation...');
+            window.exitUserImpersonation();
+        }
+        
+        function testDashboardRedirect() {
+            console.log('🧪 Testing direct navigation to dashboard.html...');
+            window.location.href = 'dashboard.html';
+        }
+        
+        function testIndexRedirect() {
+            console.log('🧪 Testing direct navigation to index.html...');
+            window.location.href = 'index.html';
+        }
+        
+        // Update info periodically
+        setInterval(() => {
+            updateLocationInfo();
+            updateImpersonationState();
+        }, 2000);
+        
+        // Initial update
+        document.addEventListener('DOMContentLoaded', () => {
+            updateLocationInfo();
+            updateImpersonationState();
+            console.log('🔍 Debug page loaded');
+        });
+    </script>
+</body>
+</html>

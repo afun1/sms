@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Contact List</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="static/supersparky.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="static/global-nav-v2.js"></script>
+  <style>
+    body { margin: 0; }
+    .gradient-btn {
+      background: linear-gradient(90deg, #4e73df 0%, #8f5be8 100%);
+      box-shadow: 0 2px 6px rgba(78,115,223,0.08);
+      transition: background 0.2s;
+    }
+    .gradient-btn:hover {
+      background: linear-gradient(90deg, #8f5be8 0%, #4e73df 100%);
+    }
+    .red-btn {
+      background: #e53935;
+      box-shadow: 0 2px 6px rgba(229,57,53,0.08);
+      transition: background 0.2s;
+    }
+    .red-btn:hover {
+      background: #b71c1c;
+    }
+    .table-box {
+      width: 100vw !important;
+      min-width: 100vw !important;
+      max-width: 100vw !important;
+      margin: 0 !important;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    .contact-table {
+      width: 100vw !important;
+      min-width: 100vw !important;
+      max-width: 100vw !important;
+      margin: 0 !important;
+      background: #fff;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+    .contact-table th, .contact-table td {
+      padding: 8px;
+      text-align: left;
+      border: 1px solid #000;
+      border-right: 1px solid #000 !important;
+      border-left: 1px solid #000 !important;
+      white-space: nowrap;
+      min-width: 1px;
+      max-width: none;
+      word-break: normal;
+    }
+    .contact-table th {
+      background-color: #f4f4f4;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .contact-table th.sticky-col-1,
+    .contact-table td.sticky-col-1 {
+      position: sticky;
+      left: 0;
+      background: #f0f0f0 !important;
+      border-right: 3px solid #000 !important;
+      border-left: 3px solid #000 !important;
+      border-top: 2px solid #000 !important;
+      border-bottom: 2px solid #000 !important;
+      z-index: 50;
+    }
+    .contact-table th.sticky-col-2,
+    .contact-table td.sticky-col-2 {
+      position: sticky;
+      left: 50px;
+      background: #f0f0f0 !important;
+      border-right: 3px solid #000 !important;
+      border-left: none !important;
+      border-top: 2px solid #000 !important;
+      border-bottom: 2px solid #000 !important;
+      z-index: 49;
+    }
+    .contact-table th.sticky-col-3,
+    .contact-table td.sticky-col-3 {
+      position: sticky;
+      left: 100px;
+      background: #f0f0f0 !important;
+      border-right: 3px solid #000 !important;
+      border-left: none !important;
+      border-top: 2px solid #000 !important;
+      border-bottom: 2px solid #000 !important;
+      z-index: 48;
+    }
+    .contact-table th.sticky-col-4,
+    .contact-table td.sticky-col-4 {
+      position: sticky;
+      left: 150px;
+      background: #f0f0f0 !important;
+      border-right: 3px solid #000 !important;
+      border-left: none !important;
+      border-top: 2px solid #000 !important;
+      border-bottom: 2px solid #000 !important;
+      z-index: 47;
+    }
+    .contact-table th:nth-child(5),
+    .contact-table td:nth-child(5) {
+      border-left: none !important;
+    }
+    .contact-table th:not(.sticky-col-1):not(.sticky-col-2):not(.sticky-col-3):not(.sticky-col-4),
+    .contact-table td:not(.sticky-col-1):not(.sticky-col-2):not(.sticky-col-3):not(.sticky-col-4) {
+      border-left: none;
+    }
+    .contact-table th:last-child,
+    .contact-table td:last-child {
+      border-right: 1px solid #000 !important;
+      border-left: 1px solid #000 !important;
+      background: inherit !important;
+      z-index: auto;
+    }
+    .contact-table tr > td:last-child:not(.hidden),
+    .contact-table tr > th:last-child:not(.hidden) {
+      border-right: 1.5px solid #000 !important;
+    }
+    .contact-table tr > td:not(.hidden):last-of-type,
+    .contact-table tr > th:not(.hidden):last-of-type {
+      border-right: 1.5px solid #000 !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- Button/Search Box -->
+  <div style="width:100%;display:flex;align-items:center;margin:55px 0 20px 0;gap:16px;padding-top:10px;">
+    <button id="delete-selected-btn" class="red-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-right:auto;">Delete Selected</button>
+    <div style="display:flex;gap:16px;align-items:center;justify-content:center;width:100%;">
+      <input id="search-input" type="text" placeholder="Search contacts..." style="font-size:12px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;outline:none;">
+      <button id="reset-search-btn" style="font-size:12px;padding:4px 16px;background:#e0e0e0;color:#222;border:none;border-radius:4px;cursor:pointer;">Reset</button>
+      <button id="search-btn" style="font-size:12px;padding:4px 16px;background:#4e73df;color:#fff;border:none;border-radius:4px;cursor:pointer;">Search</button>
+      <button id="add-btn" class="gradient-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Add Contact</button>
+      <button id="select-columns-btn" class="gradient-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Select Columns</button>
+      <button id="sort-btn" class="gradient-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Sort</button>
+      <button id="import-btn" class="gradient-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Import</button>
+      <button id="export-btn" class="gradient-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Export</button>
+    </div>
+  </div>
+  <!-- Contacts Table -->
+  <div class="table-box" style="margin:0 0 24px 0;">
+    <table class="contact-table">
+      <thead>
+        <tr>
+          <th colspan="4" style="font-size:10px;background:#fffbe6;color:#b26a00;text-align:left;padding:2px 8px 2px 8px;border-bottom:none;">Do Not Disturb, indicated by X</th>
+          <th colspan="24" style="border-bottom:none;background:transparent;"></th>
+        </tr>
+        <tr>
+          <th class="sticky-col-1">SMS</th>
+          <th class="sticky-col-2">Call</th>
+          <th class="sticky-col-3">Email</th>
+          <th class="sticky-col-4"><input type="checkbox" id="select-all"></th>
+          <th>Sponsor</th>
+          <th>Sponsor First</th>
+          <th>Sponsor Last</th>
+          <th>Campaign</th>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>E-mail</th>
+          <th>Valid</th>
+          <th>Phone</th>
+          <th>Address</th>
+          <th>City</th>
+          <th>State</th>
+          <th>Zip</th>
+          <th>Status</th>
+          <th>Rating</th>
+          <th>IP</th>
+          <th>Date</th>
+          <th>Timezone</th>
+          <th>Cell</th>
+          <th>Carrier</th>
+          <th>Landline</th>
+          <th>Voip</th>
+          <th>Other</th>
+          <th>Foreign</th>
+          <th>Country</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="sticky-col-1"></td>
+          <td class="sticky-col-2"></td>
+          <td class="sticky-col-3"></td>
+          <td class="sticky-col-4"><input type="checkbox" class="row-select"></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- ... (rest of your modals and scripts remain unchanged) ... -->
+  <script>
+    // Initialize Supabase client (same as index.html)
+    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[DEBUG] Supabase client initialized in list.html');
+  </script>
+  <!-- ... (rest of your JS remains unchanged) ... -->
+</body>
+</html>

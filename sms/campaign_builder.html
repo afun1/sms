@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Builder - Sparky Messaging</title>
+    <link rel="icon" type="image/png" href="static/supersparky.png">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <style>
+        /* ... your existing CSS remains unchanged ... */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding-top: 80px;
+        }
+
+        /* Lock global-nav-v2.js navigation to the top */
+        #global-nav, .global-nav, nav[role="navigation"] {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            z-index: 2000;
+        }
+        body {
+            /* Adjust this value if your nav is taller or shorter */
+            padding-top: 64px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .main-content {
+            padding: 40px;
+        }
+        .campaign-wizard {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            min-height: 600px;
+        }
+        .wizard-sidebar {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+        }
+        .wizard-steps {
+            list-style: none;
+        }
+        .wizard-step {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .wizard-step.active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .wizard-step.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .wizard-step:hover:not(.active) {
+            background: #e9ecef;
+        }
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .wizard-content {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            position: relative;
+        }
+        .step-content {
+            display: none;
+        }
+        .step-content.active {
+            display: block;
+        }
+        .step-title {
+            font-size: 1.8em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .form-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #e9ecef;
+        }
+        .section-title {
+            font-size: 1.2em;
+            color: #495057;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #f5576c;
+            box-shadow: 0 0 0 3px rgba(245,87,108,0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245,87,108,0.4);
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        .wizard-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+        .campaign-preview {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .campaign-flow {
+            display: grid;
+            gap: 20px;
+        }
+        .flow-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+        }
+        .flow-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .flow-type {
+            background: #007bff;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .flow-type.sms {
+            background: #28a745;
+        }
+        .flow-type.rvm {
+            background: #17a2b8;
+        }
+        .flow-content {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .channel-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .channel-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .channel-card.selected {
+            border-color: #f5576c;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .channel-card:hover:not(.selected) {
+            border-color: #f5576c;
+            transform: translateY(-2px);
+        }
+        .channel-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .target-audience {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .audience-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .audience-tag {
+            background: #2196f3;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+        .progress-bar {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .progress-fill {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .launch-section {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+        }
+        .launch-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .launch-stat {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        @media (max-width: 1200px) {
+            .campaign-wizard {
+                grid-template-columns: 1fr;
+            }
+            .wizard-sidebar {
+                order: -1;
+            }
+            .wizard-steps {
+                display: flex;
+                overflow-x: auto;
+                gap: 10px;
+            }
+            .wizard-step {
+                min-width: 200px;
+            }
+        }
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .channel-selector {
+                grid-template-columns: 1fr;
+            }
+            .nav-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding: 10px;
+                gap: 10px;
+            }
+            .nav-center {
+                order: 2;
+            }
+            .nav-right {
+                order: 3;
+                justify-content: center;
+                padding-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation will be injected by global-nav-v2.js -->
+
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Campaign Builder</h1>
+            <p>Create multi-channel SMS + RVM campaigns with AI-powered content</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="campaign-wizard">
+                <aside class="wizard-sidebar">
+                    <ul class="wizard-steps">
+                        <li class="wizard-step active"><span class="step-number">1</span> Audience</li>
+                        <li class="wizard-step"><span class="step-number">2</span> Channels</li>
+                        <li class="wizard-step"><span class="step-number">3</span> Content</li>
+                        <li class="wizard-step"><span class="step-number">4</span> Schedule</li>
+                        <li class="wizard-step"><span class="step-number">5</span> Review & Launch</li>
+                    </ul>
+                </aside>
+                <section class="wizard-content">
+                    <div class="step-content active" id="step-audience">
+                        <div class="step-title">👥 Select Audience</div>
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label for="audienceName">Audience Name</label>
+                                <input type="text" id="audienceName" placeholder="e.g. New Leads June 2025">
+                            </div>
+                            <div class="form-group">
+                                <label for="audienceTags">Tags</label>
+                                <input type="text" id="audienceTags" placeholder="e.g. warm, sms, promo">
+                            </div>
+                            <div class="form-group">
+                                <label for="audienceUpload">Upload CSV</label>
+                                <input type="file" id="audienceUpload" accept=".csv">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-content" id="step-channels">
+                        <div class="step-title">📢 Choose Channels</div>
+                        <div class="channel-selector">
+                            <div class="channel-card" id="channel-sms">
+                                <div class="channel-icon">💬</div>
+                                SMS
+                            </div>
+                            <div class="channel-card" id="channel-rvm">
+                                <div class="channel-icon">🎙️</div>
+                                RVM
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-content" id="step-content">
+                        <div class="step-title">✍️ Compose Content</div>
+                        <div class="form-grid">
+                            <div class="form-section">
+                                <div class="section-title">SMS Message</div>
+                                <textarea id="smsContent" rows="5" placeholder="Type your SMS message here..."></textarea>
+                            </div>
+                            <div class="form-section">
+                                <div class="section-title">RVM Script</div>
+                                <textarea id="rvmContent" rows="5" placeholder="Type your RVM script here..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-content" id="step-schedule">
+                        <div class="step-title">⏰ Schedule</div>
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label for="scheduleDate">Date</label>
+                                <input type="date" id="scheduleDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="scheduleTime">Time</label>
+                                <input type="time" id="scheduleTime">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-content" id="step-review">
+                        <div class="step-title">🚀 Review & Launch</div>
+                        <div class="campaign-preview">
+                            <div class="preview-header">
+                                <span>Campaign Summary</span>
+                                <button class="btn btn-success" onclick="launchCampaign()">Launch Campaign</button>
+                            </div>
+                            <div class="campaign-flow" id="campaignFlow">
+                                <!-- Campaign flow summary will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="wizard-navigation">
+                        <button class="btn btn-secondary" id="prevStepBtn" onclick="prevStep()">Previous</button>
+                        <button class="btn btn-primary" id="nextStepBtn" onclick="nextStep()">Next</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Wizard navigation logic
+        const steps = Array.from(document.querySelectorAll('.wizard-step'));
+        const stepContents = Array.from(document.querySelectorAll('.step-content'));
+        let currentStep = 0;
+
+        function showStep(index) {
+            steps.forEach((step, i) => {
+                step.classList.toggle('active', i === index);
+                step.classList.toggle('completed', i < index);
+            });
+            stepContents.forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+            document.getElementById('prevStepBtn').disabled = index === 0;
+            document.getElementById('nextStepBtn').textContent = index === steps.length - 1 ? 'Review' : 'Next';
+        }
+
+        function nextStep() {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                showStep(currentStep);
+            } else if (currentStep === steps.length - 1) {
+                // Review step
+                renderCampaignFlow();
+                currentStep++;
+                showStep(currentStep);
+                document.getElementById('nextStepBtn').style.display = 'none';
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                showStep(currentStep);
+                document.getElementById('nextStepBtn').style.display = '';
+            }
+        }
+
+        function renderCampaignFlow() {
+            const flow = document.getElementById('campaignFlow');
+            const audience = document.getElementById('audienceName').value || 'Unnamed Audience';
+            const tags = document.getElementById('audienceTags').value || '';
+            const sms = document.getElementById('smsContent').value || '';
+            const rvm = document.getElementById('rvmContent').value || '';
+            const date = document.getElementById('scheduleDate').value || '';
+            const time = document.getElementById('scheduleTime').value || '';
+            flow.innerHTML = `
+                <div class="flow-item">
+                    <div class="flow-header">
+                        <span class="flow-type">Audience</span>
+                    </div>
+                    <div class="flow-content">
+                        <strong>${audience}</strong><br>
+                        Tags: ${tags}
+                    </div>
+                </div>
+                <div class="flow-item">
+                    <div class="flow-header">
+                        <span class="flow-type sms">SMS</span>
+                    </div>
+                    <div class="flow-content">${sms}</div>
+                </div>
+                <div class="flow-item">
+                    <div class="flow-header">
+                        <span class="flow-type rvm">RVM</span>
+                    </div>
+                    <div class="flow-content">${rvm}</div>
+                </div>
+                <div class="flow-item">
+                    <div class="flow-header">
+                        <span class="flow-type">Schedule</span>
+                    </div>
+                    <div class="flow-content">${date} ${time}</div>
+                </div>
+            `;
+        }
+
+        function launchCampaign() {
+            alert('Campaign launched! (Simulation)');
+        }
+
+        // Channel selection logic
+        document.getElementById('channel-sms').onclick = function() {
+            this.classList.toggle('selected');
+        };
+        document.getElementById('channel-rvm').onclick = function() {
+            this.classList.toggle('selected');
+        };
+
+        // Step click navigation
+        steps.forEach((step, i) => {
+            step.onclick = () => {
+                currentStep = i;
+                showStep(currentStep);
+                document.getElementById('nextStepBtn').style.display = '';
+            };
+        });
+
+        // Initialize wizard
+        showStep(currentStep);
+        
+        // Initialize Supabase client (same as index.html)
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('[DEBUG] Supabase client initialized in campaign_builder.html');
+    </script>
+</body>
+</html>

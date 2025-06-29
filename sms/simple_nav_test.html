@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Global Nav Test - Sparky Messaging</title>
+    <script src="static/global-nav.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .demo-box {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 5px;
+            transition: transform 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌟 Simple Global Navigation</h1>
+            <p>This page uses the simplified global navigation script</p>
+        </div>
+        
+        <div class="content">
+            <div class="demo-box">
+                <h2>How to Use Global Navigation</h2>
+                <p>To add the global navigation to any page, simply add this line to your HTML head:</p>
+                <code style="background: #e9ecef; padding: 10px; border-radius: 5px; display: block; margin: 10px 0;">
+                    &lt;script src="static/global-nav.js"&gt;&lt;/script&gt;
+                </code>
+                <p>That's it! The navigation will automatically appear and handle authentication.</p>
+            </div>
+            
+            <div class="demo-box">
+                <h2>Test Links</h2>
+                <p>Use these links to test the navigation on other pages:</p>
+                <a href="dashboard.html" class="btn">Dashboard</a>
+                <a href="sms_editor.html" class="btn">SMS Editor</a>
+                <a href="email_editor.html" class="btn">Email Editor</a>
+                <a href="rvm_editor.html" class="btn">RVM Editor</a>
+                <a href="ai_editor.html" class="btn">AI Editor</a>
+                <a href="campaign_builder.html" class="btn">Campaign Builder</a>
+                <a href="admin.html" class="btn">Admin</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

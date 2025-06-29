@@ -4,7 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Sparky Messaging</title>
+    <link rel="icon" type="image/png" href="static/supersparky.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <script src="static/admin-role-management.js"></script>
+    <script src="static/user_impersonation.js"></script>
     <style>
+        /* Lock global-nav-v2.js navigation to the top */
+        #global-nav {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 1000 !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border-bottom: 1px solid rgba(42,63,124,0.1) !important;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -98,24 +116,6 @@
             transform: translateY(-2px);
         }
 
-        .debug-info {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .debug-info h4 {
-            color: #155724;
-            margin-bottom: 10px;
-        }
-
-        .debug-info p {
-            color: #155724;
-            margin: 5px 0;
-        }
-
         /* MOBILE RESPONSIVE */
         @media (max-width: 768px) {
             .admin-grid {
@@ -130,289 +130,301 @@
         .close:hover { color: #e74c3c; }
         #manager-form label { display:block; margin:10px 0 4px 0; font-weight:500; }
         #manager-form input, #manager-form select { width:100%; padding:7px 8px; margin-bottom:8px; border:1px solid #ccc; border-radius:4px; }
+
+        /* Toggle Switch Styles */
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #3498db;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Role Radio Option Styles */
+        .role-radio-option:hover {
+            background-color: #f8f9fa;
+        }
+
+        .role-radio-option input[type="radio"]:checked {
+            accent-color: #3498db;
+        }
+
+        .role-radio-option:has(input[type="radio"]:checked) {
+            background-color: #e3f2fd;
+            border-radius: 4px;
+        }
+
+        /* Admin Radio Option Styles */
+        .admin-radio-option:hover {
+            background-color: #f8f9fa;
+        }
+
+        .admin-radio-option input[type="radio"]:checked {
+            accent-color: #3498db;
+        }
+
+        .admin-radio-option:has(input[type="radio"]:checked) {
+            background-color: #e3f2fd;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
-    <!-- Navigation will be injected by global-nav.js -->
+    <!-- Navigation will be injected by global-nav-v2.js -->
 
     <div class="container">
         <div class="header">
-            <h1>⚙️ Admin Panel</h1>
-            <p>System administration and management</p>
+            <div style="text-align: center;">
+                <h1>⚙️ Admin Panel</h1>
+                <p>System administration and management</p>
+            </div>
         </div>
         
         <div class="admin-content">
             <!-- User Management Table Section -->
             <div id="user-management-section" style="margin:0 0 40px 0;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-                    <h2 style="font-size:1.4em;font-weight:600;">User Management</h2>
-                </div>
-                <div style="overflow-x:auto;">
-                    <table id="user-table" style="width:100%;border-collapse:collapse;min-width:600px;">
-                        <thead>
-                            <tr style="background:#f4f4f4;">
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Name</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Email</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Role</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Status</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-table-body">
-                            <!-- Sample users, replace with dynamic data -->
-                            <tr>
-                                <td style="padding:8px;border:1px solid #eee;">Alice Smith</td>
-                                <td style="padding:8px;border:1px solid #eee;">alice@example.com</td>
-                                <td style="padding:8px;border:1px solid #eee;">admin</td>
-                                <td style="padding:8px;border:1px solid #eee;">Active</td>
-                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-user-btn" style="background:#8f5be8;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-user-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
-                            </tr>
-                            <tr>
-                                <td style="padding:8px;border:1px solid #eee;">Bob Jones</td>
-                                <td style="padding:8px;border:1px solid #eee;">bob@example.com</td>
-                                <td style="padding:8px;border:1px solid #eee;">manager</td>
-                                <td style="padding:8px;border:1px solid #eee;">Active</td>
-                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-user-btn" style="background:#8f5be8;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-user-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
-                            </tr>
-                            <tr>
-                                <td style="padding:8px;border:1px solid #eee;">Carol Lee</td>
-                                <td style="padding:8px;border:1px solid #eee;">carol@example.com</td>
-                                <td style="padding:8px;border:1px solid #eee;">user</td>
-                                <td style="padding:8px;border:1px solid #eee;">Suspended</td>
-                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-user-btn" style="background:#8f5be8;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-user-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <!-- Manager Management Table Section -->
-            <div id="manager-management-section" style="margin:0 0 40px 0;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-                    <h2 style="font-size:1.4em;font-weight:600;">Manager Management</h2>
-                </div>
-                <div style="overflow-x:auto;">
-                    <table id="manager-table" style="width:100%;border-collapse:collapse;min-width:600px;">
-                        <thead>
-                            <tr style="background:#f4f4f4;">
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Name</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Email</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Department</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Status</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="manager-table-body">
-                            <!-- Sample managers, replace with dynamic data -->
-                            <tr>
-                                <td style="padding:8px;border:1px solid #eee;">Dana White</td>
-                                <td style="padding:8px;border:1px solid #eee;">dana@company.com</td>
-                                <td style="padding:8px;border:1px solid #eee;">Sales</td>
-                                <td style="padding:8px;border:1px solid #eee;">Active</td>
-                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-manager-btn" style="background:#36b37e;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-manager-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
-                            </tr>
-                            <tr>
-                                <td style="padding:8px;border:1px solid #eee;">Eli Brown</td>
-                                <td style="padding:8px;border:1px solid #eee;">eli@company.com</td>
-                                <td style="padding:8px;border:1px solid #eee;">Support</td>
-                                <td style="padding:8px;border:1px solid #eee;">Suspended</td>
-                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-manager-btn" style="background:#36b37e;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-manager-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <!-- Supervisor Management Table Section -->
-            <div id="supervisor-management-section" style="margin:0 0 40px 0;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-                    <h2 style="font-size:1.4em;font-weight:600;">Supervisor Management</h2>
-                </div>
-                <div style="overflow-x:auto;">
-                    <table id="supervisor-table" style="width:100%;border-collapse:collapse;min-width:600px;">
-                        <thead>
-                            <tr style="background:#f4f4f4;">
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Name</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Email</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Team</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Status</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="supervisor-table-body">
-                            <!-- Sample supervisors, replace with dynamic data -->
-                            <tr>
-                                <td style="padding:8px;border:1px solid #eee;">Fiona Green</td>
-                                <td style="padding:8px;border:1px solid #eee;">fiona@company.com</td>
-                                <td style="padding:8px;border:1px solid #eee;">Team Alpha</td>
-                                <td style="padding:8px;border:1px solid #eee;">Active</td>
-                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-supervisor-btn" style="background:#f7b731;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-supervisor-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
-                            </tr>
-                            <tr>
-                                <td style="padding:8px;border:1px solid #eee;">George King</td>
-                                <td style="padding:8px;border:1px solid #eee;">george@company.com</td>
-                                <td style="padding:8px;border:1px solid #eee;">Team Beta</td>
-                                <td style="padding:8px;border:1px solid #eee;">Suspended</td>
-                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-supervisor-btn" style="background:#f7b731;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-supervisor-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <!-- Admin Management Table Section -->
-            <div id="admin-management-section" style="margin:0 0 40px 0;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-                    <h2 style="font-size:1.4em;font-weight:600;">Admin Management</h2>
-                </div>
-                <div style="overflow-x:auto;">
-                    <table id="admin-table" style="width:100%;border-collapse:collapse;min-width:600px;">
-                        <thead>
-                            <tr style="background:#f4f4f4;">
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Name</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Email</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Level</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Status</th>
-                                <th style="padding:10px 8px;border:1px solid #ddd;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-table-body">
-                            <!-- Sample admins, replace with dynamic data -->
-                            <tr>
-                                <td style="padding:8px;border:1px solid #eee;">Hannah Lee</td>
-                                <td style="padding:8px;border:1px solid #eee;">hannah@company.com</td>
-                                <td style="padding:8px;border:1px solid #eee;">Super Admin</td>
-                                <td style="padding:8px;border:1px solid #eee;">Active</td>
-                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-admin-btn" style="background:#4e73df;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-admin-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
-                            </tr>
-                            <tr>
-                                <td style="padding:8px;border:1px solid #eee;">Ivan Novak</td>
-                                <td style="padding:8px;border:1px solid #eee;">ivan@company.com</td>
-                                <td style="padding:8px;border:1px solid #eee;">Admin</td>
-                                <td style="padding:8px;border:1px solid #eee;">Suspended</td>
-                                <td style="padding:8px;border:1px solid #eee;"><button class="admin-button edit-admin-btn" style="background:#4e73df;padding:4px 12px;font-size:0.95em;">Edit</button> <button class="admin-button delete-admin-btn" style="background:#e74c3c;padding:4px 12px;font-size:0.95em;">Delete</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="admin-grid">
-                <!-- User Management -->
-                <div class="admin-card">
-                    <div class="admin-icon">👥</div>
-                    <div class="admin-title">User Management</div>
-                    <div class="admin-description">
-                        Manage user accounts, roles, and permissions
-                    </div>
-                    <button class="admin-button" onclick="manageUsers()">
-                        Manage Users
-                    </button>
-                </div>
                 
-                <!-- System Settings -->
-                <div class="admin-card">
-                    <div class="admin-icon">⚙️</div>
-                    <div class="admin-title">System Settings</div>
-                    <div class="admin-description">
-                        Configure system-wide settings and preferences
+                <!-- Admin Users Table -->
+                <div id="admin-table-section" style="margin-bottom: 30px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                        <h2 style="font-size:1.4em;font-weight:600;color:#e74c3c;">👑 Admin Users</h2>
                     </div>
-                    <button class="admin-button" onclick="systemSettings()">
-                        System Settings
-                    </button>
-                </div>
-                
-                <!-- Analytics -->
-                <div class="admin-card">
-                    <div class="admin-icon">📊</div>
-                    <div class="admin-title">Analytics & Reports</div>
-                    <div class="admin-description">
-                        View detailed analytics and generate reports
+                    <div style="overflow-x:auto;">
+                        <table id="admin-table" style="width:100%;border-collapse:collapse;min-width:600px;">
+                            <thead>
+                                <tr style="background:#fdf2f2;">
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">First Name</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Last Name</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Email</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Phone</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Sparky Username</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Primary Role</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Secondary Role</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;width:60px;text-align:center;">Edit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-table-body">
+                                <!-- Admin users will be loaded here -->
+                            </tbody>
+                        </table>
                     </div>
-                    <button class="admin-button" onclick="viewAnalytics()">
-                        View Analytics
-                    </button>
-                </div>
-                
-                <!-- API Management -->
-                <div class="admin-card">
-                    <div class="admin-icon">🔌</div>
-                    <div class="admin-title">API Management</div>
-                    <div class="admin-description">
-                        Manage API keys and integrations
-                    </div>
-                    <button class="admin-button" onclick="manageAPI()">
-                        Manage APIs
-                    </button>
-                </div>
-                
-                <!-- Billing -->
-                <div class="admin-card">
-                    <div class="admin-icon">💳</div>
-                    <div class="admin-title">Billing & Usage</div>
-                    <div class="admin-description">
-                        Monitor usage and manage billing settings
-                    </div>
-                    <button class="admin-button" onclick="manageBilling()">
-                        View Billing
-                    </button>
-                </div>
-                
-                <!-- Security -->
-                <div class="admin-card">
-                    <div class="admin-icon">🔒</div>
-                    <div class="admin-title">Security Settings</div>
-                    <div class="admin-description">
-                        Configure security policies and monitoring
-                    </div>
-                    <button class="admin-button" onclick="securitySettings()">
-                        Security Panel
-                    </button>
                 </div>
 
-                <!-- Set Admin Role -->
-                <div class="admin-card">
-                    <div class="admin-icon">🛠️</div>
-                    <div class="admin-title">Set Admin Role</div>
-                    <div class="admin-description">
-                        Click to set current user as admin for testing
+                <!-- Supervisor Users Table -->
+                <div style="margin-bottom: 30px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                        <h2 style="font-size:1.4em;font-weight:600;color:#f39c12;">🎯 Supervisor Users</h2>
                     </div>
-                    <button class="admin-button" onclick="setAdminRole()">
-                        Become Admin
-                    </button>
+                    <div style="overflow-x:auto;">
+                        <table id="supervisor-table" style="width:100%;border-collapse:collapse;min-width:600px;">
+                            <thead>
+                                <tr style="background:#fefbf3;">
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">First Name</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Last Name</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Email</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Phone</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Sparky Username</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Primary Role</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Secondary Role</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;width:60px;text-align:center;">Edit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="supervisor-table-body">
+                                <!-- Supervisor users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Manager Users Table -->
+                <div style="margin-bottom: 30px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                        <h2 style="font-size:1.4em;font-weight:600;color:#3498db;">👔 Manager Users</h2>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table id="manager-table" style="width:100%;border-collapse:collapse;min-width:600px;">
+                            <thead>
+                                <tr style="background:#f4f9fd;">
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">First Name</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Last Name</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Email</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Phone</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Sparky Username</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Primary Role</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Secondary Role</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Supervisor</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;width:60px;text-align:center;">Edit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manager-table-body">
+                                <!-- Manager users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Regular Users Table -->
+                <div style="margin-bottom: 30px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+                        <h2 style="font-size:1.4em;font-weight:600;color:#95a5a6;">👤 Regular Users</h2>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table id="user-table" style="width:100%;border-collapse:collapse;min-width:600px;">
+                            <thead>
+                                <tr style="background:#f8f9fa;">
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">First Name</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Last Name</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Email</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Phone</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Sparky Username</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Primary Role</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Secondary Role</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;text-align:center;">Manager</th>
+                                    <th style="padding:10px 8px;border:1px solid #ddd;width:60px;text-align:center;">Edit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body">
+                                <!-- Regular users will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Debug Information -->
-            <div class="debug-info">
-                <h4>🔍 Debug Information</h4>
-                <p><strong>Current User:</strong> <span id="debugUser">Loading...</span></p>
-                <p><strong>User Role:</strong> <span id="debugRole">Loading...</span></p>
-                <p><strong>Auth Token:</strong> <span id="debugToken">Loading...</span></p>
-            </div>
-
-            <!-- User Modal -->
-            <div id="user-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);z-index:2000;align-items:center;justify-content:center;">
-                <div style="background:#fff;padding:28px 32px;border-radius:10px;min-width:320px;max-width:95vw;max-height:95vh;overflow:auto;box-shadow:0 4px 24px rgba(0,0,0,0.18);">
-                    <h2 id="user-modal-title" style="margin-top:0;font-size:1.2em;">Add User</h2>
-                    <form id="user-form">
-                        <div style="display:flex;flex-direction:column;gap:14px;">
-                            <input name="name" id="user-name" placeholder="Full Name" required style="padding:8px;font-size:1em;border:1px solid #ccc;border-radius:5px;" />
-                            <input name="email" id="user-email" placeholder="Email" type="email" required style="padding:8px;font-size:1em;border:1px solid #ccc;border-radius:5px;" />
-                            <select name="role" id="user-role" required style="padding:8px;font-size:1em;border:1px solid #ccc;border-radius:5px;">
-                                <option value="admin">Admin</option>
-                                <option value="supervisor">Supervisor</option>
-                                <option value="manager">Manager</option>
-                                <option value="user">User</option>
-                            </select>
-                            <select name="status" id="user-status" required style="padding:8px;font-size:1em;border:1px solid #ccc;border-radius:5px;">
-                                <option value="Active">Active</option>
-                                <option value="Suspended">Suspended</option>
-                            </select>
+        <!-- User Management Modal -->
+        <div id="manage-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);z-index:2000;align-items:center;justify-content:center;">
+            <div style="background:#fff;padding:30px;border-radius:12px;min-width:500px;max-width:90vw;max-height:90vh;overflow:auto;box-shadow:0 4px 24px rgba(0,0,0,0.18);">
+                <h2 id="manage-modal-title" style="margin-top:0;font-size:1.4em;color:#2c3e50;">⚙️ Manage Users</h2>
+                
+                <!-- Selected Users Display -->
+                <div id="selected-users-display" style="background:#f8f9fa;padding:16px;border-radius:8px;border-left:4px solid #3498db;margin-bottom:24px;">
+                    <div style="font-weight:600;color:#2c3e50;margin-bottom:8px;">Selected Users</div>
+                    <div id="selected-users-list" style="color:#34495e;font-size:0.95em;"></div>
+                </div>
+                
+                <form id="manage-form">
+                    <!-- Two Column Layout -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-bottom:24px;">
+                        
+                        <!-- Left Column: Role & Admin Assignment -->
+                        <div>
+                            <!-- Role Selection Section -->
+                            <div style="border:2px solid #eee;border-radius:8px;padding:16px;margin-bottom:16px;">
+                                <h3 style="margin:0 0 12px 0;color:#2c3e50;font-size:1.1em;">🎭 Role</h3>
+                                
+                                <div style="display:flex;flex-direction:column;gap:4px;">
+                                    <!-- None -->
+                                    <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;transition:all 0.3s;" class="role-radio-option">
+                                        <input type="radio" name="user-role" value="none" style="margin:0;width:16px;height:16px;">
+                                        <span style="font-weight:600;color:#6c757d;">None</span>
+                                    </label>
+                                    
+                                    <!-- User -->
+                                    <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;transition:all 0.3s;" class="role-radio-option">
+                                        <input type="radio" name="user-role" value="user" style="margin:0;width:16px;height:16px;">
+                                        <span style="font-weight:600;color:#95a5a6;">User</span>
+                                    </label>
+                                    
+                                    <!-- Manager -->
+                                    <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;transition:all 0.3s;" class="role-radio-option">
+                                        <input type="radio" name="user-role" value="manager" style="margin:0;width:16px;height:16px;">
+                                        <span style="font-weight:600;color:#3498db;">Manager</span>
+                                    </label>
+                                    
+                                    <!-- Supervisor -->
+                                    <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;transition:all 0.3s;" class="role-radio-option">
+                                        <input type="radio" name="user-role" value="supervisor" style="margin:0;width:16px;height:16px;">
+                                        <span style="font-weight:600;color:#f39c12;">Supervisor</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Admin Access Section -->
+                            <div id="make-admin-section" style="border:2px solid #eee;border-radius:8px;padding:16px;">
+                                <h3 style="margin:0 0 12px 0;color:#2c3e50;font-size:1.1em;">👑 Make Admin</h3>
+                                
+                                <div style="display:flex;gap:8px;">
+                                    <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;transition:all 0.3s;flex:1;" class="admin-radio-option">
+                                        <input type="radio" name="admin-access" value="yes" style="margin:0;width:16px;height:16px;">
+                                        <span style="font-weight:600;color:#27ae60;">Yes</span>
+                                    </label>
+                                    
+                                    <label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;transition:all 0.3s;flex:1;" class="admin-radio-option">
+                                        <input type="radio" name="admin-access" value="no" style="margin:0;width:16px;height:16px;">
+                                        <span style="font-weight:600;color:#e74c3c;">No</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                        <div style="margin-top:22px;display:flex;gap:12px;justify-content:flex-end;">
-                            <button type="button" id="cancel-user-modal" style="padding:7px 18px;border:none;border-radius:4px;background:#ccc;color:#222;cursor:pointer;">Cancel</button>
-                            <button type="submit" class="admin-button" style="padding:7px 18px;">Save</button>
+                        
+                        <!-- Right Column: Hierarchy Assignment -->
+                        <div>
+                            <div style="border:2px solid #eee;border-radius:8px;padding:16px;">
+                                <h3 style="margin:0 0 12px 0;color:#2c3e50;font-size:1.1em;">👥 Assign Hierarchy</h3>
+                                
+                                <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;">
+                                    <input type="radio" name="action" value="assign-hierarchy" style="margin:0;width:16px;height:16px;">
+                                    <span style="font-weight:600;">Assign to Manager/Supervisor</span>
+                                </label>
+                                
+                                <div id="hierarchy-assignment" style="opacity:0.5;transition:opacity 0.3s;">
+                                    <!-- Searchable Dropdown Container -->
+                                    <div style="position:relative;">
+                                        <input 
+                                            type="text" 
+                                            id="hierarchy-search" 
+                                            placeholder="🔍 Search for manager or supervisor..."
+                                            style="width:100%;padding:12px 40px 12px 12px;border:2px solid #ddd;border-radius:6px;background:#fff;"
+                                            disabled
+                                            autocomplete="off"
+                                        >
+                                        <button type="button" id="hierarchy-dropdown-btn" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:none;font-size:16px;cursor:pointer;color:#666;" disabled>
+                                            ▼
+                                        </button>
+                                        
+                                        <!-- Dropdown Options -->
+                                        <div id="hierarchy-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px;max-height:200px;overflow-y:auto;z-index:100;box-shadow:0 4px 8px rgba(0,0,0,0.1);">
+                                            <!-- Options will be populated dynamically -->
+                                        </div>
+                                    </div>
+                                    
+                                    <input type="hidden" id="hierarchy-select" disabled>
+                                    
+                                    <div style="font-size:0.85em;color:#666;margin-top:6px;">
+                                        💡 Type to search or click the dropdown arrow to browse all available managers and supervisors
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:20px;border-top:1px solid #eee;">
+                        <button type="button" id="cancel-manage-modal" style="padding:10px 20px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#666;cursor:pointer;font-size:0.95em;">
+                            Cancel
+                        </button>
+                        <button type="submit" style="padding:10px 20px;border:none;border-radius:6px;background:#3498db;color:#fff;cursor:pointer;font-size:0.95em;font-weight:600;">
+                            Apply Changes
+                        </button>
+                    </div>
+                    </div>
+                    
+                </form>
             </div>
+        </div>
             <!-- Manager Modal -->
             <div id="manager-modal" class="modal" style="display:none;">
                 <div class="modal-content" style="max-width:400px;">
@@ -439,23 +451,76 @@
     </div>
 
     <script>
-        // TEMPORARY: Automatically set admin role
-        localStorage.setItem('userRole', 'admin');
-        localStorage.setItem('username', 'TestAdmin');
-        localStorage.setItem('authToken', 'test-admin-token');
+        // Supabase configuration - wait for library to load
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        // Initialize Supabase client when library is available
+        let supabase = null;
+        
+        // Global user storage for role management
+        window.allUsers = [];
+        
+        function initializeSupabase() {
+            if (typeof window.supabase !== 'undefined') {
+                supabase = window.globalSupabase || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                window.supabase = supabase; // Make globally accessible
+                console.log('✅ Supabase client initialized:', supabase);
+                return true;
+            } else {
+                console.log('⏳ Waiting for Supabase library...');
+                return false;
+            }
+        }
+
+        // Note: User role will be determined from authenticated session and database profile
+        // localStorage role is used as fallback only when database is not available
 
         // Admin page initialization - NO REDIRECTS
         function initializeAdmin() {
+            console.log('🚀 Admin page initializing...');
+            
+            // Prevent any browser authentication prompts
+            preventAuthPrompts();
+            
+            // Set default admin values if not present
+            if (!localStorage.getItem('userRole')) {
+                localStorage.setItem('userRole', 'admin');
+                localStorage.setItem('username', 'AdminUser');
+                localStorage.setItem('userEmail', 'admin@test.com');
+                console.log('✅ Set default admin role for testing');
+            }
+            
             const username = localStorage.getItem('username') || 'Admin';
-            const role = localStorage.getItem('userRole') || 'user';
+            const role = localStorage.getItem('userRole') || 'admin';
             const token = localStorage.getItem('authToken') || 'none';
             
-            console.log('Admin page loading...', { username, role, token });
+            console.log('📊 Admin page loading...', { username, role, token });
             
-            // Update debug info
-            document.getElementById('debugUser').textContent = username;
-            document.getElementById('debugRole').textContent = role;
-            document.getElementById('debugToken').textContent = token ? 'Present' : 'None';
+            // Initialize Supabase and load users (simplified approach)
+            console.log('🔧 Initializing Supabase...');
+            if (initializeSupabase()) {
+                console.log('✅ Supabase initialized, loading users...');
+                loadUsersWithHierarchy();
+            } else {
+                console.log('⚠️ Supabase not ready, waiting...');
+                // Wait for Supabase library to load
+                let attempts = 0;
+                const maxAttempts = 50;
+                const waitForSupabase = setInterval(() => {
+                    attempts++;
+                    console.log(`🔄 Attempt ${attempts} to initialize Supabase...`);
+                    if (initializeSupabase()) {
+                        clearInterval(waitForSupabase);
+                        console.log('✅ Supabase ready, loading users...');
+                        loadUsersWithHierarchy();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(waitForSupabase);
+                        console.error('❌ Failed to load Supabase library after', maxAttempts, 'attempts');
+                        showEmptyState('Failed to initialize database connection');
+                    }
+                }, 100);
+            }
         }
 
         function setAdminRole() {
@@ -500,208 +565,1976 @@
             }
         }
 
+        // Check authentication and setup
+        async function checkAuth() {
+            try {
+                if (!supabase) {
+                    console.error('❌ Supabase client not initialized');
+                    return null;
+                }
+                
+                console.log('🔐 Checking authentication...');
+                
+                // Get current session without triggering any authentication flows
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error('❌ Auth error:', error);
+                }
+                
+                if (session) {
+                    console.log('✅ User is authenticated:', session.user.email);
+                    console.log('User ID:', session.user.id);
+                    // Update navigation to show user name
+                    if (window.refreshGlobalNav) {
+                        console.log('🔄 Refreshing navigation...');
+                        window.refreshGlobalNav();
+                    }
+                    return session;
+                } else {
+                    console.log('⚠️ No active session found');
+                    console.log('ℹ️ Admin panel will work with existing RLS policies');
+                    return null;
+                }
+                
+            } catch (error) {
+                console.error('💥 Error checking auth:', error);
+                return null;
+            }
+        }
+
+        // Sign in as admin to bypass RLS
+        async function signInAsAdmin() {
+            try {
+                if (!supabase) {
+                    console.error('❌ Supabase client not initialized for admin signin');
+                    return false;
+                }
+                
+                console.log('🔐 Checking authentication status...');
+                
+                // Try to get current session first
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    console.log('✅ Already authenticated as:', session.user.email);
+                    // Update navigation to show user name
+                    if (window.refreshGlobalNav) {
+                        window.refreshGlobalNav();
+                    }
+                    return true;
+                }
+                
+                // No active session - admin page should still be accessible
+                // The RLS policies will control data access based on user role
+                console.log('ℹ️ No active session - admin interface accessible without authentication');
+                console.log('💡 Users must sign in through the main login page to access data');
+                return false;
+                
+            } catch (error) {
+                console.error('💥 Admin signin exception:', error);
+                return false;
+            }
+        }
+
+        // Sign in with one of the existing user IDs you provided
+        async function signInWithExistingUser() {
+            try {
+                if (!supabase) {
+                    console.error('❌ Supabase client not initialized');
+                    return false;
+                }
+                
+                console.log('🔐 Attempting to sign in with existing user...');
+                
+                // Try to sign in using magic link or create session for existing user
+                // This is a workaround - you might need to adjust based on your auth setup
+                
+                // First, let's try to set the session manually using one of your user IDs
+                const userId = '29d0eb05-fb7f-425d-b734-25ab8d7d1d11'; // One of your existing users
+                
+                // This won't work directly, but let's see what error we get
+                console.log('🔄 Attempting manual session creation for user:', userId);
+                
+                // Alternative: try to query without authentication first to see RLS error details
+                const { data, error } = await supabase.auth.getSession();
+                console.log('Current session:', data, 'Error:', error);
+                
+                return false; // Will implement proper solution based on your auth method
+                
+            } catch (error) {
+                console.error('💥 Signin exception:', error);
+                return false;
+            }
+        }
+
+        // Disable RLS temporarily for admin operations (requires service role)
+        async function bypassRLSForAdmin() {
+            try {
+                console.log('⚠️ Attempting to bypass RLS...');
+                
+                // This would require service role key, not anon key
+                // You'd need to create a separate admin API endpoint
+                console.log('❌ RLS bypass requires service role - not possible with anon key');
+                
+                return false;
+            } catch (error) {
+                console.error('💥 RLS bypass exception:', error);
+                return false;
+            }
+        }
+
+        // Prevent browser authentication dialogs
+        function preventAuthPrompts() {
+            // Override XMLHttpRequest to prevent basic auth prompts
+            const originalXHR = window.XMLHttpRequest;
+            window.XMLHttpRequest = function() {
+                const xhr = new originalXHR();
+                const originalOpen = xhr.open;
+                xhr.open = function(method, url, async, user, password) {
+                    // Call original open without credentials to prevent auth prompts
+                    return originalOpen.call(this, method, url, async);
+                };
+                return xhr;
+            };
+            
+            // Override fetch to prevent auth prompts
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                // Remove any authorization headers that might trigger auth prompts
+                if (options.headers) {
+                    delete options.headers['Authorization'];
+                    delete options.headers['authorization'];
+                }
+                return originalFetch(url, options);
+            };
+            
+            console.log('🚫 Browser authentication prompts disabled');
+        }
+
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', initializeAdmin);
 
-        // User Management Modal Logic
-        const userModal = document.getElementById('user-modal');
-        const addUserBtn = document.getElementById('add-user-btn');
-        const userForm = document.getElementById('user-form');
-        const userModalTitle = document.getElementById('user-modal-title');
-        const cancelUserModal = document.getElementById('cancel-user-modal');
-        let editingUserRow = null;
+        // Fetch and display users with hierarchy
+        async function loadUsersWithHierarchy() {
+            try {
+                console.log('🔄 Starting loadUsersWithHierarchy...');
+                
+                if (!supabase) {
+                    console.error('❌ Supabase client not initialized');
+                    // Don't show alert immediately, try to reinitialize
+                    console.log('🔄 Attempting to reinitialize Supabase...');
+                    if (initializeSupabase()) {
+                        console.log('✅ Supabase reinitialized successfully');
+                    } else {
+                        console.error('❌ Failed to reinitialize Supabase');
+                        // Show empty state instead of error
+                        showEmptyState('Database connection not available');
+                        return;
+                    }
+                }
+                
+                console.log('🔄 Starting to load users from Supabase...');
+                console.log('Supabase client:', supabase);
+                
+                // Test connection first with a simple query
+                console.log('🧪 Testing database connection...');
+                const { data: testData, error: testError } = await supabase
+                    .from('profiles')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (testError) {
+                    console.error('❌ Connection test failed:', testError);
+                    console.error('Error details:', testError.details);
+                    console.error('Error message:', testError.message);
+                    console.error('Error code:', testError.code);
+                    showEmptyState('Database connection failed: ' + testError.message);
+                    return;
+                }
+                
+                console.log('✅ Database connection successful, total records:', testData);
+                
+                // Fetch all profiles with hierarchy information
+                console.log('📊 Fetching profiles...');
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select(`
+                        *,
+                        manager:manager_id(first_name, last_name, email),
+                        supervisor:supervisor_id(first_name, last_name, email)
+                    `)
+                    .order('role', { ascending: true })
+                    .order('first_name', { ascending: true });
 
-        addUserBtn.addEventListener('click', function() {
-            userModalTitle.textContent = 'Add User';
-            userForm.reset();
-            editingUserRow = null;
-            userModal.style.display = 'flex';
-        });
+                if (error) {
+                    console.error('❌ Error fetching profiles:', error);
+                    console.error('Error details:', error.details);
+                    console.error('Error hint:', error.hint);
+                    console.error('Error code:', error.code);
+                    
+                    // Try simpler query without hierarchy
+                    console.log('🔄 Trying simpler query...');
+                    const { data: simpleProfiles, error: simpleError } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .order('role', { ascending: true });
+                        
+                    if (simpleError) {
+                        console.error('❌ Simple query also failed:', simpleError);
+                        showEmptyState('Error loading user data: ' + simpleError.message);
+                        return;
+                    }
+                    
+                    console.log('✅ Simple query worked, using basic data');
+                    profiles = simpleProfiles;
+                }
 
-        cancelUserModal.addEventListener('click', function() {
-            userModal.style.display = 'none';
-        });
+                console.log('📋 Loaded profiles:', profiles);
+                console.log('📊 Profile count:', profiles ? profiles.length : 0);
+                
+                // Store users globally for role modal
+                window.allUsers = profiles || [];
+                
+                // Update external role management script cache
+                if (window.updateUserCache) {
+                    window.updateUserCache(window.allUsers);
+                    console.log('✅ External role management cache updated');
+                }
 
-        userModal.addEventListener('click', function(e) {
-            if (e.target === userModal) userModal.style.display = 'none';
-        });
+                // Filter users based on current user's role and hierarchy
+                const filteredUsers = await filterUsersForCurrentUser(profiles || []);
+                console.log('🔍 Filtered users for current user:', filteredUsers.length, 'of', profiles?.length || 0);
 
-        // Edit user logic
-        document.querySelectorAll('.edit-user-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const row = btn.closest('tr');
-                editingUserRow = row;
-                userModalTitle.textContent = 'Edit User';
-                document.getElementById('user-name').value = row.children[0].textContent;
-                document.getElementById('user-email').value = row.children[1].textContent;
-                document.getElementById('user-role').value = row.children[2].textContent;
-                document.getElementById('user-status').value = row.children[3].textContent;
-                userModal.style.display = 'flex';
-            });
-        });
+                // Clear all table bodies first
+                const tableIds = ['admin-table-body', 'supervisor-table-body', 'manager-table-body', 'user-table-body'];
+                tableIds.forEach(id => {
+                    const tbody = document.getElementById(id);
+                    if (tbody) {
+                        tbody.innerHTML = '';
+                    } else {
+                        console.warn(`Table body not found: ${id}`);
+                    }
+                });
 
-        // Delete user logic
-        document.querySelectorAll('.delete-user-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const row = btn.closest('tr');
-                if (confirm('Delete user ' + row.children[0].textContent + '?')) {
-                    row.remove();
+                // Group users by role and populate tables
+                if (filteredUsers && filteredUsers.length > 0) {
+                    console.log('🔄 Populating tables...');
+                    
+                    // Check permissions once for all users
+                    const canEdit = await checkEditPermission();
+                    console.log('🔑 Current user can edit:', canEdit);
+                    console.log('🔍 Current user role from DB:', await getCurrentUserRoleFromDB());
+                    console.log('🔍 Current user role from localStorage:', getCurrentUserRole());
+                    
+                    // Process each user
+                    for (const user of filteredUsers) {
+                        console.log('👤 Processing user:', user.email, 'Primary Role:', user.role, 'Secondary Role:', user.secondary_role, 'Can Edit:', canEdit);
+                        
+                        // Add user to appropriate table
+                        const tableId = user.role === 'admin' ? 'admin-table-body' :
+                                        user.role === 'supervisor' ? 'supervisor-table-body' :
+                                        user.role === 'manager' ? 'manager-table-body' :
+                                        'user-table-body';
+                        
+                        const tbody = document.getElementById(tableId);
+                        if (tbody) {
+                            const impersonateButton = canEdit ? 
+                                `<button onclick="impersonateUser('${user.id}')" style="background:#e74c3c;color:white;border:none;padding:4px 8px;border-radius:3px;cursor:pointer;margin-right:5px;">Impersonate</button>` : '';
+                            
+                            const rowHtml = `
+                                <tr>
+                                    <td style="padding:8px;border:1px solid #eee;">${user.first_name || ''}</td>
+                                    <td style="padding:8px;border:1px solid #eee;">${user.last_name || ''}</td>
+                                    <td style="padding:8px;border:1px solid #eee;">${user.email || ''}</td>
+                                    <td style="padding:8px;border:1px solid #eee;">${user.phone || ''}</td>
+                                    <td style="padding:8px;border:1px solid #eee;">${user.sparky_username || ''}</td>
+                                    <td style="padding:8px;border:1px solid #eee;">${user.role || ''}</td>
+                                    <td style="padding:8px;border:1px solid #eee;">${user.secondary_role || ''}</td>
+                                    <td style="padding:8px;border:1px solid #eee;text-align:center;">
+                                        ${impersonateButton}
+                                        <a href="#" onclick="openEditModal('${user.id}')" style="color:#3498db;text-decoration:none;font-weight:500;">Edit</a>
+                                    </td>
+                                </tr>
+                            `;
+                            tbody.innerHTML += rowHtml;
+                        }
+                    }
+                    console.log('✅ Tables populated successfully');
+                    
+                    // Apply role-based visibility after tables are populated
+                    await applyRoleBasedVisibility();
+                } else {
+                    console.log('⚠️ No users found after filtering');
+                    showEmptyState('No users found that you have permission to view.');
+                }
+
+            } catch (error) {
+                console.error('💥 Unexpected error in loadUsersWithHierarchy:', error);
+                console.error('Error stack:', error.stack);
+                showEmptyState('Unexpected error loading users: ' + error.message);
+            }
+        }
+
+        // Show empty state message
+        function showEmptyState(message) {
+            const emptyMessage = `<tr><td colspan="8" style="text-align:center;padding:20px;color:#666;">${message}</td></tr>`;
+            const tableIds = ['admin-table-body', 'supervisor-table-body', 'manager-table-body', 'user-table-body'];
+            
+            tableIds.forEach(id => {
+                const tbody = document.getElementById(id);
+                if (tbody) {
+                    tbody.innerHTML = emptyMessage;
                 }
             });
-        });
+        }
 
-        // Save user (add or edit)
-        userForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const name = document.getElementById('user-name').value;
-            const email = document.getElementById('user-email').value;
-            const role = document.getElementById('user-role').value;
-            const status = document.getElementById('user-status').value;
-            if (editingUserRow) {
-                editingUserRow.children[0].textContent = name;
-                editingUserRow.children[1].textContent = email;
-                editingUserRow.children[2].textContent = role;
-                editingUserRow.children[3].textContent = status;
-            } else {
-                const tbody = document.getElementById('user-table-body');
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td style='padding:8px;border:1px solid #eee;'>${name}</td><td style='padding:8px;border:1px solid #eee;'>${email}</td><td style='padding:8px;border:1px solid #eee;'>${role}</td><td style='padding:8px;border:1px solid #eee;'>${status}</td><td style='padding:8px;border:1px solid #eee;'><button class='admin-button edit-user-btn' style='background:#8f5be8;padding:4px 12px;font-size:0.95em;'>Edit</button> <button class='admin-button delete-user-btn' style='background:#e74c3c;padding:4px 12px;font-size:0.95em;'>Delete</button></td>`;
-                tbody.appendChild(tr);
-                // Re-attach event listeners for new row
-                tr.querySelector('.edit-user-btn').addEventListener('click', function() {
-                    editingUserRow = tr;
-                    userModalTitle.textContent = 'Edit User';
-                    document.getElementById('user-name').value = tr.children[0].textContent;
-                    document.getElementById('user-email').value = tr.children[1].textContent;
-                    document.getElementById('user-role').value = tr.children[2].textContent;
-                    document.getElementById('user-status').value = tr.children[3].textContent;
-                    userModal.style.display = 'flex';
+        // Filter users based on current user's role and hierarchy permissions
+        async function filterUsersForCurrentUser(allUsers) {
+            try {
+                // Check if we're in impersonation mode - if so, ALWAYS show all users for admins
+                const impersonationData = localStorage.getItem('impersonationData');
+                if (impersonationData) {
+                    console.log('🎭 Impersonation mode detected - showing all users for admin');
+                    return allUsers;
+                }
+                
+                const currentUserRole = (await getCurrentUserRoleFromDB()).toLowerCase();
+                const currentUserId = await getCurrentUserId();
+                
+                console.log('🔍 Filtering users for role:', currentUserRole, 'user ID:', currentUserId);
+                
+                // If no authenticated user, default to showing all users for admin access
+                if (!currentUserId || !currentUserRole || currentUserRole === 'admin') {
+                    console.log('👑 Admin user or no auth - showing all users');
+                    return allUsers;
+                }
+                
+                if (currentUserRole === 'supervisor') {
+                    // Supervisors can see:
+                    // 1. Only managers assigned to them (manager.supervisor_id === currentUserId)
+                    // 2. Users assigned to those specific managers (user.manager_id === manager.id)
+                    // 3. All admins for context
+                    // 4. Themselves
+                    
+                    const visibleUsers = [];
+                    
+                    // Find ONLY managers assigned to this supervisor
+                    const managersUnderSupervisor = allUsers.filter(user => 
+                        user.role && user.role.toLowerCase() === 'manager' && 
+                        user.supervisor_id === currentUserId
+                    );
+                    
+                    console.log('👥 Managers assigned to supervisor:', managersUnderSupervisor.length);
+                    
+                    // Add the assigned managers
+                    visibleUsers.push(...managersUnderSupervisor);
+                    
+                    // Find users under those specific managers only
+                    const managerIds = managersUnderSupervisor.map(m => m.id);
+                    const usersUnderManagers = allUsers.filter(user =>
+                        user.role && user.role.toLowerCase() === 'user' &&
+                        managerIds.includes(user.manager_id)
+                    );
+                    
+                    console.log('👤 Users under assigned managers:', usersUnderManagers.length);
+                    
+                    // Add the users
+                    visibleUsers.push(...usersUnderManagers);
+                    
+                    // Add the supervisor themselves
+                    const supervisor = allUsers.find(user => user.id === currentUserId);
+                    if (supervisor) {
+                        visibleUsers.push(supervisor);
+                    }
+                    
+                    // Add ALL admins (for context and escalation)
+                    const admins = allUsers.filter(user =>
+                        (user.role && user.role.toLowerCase() === 'admin') ||
+                        (user.secondary_role && user.secondary_role.toLowerCase() === 'admin')
+                    );
+                    
+                    // Merge without duplicates
+                    admins.forEach(user => {
+                        if (!visibleUsers.find(v => v.id === user.id)) {
+                            visibleUsers.push(user);
+                        }
+                    });
+                    
+                    console.log('🔍 Supervisor can see:', visibleUsers.length, 'users (only assigned managers and their users + all admins)');
+                    return visibleUsers;
+                }
+                
+                if (currentUserRole === 'manager') {
+                    // Managers can see:
+                    // 1. Only users assigned to them (user.manager_id === currentUserId)
+                    // 2. Their assigned supervisor only (if they have one)
+                    // 3. Themselves
+                    // NO other managers, NO admins
+                    
+                    console.log('🔍 Manager filtering - Current User ID:', currentUserId);
+                    console.log('🔍 All users available:', allUsers.length);
+                    
+                    const visibleUsers = [];
+                    
+                    // Find users assigned to this manager only
+                    const usersUnderManager = allUsers.filter(user =>
+                        user.role && user.role.toLowerCase() === 'user' &&
+                        user.manager_id === currentUserId
+                    );
+                    
+                    console.log('👤 Users assigned to manager:', usersUnderManager.length, usersUnderManager.map(u => u.email));
+                    
+                    // Add the assigned users
+                    visibleUsers.push(...usersUnderManager);
+                    
+                    // Add the manager themselves
+                    const manager = allUsers.find(user => user.id === currentUserId);
+                    console.log('👤 Manager found themselves:', manager ? manager.email : 'NOT FOUND');
+                    if (manager) {
+                        visibleUsers.push(manager);
+                        
+                        // Add ONLY their assigned supervisor (if they have one)
+                        console.log('👤 Manager supervisor_id:', manager.supervisor_id);
+                        if (manager.supervisor_id) {
+                            const assignedSupervisor = allUsers.find(user => user.id === manager.supervisor_id);
+                            console.log('👤 Assigned supervisor found:', assignedSupervisor ? assignedSupervisor.email : 'NOT FOUND');
+                            if (assignedSupervisor) {
+                                visibleUsers.push(assignedSupervisor);
+                                console.log('👤 Added assigned supervisor to manager view:', assignedSupervisor.email);
+                            }
+                        } else {
+                            console.log('👤 Manager has no assigned supervisor');
+                        }
+                    }
+                    
+                    console.log('🔍 Manager can see:', visibleUsers.length, 'users (only assigned users + assigned supervisor)');
+                    console.log('🔍 Manager visible users:', visibleUsers.map(u => `${u.email} (${u.role})`));
+                    return visibleUsers;
+                }
+                
+                // Regular users can only see themselves and their direct manager/admin
+                const visibleUsers = [];
+                
+                // Add the user themselves
+                const currentUser = allUsers.find(user => user.id === currentUserId);
+                if (currentUser) {
+                    visibleUsers.push(currentUser);
+                    
+                    // Add their manager if they have one
+                    if (currentUser.manager_id) {
+                        const manager = allUsers.find(user => user.id === currentUser.manager_id);
+                        if (manager) {
+                            visibleUsers.push(manager);
+                        }
+                    }
+                }
+                
+                // Add admins for support purposes
+                const admins = allUsers.filter(user =>
+                    (user.role && user.role.toLowerCase() === 'admin') ||
+                    (user.secondary_role && user.secondary_role.toLowerCase() === 'admin')
+                );
+                
+                admins.forEach(user => {
+                    if (!visibleUsers.find(v => v.id === user.id)) {
+                        visibleUsers.push(user);
+                    }
                 });
-                tr.querySelector('.delete-user-btn').addEventListener('click', function() {
-                    if (confirm('Delete user ' + tr.children[0].textContent + '?')) {
-                        tr.remove();
+                
+                console.log('🔍 Regular user can see:', visibleUsers.length, 'users');
+                return visibleUsers;
+                
+            } catch (error) {
+                console.error('💥 Error filtering users:', error);
+                // Fallback to show all users if filtering fails
+                return allUsers;
+            }
+        }
+
+        // Get current user ID from authenticated session
+        async function getCurrentUserId() {
+            try {
+                // Check if we're in impersonation mode first
+                const impersonationData = localStorage.getItem('impersonationData');
+                if (impersonationData) {
+                    try {
+                        const data = JSON.parse(impersonationData);
+                        if (data.impersonatedUser && data.impersonatedUser.id) {
+                            console.log('🎭 Using impersonated user ID:', data.impersonatedUser.id);
+                            return data.impersonatedUser.id;
+                        }
+                    } catch (parseError) {
+                        console.error('Error parsing impersonation data:', parseError);
+                        localStorage.removeItem('impersonationData');
+                    }
+                }
+                
+                // If no impersonation is active, ignore legacy localStorage and get from Supabase session
+                console.log('� No active impersonation, getting user ID from Supabase session...');
+                
+                if (!supabase) {
+                    console.warn('⚠️ Supabase not available for user ID');
+                    return null;
+                }
+
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error || !session) {
+                    console.warn('⚠️ No authenticated session for user ID');
+                    return null;
+                }
+
+                return session.user.id;
+            } catch (error) {
+                console.error('💥 Error getting current user ID:', error);
+                return null;
+            }
+        }
+
+        // Legacy function - now just opens the dropdown
+        async function openLogInAsModal() {
+            toggleLogInAsDropdown();
+        }
+        
+        // Get role badge HTML
+        function getRoleBadgeHTML(role) {
+            if (!role) return '';
+            const colors = {
+                'admin': '#e74c3c',
+                'supervisor': '#f7b731', 
+                'manager': '#36b37e',
+                'user': '#2980b9'
+            };
+            return `<span style="background:${colors[role.toLowerCase()] || '#6c757d'};color:white;padding:2px 8px;border-radius:12px;font-size:0.75em;">${role}</span>`;
+        }
+        
+        // Filter users in the login modal
+        function filterLoginUsers(searchTerm) {
+            const userList = document.getElementById('user-list');
+            if (!userList) return;
+            
+            const userDivs = userList.querySelectorAll('div[onclick^="loginAsUser"]');
+            const term = searchTerm.toLowerCase();
+            
+            userDivs.forEach(div => {
+                const text = div.textContent.toLowerCase();
+                div.style.display = text.includes(term) ? 'flex' : 'none';
+            });
+        }
+        
+        // Log in as specific user
+        async function loginAsUser(userId, userEmail) {
+            try {
+                console.log('🔄 Logging in as user:', userId, userEmail);
+                
+                if (!supabase) {
+                    console.error('❌ Supabase client not available');
+                    alert('Database connection not available');
+                    return;
+                }
+                
+                // For this demo, we'll simulate switching by updating localStorage
+                // In a real implementation, you'd want to use proper auth session switching
+                const targetUser = window.allUsers.find(u => u.id === userId);
+                if (!targetUser) {
+                    alert('User not found');
+                    return;
+                }
+                
+                // Update localStorage to simulate the switch
+                localStorage.setItem('username', `${targetUser.first_name || ''} ${targetUser.last_name || ''}`.trim() || targetUser.email);
+                localStorage.setItem('userRole', targetUser.role || 'user');
+                localStorage.setItem('userId', targetUser.id);
+                localStorage.setItem('userEmail', targetUser.email);
+                
+                console.log('✅ Switched to user:', targetUser.email, 'role:', targetUser.role);
+                
+                // Close modal
+                closeLogInAsModal();
+                
+                // Show success message
+                const userName = `${targetUser.first_name || ''} ${targetUser.last_name || ''}`.trim() || targetUser.email;
+                alert(`✅ Switched to: ${userName} (${targetUser.role})\n\nReloading page...`);
+                
+                // Reload page to refresh all data with new user context
+                location.reload();
+                
+            } catch (error) {
+                console.error('💥 Error logging in as user:', error);
+                alert('Error switching user: ' + error.message);
+            }
+        }
+        
+        // Close Log In As modal
+        function closeLogInAsModal() {
+            if (window.loginAsModal) {
+                window.loginAsModal.remove();
+                window.loginAsModal = null;
+            }
+        }
+
+        // Store original user info when first switching
+        let adminOriginalUserInfo = null;
+
+        // Toggle the Log In As dropdown
+        function toggleLogInAsDropdown() {
+            const dropdown = document.getElementById('log-in-as-dropdown');
+            const searchInput = document.getElementById('user-search-dropdown');
+            
+            if (dropdown.style.display === 'none') {
+                // Show dropdown and populate users
+                populateDropdownUsers();
+                dropdown.style.display = 'block';
+                
+                // Focus search input
+                setTimeout(() => {
+                    if (searchInput) {
+                        searchInput.focus();
+                        searchInput.value = '';
+                    }
+                }, 50);
+                
+                // Close dropdown when clicking outside
+                setTimeout(() => {
+                    document.addEventListener('click', closeDropdownOnClickOutside);
+                }, 100);
+            } else {
+                // Hide dropdown
+                dropdown.style.display = 'none';
+                document.removeEventListener('click', closeDropdownOnClickOutside);
+            }
+        }
+
+        // Close dropdown when clicking outside
+        function closeDropdownOnClickOutside(event) {
+            const dropdown = document.getElementById('log-in-as-dropdown');
+            const dropdownContainer = document.querySelector('.log-in-as-dropdown');
+            
+            if (!dropdownContainer.contains(event.target)) {
+                dropdown.style.display = 'none';
+                document.removeEventListener('click', closeDropdownOnClickOutside);
+            }
+        }
+
+        // Populate the dropdown with available users
+        async function populateDropdownUsers() {
+            try {
+                const dropdownUserList = document.getElementById('dropdown-user-list');
+                
+                // Get current user's role and filtered users
+                const currentUserRole = (await getCurrentUserRoleFromDB()).toLowerCase();
+                const filteredUsers = await filterUsersForCurrentUser(window.allUsers || []);
+                
+                if (!filteredUsers || filteredUsers.length === 0) {
+                    dropdownUserList.innerHTML = '<div style="padding:10px;color:#666;text-align:center;">No users available</div>';
+                    return;
+                }
+                
+                // Sort users by role and name
+                const sortedUsers = filteredUsers.sort((a, b) => {
+                    const roleOrder = { admin: 1, supervisor: 2, manager: 3, user: 4 };
+                    const aOrder = roleOrder[a.role?.toLowerCase()] || 5;
+                    const bOrder = roleOrder[b.role?.toLowerCase()] || 5;
+                    if (aOrder !== bOrder) return aOrder - bOrder;
+                    return (a.first_name || '').localeCompare(b.first_name || '');
+                });
+                
+                // Create user options
+                const userOptions = sortedUsers.map(user => {
+                    const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+                    const roleBadge = getRoleBadgeHTML(user.role);
+                    const secondaryBadge = user.secondary_role ? getRoleBadgeHTML(user.secondary_role) : '';
+                    
+                    return `
+                        <div class="dropdown-user-option" data-user-id="${user.id}" data-user-email="${user.email}"
+                             style="padding:10px;cursor:pointer;border-bottom:1px solid #f0f0f0;transition:background 0.2s;"
+                             onclick="switchToUser('${user.id}', '${user.email}')"
+                             onmouseover="this.style.background='#f8f9fa'"
+                             onmouseout="this.style.background='white'">
+                            <div style="font-weight:500;margin-bottom:4px;">${userName}</div>
+                            <div style="font-size:0.85em;color:#666;margin-bottom:4px;">${user.email}</div>
+                            <div>${roleBadge} ${secondaryBadge}</div>
+                        </div>
+                    `;
+                }).join('');
+                
+                dropdownUserList.innerHTML = userOptions;
+                
+            } catch (error) {
+                console.error('💥 Error populating dropdown users:', error);
+                document.getElementById('dropdown-user-list').innerHTML = '<div style="padding:10px;color:#e74c3c;">Error loading users</div>';
+            }
+        }
+
+        // Filter users in the dropdown based on search
+        function filterDropdownUsers(searchTerm) {
+            const userOptions = document.querySelectorAll('.dropdown-user-option');
+            const term = searchTerm.toLowerCase();
+            
+            userOptions.forEach(option => {
+                const text = option.textContent.toLowerCase();
+                option.style.display = text.includes(term) ? 'block' : 'none';
+            });
+        }
+
+        // Handle keyboard navigation in dropdown
+        function handleDropdownKeydown(event) {
+            const visibleOptions = Array.from(document.querySelectorAll('.dropdown-user-option')).filter(opt => opt.style.display !== 'none');
+            
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                // Navigate down the list
+                const currentFocused = document.querySelector('.dropdown-user-option.focused');
+                if (currentFocused) {
+                    currentFocused.classList.remove('focused');
+                    const nextIndex = visibleOptions.indexOf(currentFocused) + 1;
+                    if (nextIndex < visibleOptions.length) {
+                        visibleOptions[nextIndex].classList.add('focused');
+                    }
+                } else if (visibleOptions.length > 0) {
+                    visibleOptions[0].classList.add('focused');
+                }
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                // Navigate up the list
+                const currentFocused = document.querySelector('.dropdown-user-option.focused');
+                if (currentFocused) {
+                    currentFocused.classList.remove('focused');
+                    const prevIndex = visibleOptions.indexOf(currentFocused) - 1;
+                    if (prevIndex >= 0) {
+                        visibleOptions[prevIndex].classList.add('focused');
+                    }
+                }
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                // Select focused option
+                const currentFocused = document.querySelector('.dropdown-user-option.focused');
+                if (currentFocused) {
+                    const userId = currentFocused.getAttribute('data-user-id');
+                    const userEmail = currentFocused.getAttribute('data-user-email');
+                    switchToUser(userId, userEmail);
+                }
+            } else if (event.key === 'Escape') {
+                // Close dropdown
+                toggleLogInAsDropdown();
+            }
+        }
+
+        // Switch to a specific user (GHL-style immediate switching)
+        async function switchToUser(userId, userEmail) {
+            try {
+                console.log('🔄 Switching to user:', userId, userEmail);
+                
+                // Store original user info if this is the first switch
+                if (!adminOriginalUserInfo && !localStorage.getItem('userId')) {
+                    adminOriginalUserInfo = {
+                        username: localStorage.getItem('username') || 'Admin',
+                        userRole: localStorage.getItem('userRole') || 'admin',
+                        userEmail: localStorage.getItem('userEmail') || 'admin@example.com'
+                    };
+                    localStorage.setItem('originalUserInfo', JSON.stringify(adminOriginalUserInfo));
+                }
+                
+                // Find target user
+                const targetUser = window.allUsers.find(u => u.id === userId);
+                if (!targetUser) {
+                    alert('User not found');
+                    return;
+                }
+                
+                // Update localStorage to simulate the switch
+                localStorage.setItem('username', `${targetUser.first_name || ''} ${targetUser.last_name || ''}`.trim() || targetUser.email);
+                localStorage.setItem('userRole', targetUser.role || 'user');
+                localStorage.setItem('userId', targetUser.id);
+                localStorage.setItem('userEmail', targetUser.email);
+                
+                console.log('✅ Switched to user:', targetUser.email, 'role:', targetUser.role);
+                
+                // Close dropdown
+                document.getElementById('log-in-as-dropdown').style.display = 'none';
+                document.removeEventListener('click', closeDropdownOnClickOutside);
+                
+                // Update UI immediately
+                updateSwitchedUserUI();
+                
+                // Reload the tables to show data from the new user's perspective
+                await loadUsersWithHierarchy();
+                
+                // Show brief confirmation
+                const userName = `${targetUser.first_name || ''} ${targetUser.last_name || ''}`.trim() || targetUser.email;
+                showTemporaryMessage(`✅ Now viewing as: ${userName} (${targetUser.role})`);
+                
+            } catch (error) {
+                console.error('💥 Error switching to user:', error);
+                alert('Error switching user: ' + error.message);
+            }
+        }
+
+        // Switch back to original user
+        function switchBackToOriginalUser() {
+            try {
+                console.log('🔄 Switching back to original user...');
+                
+                // Get original user info
+                const storedOriginalInfo = localStorage.getItem('originalUserInfo');
+                if (storedOriginalInfo) {
+                    adminOriginalUserInfo = JSON.parse(storedOriginalInfo);
+                }
+                
+                if (!adminOriginalUserInfo) {
+                    // Fallback to default admin
+                    adminOriginalUserInfo = {
+                        username: 'Admin',
+                        userRole: 'admin',
+                        userEmail: 'admin@example.com'
+                    };
+                }
+                
+                // Clear switched user data
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('originalUserInfo');
+                
+                // Restore original user data
+                localStorage.setItem('username', adminOriginalUserInfo.username);
+                localStorage.setItem('userRole', adminOriginalUserInfo.userRole);
+                if (adminOriginalUserInfo.userEmail) {
+                    localStorage.setItem('userEmail', adminOriginalUserInfo.userEmail);
+                }
+                
+                console.log('✅ Switched back to original user:', adminOriginalUserInfo.username);
+                
+                // Update UI and reload data
+                updateSwitchedUserUI();
+                loadUsersWithHierarchy();
+                
+                // Show confirmation
+                showTemporaryMessage(`✅ Switched back to: ${adminOriginalUserInfo.username}`);
+                
+                // Reset original user info
+                adminOriginalUserInfo = null;
+                
+            } catch (error) {
+                console.error('💥 Error switching back to original user:', error);
+                alert('Error switching back: ' + error.message);
+            }
+        }
+
+        // Show temporary message
+        function showTemporaryMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: fixed; top: 20px; right: 20px; z-index: 2000;
+                background: #27ae60; color: white; padding: 12px 20px;
+                border-radius: 6px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: opacity 0.3s ease-in-out;
+            `;
+            messageDiv.textContent = message;
+            
+            document.body.appendChild(messageDiv);
+            
+            // Fade out and remove after 3 seconds
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.parentNode.removeChild(messageDiv);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Reset to original user (clear switched user state)
+        function resetToOriginalUser() {
+            try {
+                console.log('🔄 Resetting to original user...');
+                
+                // Clear switched user data
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userEmail');
+                
+                // Keep original username and userRole in localStorage as fallback
+                console.log('✅ Switched user data cleared');
+                
+                alert('✅ Reset to original user\n\nReloading page...');
+                
+                // Reload page to refresh with original user context
+                location.reload();
+                
+            } catch (error) {
+                console.error('💥 Error resetting user:', error);
+                alert('Error resetting user: ' + error.message);
+            }
+        }
+        
+        // Update UI to show/hide switch back button based on switched user state
+        function updateSwitchedUserUI() {
+            const switchBackButton = document.getElementById('switch-back-button');
+            const originalUserNameSpan = document.getElementById('original-user-name');
+            const switchedUserInfo = document.getElementById('switched-user-info');
+            
+            // Check for impersonation first
+            const impersonationData = localStorage.getItem('impersonationData');
+            let isImpersonating = false;
+            if (impersonationData) {
+                try {
+                    const data = JSON.parse(impersonationData);
+                    if (data.impersonatedUser) {
+                        isImpersonating = true;
+                    }
+                } catch (e) {
+                    console.error('Error parsing impersonation data in updateSwitchedUserUI:', e);
+                }
+            }
+            
+            // Check for legacy user switching if not impersonating
+            const switchedUserId = !isImpersonating ? localStorage.getItem('userId') : null;
+            
+            if (switchBackButton) {
+                switchBackButton.style.display = (switchedUserId || isImpersonating) ? 'block' : 'none';
+            }
+            
+            if (switchedUserInfo) {
+                switchedUserInfo.style.display = (switchedUserId || isImpersonating) ? 'block' : 'none';
+            }
+            
+            // Update switch back button text with original user name
+            if (originalUserNameSpan && (switchedUserId || isImpersonating)) {
+                if (isImpersonating) {
+                    try {
+                        const data = JSON.parse(impersonationData);
+                        const originalProfile = data.originalProfile;
+                        if (originalProfile) {
+                            const adminName = originalProfile.display_name || 
+                                            originalProfile.displayName ||
+                                            `${originalProfile.first_name || ''} ${originalProfile.last_name || ''}`.trim() ||
+                                            originalProfile.email?.split('@')[0] || 'Admin';
+                            originalUserNameSpan.textContent = adminName;
+                        } else {
+                            originalUserNameSpan.textContent = 'Admin';
+                        }
+                    } catch (e) {
+                        originalUserNameSpan.textContent = 'Admin';
+                    }
+                } else {
+                    const storedOriginalInfo = localStorage.getItem('originalUserInfo');
+                    if (storedOriginalInfo) {
+                        const originalInfo = JSON.parse(storedOriginalInfo);
+                        originalUserNameSpan.textContent = originalInfo.username || 'Admin';
+                    } else if (adminOriginalUserInfo) {
+                        originalUserNameSpan.textContent = adminOriginalUserInfo.username || 'Admin';
+                    } else {
+                        originalUserNameSpan.textContent = 'Admin';
+                    }
+                }
+            }
+            
+            // Update debug info to show user state
+            const debugUser = document.getElementById('debugUser');
+            if (debugUser) {
+                const username = localStorage.getItem('username') || 'Unknown';
+                if (isImpersonating) {
+                    debugUser.innerHTML = `${username} <span style="color:#e74c3c;font-weight:bold;">(Impersonating User)</span>`;
+                } else if (switchedUserId) {
+                    debugUser.innerHTML = `${username} <span style="color:#e74c3c;font-weight:bold;">(Switched User)</span>`;
+                } else {
+                    debugUser.textContent = username;
+                }
+            }
+        }
+
+        // Reset admin password (demo function)
+        function resetAdminPassword() {
+            const newPassword = prompt('Enter new password for admin:', 'newpassword123');
+            if (newPassword) {
+                // For demo, just log the password - in real app, update via API
+                console.log('🔑 Admin password reset to:', newPassword);
+                alert('✅ Admin password reset (demo)');
+            } else {
+                alert('❌ Password reset cancelled');
+            }
+        }
+
+        // Debug: List all users in console
+        function debugListAllUsers() {
+            console.log('📋 All users:', window.allUsers);
+            alert('✅ User list logged to console');
+        }
+
+        // Debug: Force error for testing
+        function debugForceError() {
+            console.log('💥 Forcing test error');
+            throw new Error('Test error triggered');
+        }
+
+        // Admin page demo functions
+        function demoLoadTestData() {
+            console.log('📥 Loading demo test data...');
+            
+            // Generate dummy users
+            const testUsers = [];
+            for (let i = 1; i <= 10; i++) {
+                testUsers.push({
+                    id: `test-${i}`,
+                    first_name: `Test`,
+                    last_name: `User ${i}`,
+                    email: `testuser${i}@example.com`,
+                    phone: `555-010${i}`,
+                    sparky_username: `testuser${i}`,
+                    role: i === 1 ? 'admin' : i <= 4 ? 'manager' : i <= 8 ? 'supervisor' : 'user',
+                    secondary_role: i === 2 ? 'admin' : null,
+                    manager_id: i > 4 ? `test-${Math.floor((i-1)/2)}` : null,
+                    supervisor_id: i > 8 ? `test-${Math.floor((i-1)/4)}` : null
+                });
+            }
+            
+            // Forcing error for testing
+            // testUsers.push({ id: 'error-user', email: 'error@example.com' }); // Uncomment to test error handling
+            
+            // Simulate network delay
+            setTimeout(() => {
+                window.allUsers = testUsers;
+                console.log('✅ Demo test data loaded:', testUsers);
+                alert('✅ Demo test data loaded (check console for details)');
+                
+                // Optionally, auto-populate tables with demo data
+                // tablesPopulateWithDemoData(testUsers);
+            }, 500);
+        }
+
+        // Optional: Auto-populate tables with demo data
+        function tablesPopulateWithDemoData(users) {
+            console.log('🔄 Populating tables with demo data...');
+            
+            // Clear existing data
+            const tableIds = ['admin-table-body', 'supervisor-table-body', 'manager-table-body', 'user-table-body'];
+            tableIds.forEach(id => {
+                const tbody = document.getElementById(id);
+                if (tbody) {
+                    tbody.innerHTML = '';
+                }
+            });
+            
+            // Populate each user into their respective table
+            users.forEach(user => {
+                const tableId = user.role === 'admin' ? 'admin-table-body' :
+                                user.role === 'supervisor' ? 'supervisor-table-body' :
+                                user.role === 'manager' ? 'manager-table-body' :
+                                'user-table-body';
+                
+                const tbody = document.getElementById(tableId);
+                if (tbody) {
+                    const rowHtml = `
+                        <tr>
+                            <td style="padding:8px;border:1px solid #eee;">${user.first_name || ''}</td>
+                            <td style="padding:8px;border:1px solid #eee;">${user.last_name || ''}</td>
+                            <td style="padding:8px;border:1px solid #eee;">${user.email || ''}</td>
+                            <td style="padding:8px;border:1px solid #eee;">${user.phone || ''}</td>
+                            <td style="padding:8px;border:1px solid #eee;">${user.sparky_username || ''}</td>
+                            <td style="padding:8px;border:1px solid #eee;">${user.role || ''}</td>
+                            <td style="padding:8px;border:1px solid #eee;">${user.secondary_role || ''}</td>
+                            <td style="padding:8px;border:1px solid #eee;text-align:center;">
+                                <a href="#" onclick="openEditModal('${user.id}')" style="color:#3498db;text-decoration:none;font-weight:500;">Edit</a>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += rowHtml;
+                }
+            });
+            
+            console.log('✅ Tables populated with demo data');
+        }
+
+        // Debug: Force table population with demo data
+        function debugPopulateTables() {
+            const testUsers = [
+                { id: '1', first_name: 'John', last_name: 'Doe', email: 'john.doe@example.com', phone: '555-0101', sparky_username: 'johndoe', role: 'admin', secondary_role: null },
+                { id: '2', first_name: 'Jane', last_name: 'Smith', email: 'jane.smith@example.com', phone: '555-0102', sparky_username: 'janesmith', role: 'manager', secondary_role: null },
+                { id: '3', first_name: 'Emily', last_name: 'Jones', email: 'emily.jones@example.com', phone: '555-0103', sparky_username: 'emilyjones', role: 'supervisor', secondary_role: null },
+                { id: '4', first_name: 'Michael', last_name: 'Brown', email: 'michael.brown@example.com', phone: '555-0104', sparky_username: 'michaelbrown', role: 'user', secondary_role: null }
+            ];
+            
+            console.log('🔄 Debug populating tables with demo data...');
+            tablesPopulateWithDemoData(testUsers);
+        }
+
+        // Hide sections based on user role
+        async function applyRoleBasedVisibility() {
+            try {
+                const currentRole = await getCurrentUserRoleFromDB();
+                console.log('🔍 Applying role-based visibility for role:', currentRole);
+                
+                const adminTableSection = document.getElementById('admin-table-section');
+                
+                if (adminTableSection) {
+                    // Hide admin table for managers and users (only show to admins and supervisors)
+                    if (currentRole === 'manager' || currentRole === 'user') {
+                        adminTableSection.style.display = 'none';
+                        console.log('👁️ Admin table hidden for role:', currentRole);
+                    } else {
+                        adminTableSection.style.display = 'block';
+                        console.log('👁️ Admin table visible for role:', currentRole);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error applying role-based visibility:', error);
+            }
+        }
+
+        // Memory management functions
+        function cleanupMemory() {
+            // Clear large data structures periodically
+            if (window.allUsers && window.allUsers.length > 100) {
+                console.log('🧹 Cleaning up memory - large user cache detected');
+                // Keep only essential user data
+                window.allUsers = window.allUsers.map(user => ({
+                    id: user.id,
+                    email: user.email,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    role: user.role,
+                    secondary_role: user.secondary_role
+                }));
+            }
+        }
+        
+        // Run memory cleanup every 30 seconds
+        setInterval(cleanupMemory, 30000);
+        
+        // Checkbox selection functions
+        function toggleSelectAll(roleType) {
+            const selectAllCheckbox = document.getElementById(`${roleType}-select-all`);
+            const checkboxes = document.querySelectorAll(`.${roleType}-checkbox`);
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            
+            console.log(`✅ ${roleType} select all toggled:`, selectAllCheckbox.checked);
+        }
+
+        // Get selected user IDs for a specific role
+        function getSelectedUsers(roleType) {
+            const checkboxes = document.querySelectorAll(`.${roleType}-checkbox:checked`);
+            const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+            console.log(`📋 Selected ${roleType} users:`, selectedIds);
+            return selectedIds;
+        }
+
+        // Get all selected users across all roles
+        function getAllSelectedUsers() {
+            const allCheckboxes = document.querySelectorAll('.user-checkbox:checked');
+            const selectedUsers = Array.from(allCheckboxes).map(cb => ({
+                id: cb.value,
+                role: cb.className.includes('admin') ? 'admin' : 
+                      cb.className.includes('supervisor') ? 'supervisor' :
+                      cb.className.includes('manager') ? 'manager' : 'user'
+            }));
+            console.log('📋 All selected users:', selectedUsers);
+            return selectedUsers;
+        }
+
+        // Clear all selections
+        function clearAllSelections() {
+            const allCheckboxes = document.querySelectorAll('.user-checkbox, input[id$="-select-all"]');
+            allCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            console.log('🧹 All selections cleared');
+        }
+
+        // Count selected users
+        function getSelectedCount() {
+            const selectedCount = document.querySelectorAll('.user-checkbox:checked').length;
+            console.log('🔢 Selected users count:', selectedCount);
+            return selectedCount;
+        }
+
+        // Add action buttons for selected users
+        function addSelectionActionButtons() {
+            // Check if action buttons already exist
+            if (document.getElementById('selection-actions')) {
+                return;
+            }
+            
+            const actionContainer = document.createElement('div');
+            actionContainer.id = 'selection-actions';
+            actionContainer.style.cssText = `
+                background: #f8f9fa; 
+                padding: 15px; 
+                border-radius: 8px; 
+                margin: 20px 0;
+                border: 1px solid #dee2e6;
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                flex-wrap: wrap;
+            `;
+            
+            actionContainer.innerHTML = `
+                <strong style="margin-right: 10px;">Bulk Actions:</strong>
+                <button onclick="showSelectedUsers()" style="padding: 8px 16px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    📋 Show Selected
+                </button>
+                <button onclick="exportSelectedUsers()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    📤 Export Selected
+                </button>
+                <button onclick="clearAllSelections()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    🧹 Clear Selection
+                </button>
+                <span id="selection-count" style="margin-left: auto; font-weight: 500; color: #495057;">
+                    0 users selected
+                </span>
+            `;
+            
+            // Insert after the first table section
+            const userManagementSection = document.getElementById('user-management-section');
+            if (userManagementSection) {
+                userManagementSection.insertBefore(actionContainer, userManagementSection.firstChild);
+            }
+        }
+
+        // Update selection count display
+        function updateSelectionCount() {
+            const count = getSelectedCount();
+            const countElement = document.getElementById('selection-count');
+            if (countElement) {
+                countElement.textContent = `${count} user${count !== 1 ? 's' : ''} selected`;
+            }
+        }
+
+        // Show selected users
+        function showSelectedUsers() {
+            const selected = getAllSelectedUsers();
+            if (selected.length === 0) {
+                alert('No users selected');
+                return;
+            }
+            
+            const userList = selected.map(user => `• ${user.id} (${user.role})`).join('\n');
+            alert(`Selected Users (${selected.length}):\n\n${userList}`);
+        }
+
+        // Export selected users (placeholder)
+        function exportSelectedUsers() {
+            const selected = getAllSelectedUsers();
+            if (selected.length === 0) {
+                alert('No users selected');
+                return;
+            }
+            
+            console.log('📤 Exporting users:', selected);
+            alert(`Export functionality would export ${selected.length} users to CSV/Excel`);
+        }
+
+        // Add event listeners to update count when checkboxes change
+        function addCheckboxListeners() {
+            document.addEventListener('change', function(e) {
+                if (e.target.classList.contains('user-checkbox') || e.target.id.includes('select-all')) {
+                    updateSelectionCount();
+                }
+            });
+        }
+        
+        // User Management Functions
+        let selectedUsersForManagement = [];
+        let currentTableType = '';
+        
+        // Open edit modal for a single user
+        async function openEditModal(userId) {
+            const canEdit = await checkEditPermission();
+            if (!canEdit) {
+                showAlert('Only administrators and supervisors can edit users.', 'error');
+                return;
+            }
+            
+            // Find the user in the global users array
+            const user = window.allUsers.find(u => u.id === userId);
+            if (!user) {
+                showAlert('User not found.', 'error');
+                return;
+            }
+            
+            // Set up for single user editing
+            selectedUsersForManagement = [userId];
+            currentTableType = user.role || 'user';
+            
+            // Update modal title and content with permission indicator
+            const userName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+            const userRole = await getCurrentUserRoleFromDB();
+            let permissionText = '';
+            
+            if (userRole === 'admin') {
+                permissionText = ' (Full Access)';
+            } else if (userRole === 'supervisor') {
+                permissionText = ' (Can edit roles, no admin access)';
+            } else {
+                permissionText = ' (View Only)';
+            }
+            
+            document.getElementById('manage-modal-title').textContent = `⚙️ Edit User: ${userName}${permissionText}`;
+            
+            // Display selected user
+            document.getElementById('selected-users-list').textContent = userName;
+            
+            // Pre-populate current values
+            if (user.role) {
+                const roleRadio = document.querySelector(`input[name="user-role"][value="${user.role}"]`);
+                if (roleRadio) roleRadio.checked = true;
+            }
+            
+            // Control admin section visibility based on current user's role
+            const makeAdminSection = document.getElementById('make-admin-section');
+            
+            if (await checkMakeAdminPermission()) {
+                // Only admins can see and use the Make Admin section
+                makeAdminSection.style.display = 'block';
+                makeAdminSection.style.opacity = '1';
+                
+                // Enable radio buttons
+                const adminRadios = makeAdminSection.querySelectorAll('input[type="radio"]');
+                adminRadios.forEach(radio => radio.disabled = false);
+                
+                // Pre-populate admin access values
+                if (user.secondary_role === 'admin') {
+                    const adminYes = document.querySelector(`input[name="admin-access"][value="yes"]`);
+                    if (adminYes) adminYes.checked = true;
+                } else {
+                    const adminNo = document.querySelector(`input[name="admin-access"][value="no"]`);
+                    if (adminNo) adminNo.checked = true;
+                }
+            } else if (userRole === 'supervisor') {
+                // Supervisors see a disabled section with explanation
+                makeAdminSection.style.display = 'block';
+                makeAdminSection.style.opacity = '0.4';
+                
+                // Disable radio buttons
+                const adminRadios = makeAdminSection.querySelectorAll('input[type="radio"]');
+                adminRadios.forEach(radio => radio.disabled = true);
+                
+                // Show current status but don't allow changes
+                if (user.secondary_role === 'admin') {
+                    const adminYes = document.querySelector(`input[name="admin-access"][value="yes"]`);
+                    if (adminYes) adminYes.checked = true;
+                } else {
+                    const adminNo = document.querySelector(`input[name="admin-access"][value="no"]`);
+                    if (adminNo) adminNo.checked = true;
+                }
+                
+                // Add visual indicator
+                const adminTitle = makeAdminSection.querySelector('h3');
+                if (adminTitle && !adminTitle.querySelector('.permission-note')) {
+                    adminTitle.innerHTML += ' <span class="permission-note" style="font-size:0.8em;color:#999;font-weight:normal;">(Admin only)</span>';
+                }
+            } else {
+                // Hide section completely for users and managers
+                makeAdminSection.style.display = 'none';
+            }
+            
+            // Load hierarchy options
+            loadHierarchyOptions(user.role || 'user');
+            
+            // Show modal
+            document.getElementById('manage-modal').style.display = 'flex';
+            
+            // Setup form interactions
+            setupManageModalInteractions();
+        }
+        
+        // Check if user has admin permission (only admins)
+        async function checkAdminPermission() {
+            const userRole = (await getCurrentUserRoleFromDB()).toLowerCase();
+            if (userRole !== 'admin') {
+                showAlert('Only administrators can perform administrative actions.', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // Check if user has edit permission (admin or supervisor can edit users and promote to manager)
+        async function checkEditPermission() {
+            const userRole = (await getCurrentUserRoleFromDB()).toLowerCase();
+            return userRole === 'admin' || userRole === 'supervisor';
+        }
+
+        // Check if user can make admin (only admins)
+        async function checkMakeAdminPermission() {
+            const userRole = (await getCurrentUserRoleFromDB()).toLowerCase();
+            return userRole === 'admin';
+        }
+
+        // Get current user role from localStorage (fallback)
+        function getCurrentUserRole() {
+            return localStorage.getItem('userRole') || 'admin';
+        }
+
+        // Get current user role from database based on authenticated session
+        async function getCurrentUserRoleFromDB() {
+            try {
+                // Check if we're in impersonation mode first
+                const impersonationData = localStorage.getItem('impersonationData');
+                if (impersonationData) {
+                    try {
+                        const data = JSON.parse(impersonationData);
+                        if (data.impersonatedUser && data.impersonatedUser.role) {
+                            console.log('🎭 Using impersonated user role:', data.impersonatedUser.role, 'for user:', data.impersonatedUser.email);
+                            return data.impersonatedUser.role.toLowerCase();
+                        }
+                    } catch (parseError) {
+                        console.error('Error parsing impersonation data:', parseError);
+                        localStorage.removeItem('impersonationData');
+                    }
+                }
+                
+                // If no impersonation is active, ignore legacy localStorage and get from Supabase session
+                console.log('� No active impersonation, getting role from Supabase session...');
+                
+                if (!supabase) {
+                    console.warn('⚠️ Supabase not available, using localStorage role or defaulting to admin');
+                    return getCurrentUserRole() || 'admin';
+                }
+
+                // Get current session
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                
+                if (sessionError || !session) {
+                    console.warn('⚠️ No authenticated session, defaulting to admin for admin panel access');
+                    return getCurrentUserRole() || 'admin';
+                }
+
+                // Get user profile from database
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('role, secondary_role')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (profileError || !profile) {
+                    console.warn('⚠️ Could not fetch user profile, using localStorage role');
+                    return getCurrentUserRole();
+                }
+
+                // Check if user has admin access through secondary_role
+                if ((profile.secondary_role || '').toLowerCase() === 'admin') {
+                    return 'admin';
+                }
+
+                // Return primary role (normalize to lowercase)
+                return (profile.role || 'user').toLowerCase();
+
+            } catch (error) {
+                console.error('💥 Error getting user role from database:', error);
+                return getCurrentUserRole();
+            }
+        }
+        
+        // Load available managers/supervisors for hierarchy assignment
+        async function loadHierarchyOptions(currentTableType) {
+            try {
+                const hierarchySearch = document.getElementById('hierarchy-search');
+                const hierarchyDropdown = document.getElementById('hierarchy-dropdown');
+                
+                // Clear existing options
+                hierarchyDropdown.innerHTML = '';
+                
+                // Get managers and supervisors (excluding current users)
+                const hierarchyUsers = window.allUsers.filter(user => 
+                    (user.role === 'manager' || user.role === 'supervisor') && 
+                    !selectedUsersForManagement.includes(user.id)
+                );
+                
+                // Store hierarchy users globally for search
+                window.hierarchyUsers = hierarchyUsers;
+                
+                // Populate dropdown options
+                populateHierarchyDropdown(hierarchyUsers);
+                
+                console.log('✅ Hierarchy options loaded:', hierarchyUsers.length, 'available');
+                
+            } catch (error) {
+                console.error('💥 Error loading hierarchy options:', error);
+            }
+        }
+        
+        // Populate hierarchy dropdown with users
+        function populateHierarchyDropdown(users) {
+            const dropdown = document.getElementById('hierarchy-dropdown');
+            dropdown.innerHTML = '';
+            
+            if (users.length === 0) {
+                const noOption = document.createElement('div');
+                noOption.style.cssText = 'padding:12px;color:#999;font-style:italic;';
+                noOption.textContent = 'No managers or supervisors available';
+                dropdown.appendChild(noOption);
+                return;
+            }
+            
+            users.forEach(user => {
+                const displayName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+                const roleIcon = user.role === 'manager' ? '👔' : '🎯';
+                const roleColor = user.role === 'manager' ? '#3498db' : '#f39c12';
+                
+                const option = document.createElement('div');
+                option.style.cssText = `
+                    padding:12px;
+                    cursor:pointer;
+                    border-bottom:1px solid #f0f0f0;
+                    transition:background-color 0.2s;
+                    display:flex;
+                    align-items:center;
+                    gap:8px;
+                `;
+                
+                option.innerHTML = `
+                    <span style="font-size:16px;">${roleIcon}</span>
+                    <div style="flex:1;">
+                        <div style="font-weight:500;color:#2c3e50;">${displayName}</div>
+                        <div style="font-size:0.85em;color:${roleColor};text-transform:capitalize;">${user.role}</div>
+                    </div>
+                `;
+                
+                option.addEventListener('mouseenter', () => {
+                    option.style.backgroundColor = '#f8f9fa';
+                });
+                
+                option.addEventListener('mouseleave', () => {
+                    option.style.backgroundColor = 'transparent';
+                });
+                
+                option.addEventListener('click', () => {
+                    selectHierarchyUser(user, displayName, roleIcon);
+                });
+                
+                dropdown.appendChild(option);
+            });
+        }
+        
+        // Select a hierarchy user
+        function selectHierarchyUser(user, displayName, roleIcon) {
+            const searchInput = document.getElementById('hierarchy-search');
+            const hiddenInput = document.getElementById('hierarchy-select');
+            const dropdown = document.getElementById('hierarchy-dropdown');
+            
+            // Update inputs
+            searchInput.value = `${roleIcon} ${displayName} (${user.role})`;
+            hiddenInput.value = user.id;
+            
+            // Hide dropdown
+            dropdown.style.display = 'none';
+            
+            // Update action summary
+            updateActionSummary();
+            
+            console.log('✅ Selected hierarchy user:', displayName, user.role);
+        }
+        
+        // Search hierarchy users
+        function searchHierarchyUsers(searchTerm) {
+            if (!window.hierarchyUsers) return;
+            
+            const filtered = window.hierarchyUsers.filter(user => {
+                const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                const email = user.email || '';
+                const role = user.role || '';
+                
+                const searchLower = searchTerm.toLowerCase();
+                return fullName.toLowerCase().includes(searchLower) ||
+                       email.toLowerCase().includes(searchLower) ||
+                       role.toLowerCase().includes(searchLower);
+            });
+            
+            populateHierarchyDropdown(filtered);
+        }
+        
+        // Setup modal interactions
+        function setupManageModalInteractions() {
+            // Role radio buttons
+            const roleRadios = document.querySelectorAll('input[name="user-role"]');
+            // Admin access radio buttons
+            const adminRadios = document.querySelectorAll('input[name="admin-access"]');
+            const hierarchySection = document.getElementById('hierarchy-assignment');
+            const hierarchySearch = document.getElementById('hierarchy-search');
+            const hierarchySelect = document.getElementById('hierarchy-select');
+            const hierarchyDropdownBtn = document.getElementById('hierarchy-dropdown-btn');
+            const hierarchyDropdown = document.getElementById('hierarchy-dropdown');
+            const hierarchyRadio = document.querySelector('input[value="assign-hierarchy"]');
+            
+            // Handle role radio button changes
+            roleRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // Add visual feedback for selected role
+                    document.querySelectorAll('.role-radio-option').forEach(option => {
+                        const radioInput = option.querySelector('input[type="radio"]');
+                        if (radioInput.checked) {
+                            option.style.backgroundColor = '#e3f2fd';
+                            option.style.borderRadius = '4px';
+                        } else {
+                            option.style.backgroundColor = 'transparent';
+                            option.style.borderRadius = '0';
+                        }
+                    });
+                });
+            });
+            
+            // Handle admin radio button changes
+            adminRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // Add visual feedback for selected admin option
+                    document.querySelectorAll('.admin-radio-option').forEach(option => {
+                        const radioInput = option.querySelector('input[type="radio"]');
+                        if (radioInput.checked) {
+                            option.style.backgroundColor = '#e3f2fd';
+                            option.style.borderRadius = '4px';
+                        } else {
+                            option.style.backgroundColor = 'transparent';
+                            option.style.borderRadius = '0';
+                        }
+                    });
+                });
+            });
+            
+            // Handle hierarchy assignment radio button
+            if (hierarchyRadio) {
+                hierarchyRadio.addEventListener('change', function() {
+                    if (this.checked) {
+                        hierarchySection.style.opacity = '1';
+                        hierarchySearch.disabled = false;
+                        hierarchySelect.disabled = false;
+                        hierarchyDropdownBtn.disabled = false;
+                    } else {
+                        hierarchySection.style.opacity = '0.5';
+                        hierarchySearch.disabled = true;
+                        hierarchySelect.disabled = true;
+                        hierarchyDropdownBtn.disabled = true;
+                        hierarchySearch.value = '';
+                        hierarchySelect.value = '';
+                        hierarchyDropdown.style.display = 'none';
                     }
                 });
             }
-            userModal.style.display = 'none';
-        });
-
-        // Manager Management Modal/Event Logic
-        const managerModal = document.getElementById('manager-modal');
-        const addManagerBtn = document.getElementById('add-manager-btn');
-        const closeManagerModal = document.getElementById('close-manager-modal');
-        const managerForm = document.getElementById('manager-form');
-        const managerTableBody = document.getElementById('manager-table-body');
-        let editingManagerIndex = null;
-
-        // Open Add Manager Modal
-        addManagerBtn.onclick = function() {
-            managerForm.reset();
-            document.getElementById('manager-modal-title').innerText = 'Add Manager';
-            document.getElementById('manager-edit-index').value = '';
-            managerModal.style.display = 'block';
-        };
-        // Close Modal
-        closeManagerModal.onclick = function() { managerModal.style.display = 'none'; };
-        window.onclick = function(event) { if (event.target === managerModal) managerModal.style.display = 'none'; };
-
-        // Edit Manager
-        managerTableBody.addEventListener('click', function(e) {
-            if (e.target.classList.contains('edit-manager-btn')) {
-                const row = e.target.closest('tr');
-                editingManagerIndex = Array.from(managerTableBody.children).indexOf(row);
-                document.getElementById('manager-modal-title').innerText = 'Edit Manager';
-                document.getElementById('manager-name').value = row.children[0].innerText;
-                document.getElementById('manager-email').value = row.children[1].innerText;
-                document.getElementById('manager-department').value = row.children[2].innerText;
-                document.getElementById('manager-status').value = row.children[3].innerText;
-                document.getElementById('manager-edit-index').value = editingManagerIndex;
-                managerModal.style.display = 'block';
+            
+            // Hierarchy search functionality
+            hierarchySearch.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
+                if (searchTerm.length > 0) {
+                    searchHierarchyUsers(searchTerm);
+                    hierarchyDropdown.style.display = 'block';
+                } else {
+                    populateHierarchyDropdown(window.hierarchyUsers || []);
+                }
+            });
+            
+            hierarchySearch.addEventListener('focus', function() {
+                if (!this.disabled) {
+                    hierarchyDropdown.style.display = 'block';
+                }
+            });
+            
+            // Dropdown button toggle
+            hierarchyDropdownBtn.addEventListener('click', function() {
+                if (!this.disabled) {
+                    const isVisible = hierarchyDropdown.style.display === 'block';
+                    hierarchyDropdown.style.display = isVisible ? 'none' : 'block';
+                    
+                    if (!isVisible) {
+                        populateHierarchyDropdown(window.hierarchyUsers || []);
+                        hierarchySearch.focus();
+                    }
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!hierarchySection.contains(e.target)) {
+                    hierarchyDropdown.style.display = 'none';
+                }
+            });
+            
+            // Form submission
+            document.getElementById('manage-form').addEventListener('submit', handleManageFormSubmit);
+            
+            // Cancel button
+            document.getElementById('cancel-manage-modal').addEventListener('click', closeManageModal);
+            
+            // Close on background click
+            document.getElementById('manage-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeManageModal();
+                }
+            });
+        }
+        
+        // Handle form submission
+        async function handleManageFormSubmit(event) {
+            event.preventDefault();
+            
+            const roleRadio = document.querySelector('input[name="user-role"]:checked');
+            const adminRadio = document.querySelector('input[name="admin-access"]:checked');
+            const hierarchyRadio = document.querySelector('input[value="assign-hierarchy"]:checked');
+            
+            // Check if any action is selected
+            if (!roleRadio && !adminRadio && !hierarchyRadio) {
+                showAlert('Please select at least one action to perform.', 'warning');
+                return;
             }
-            // Delete Manager
-            if (e.target.classList.contains('delete-manager-btn')) {
-                if (confirm('Are you sure you want to delete this manager?')) {
-                    e.target.closest('tr').remove();
+            
+            // Validate hierarchy assignment
+            if (hierarchyRadio) {
+                const hierarchyId = document.getElementById('hierarchy-select').value;
+                if (!hierarchyId) {
+                    showAlert('Please select a manager or supervisor to assign.', 'warning');
+                    return;
                 }
             }
-        });
+            
+            // Show loading state
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Processing...';
+            
+            try {
+                let successMessages = [];
+                
+                // Handle role assignment
+                if (roleRadio) {
+                    const role = roleRadio.value;
+                    if (role === 'none') {
+                        await handleRoleChange(null); // Remove role
+                        successMessages.push(`Role removed from ${selectedUsersForManagement.length} user(s)`);
+                    } else {
+                        await handleRoleChange(role);
+                        successMessages.push(`${selectedUsersForManagement.length} user(s) assigned ${role} role`);
+                    }
+                }
+                
+                // Handle admin access (only if current user is admin)
+                if (adminRadio && await checkMakeAdminPermission()) {
+                    if (adminRadio.value === 'yes') {
+                        await handleMakeAdmin();
+                        successMessages.push(`Admin access granted to ${selectedUsersForManagement.length} user(s)`);
+                    } else if (adminRadio.value === 'no') {
+                        await handleRevokeAdmin();
+                        successMessages.push(`Admin access revoked from ${selectedUsersForManagement.length} user(s)`);
+                    }
+                } else if (adminRadio && !await checkMakeAdminPermission()) {
+                    console.log('⚠️ Non-admin user attempted to change admin access - ignoring');
+                    showAlert('Only administrators can grant or revoke admin access.', 'warning');
+                }
+                
+                // Handle hierarchy assignment
+                if (hierarchyRadio) {
+                    await handleHierarchyAssignment();
+                    const assignmentType = currentTableType === 'user' ? 'manager' : 'supervisor';
+                    successMessages.push(`${selectedUsersForManagement.length} user(s) assigned to ${assignmentType}`);
+                }
+                
+                // Close modal and refresh tables
+                closeManageModal();
+                await loadUsersWithHierarchy();
+                
+                const finalMessage = '✅ ' + successMessages.join('. ');
+                showAlert(finalMessage, 'success');
+                
+            } catch (error) {
+                console.error('💥 Error in form submission:', error);
+                showAlert(`Error updating users: ${error.message}`, 'error');
+            } finally {
+                // Restore button state
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        }
+        
+        // Enhanced alert function with different types
+        function showAlert(message, type = 'info') {
+            const alertColors = {
+                success: { bg: '#d4edda', border: '#c3e6cb', text: '#155724' },
+                error: { bg: '#f8d7da', border: '#f5c6cb', text: '#721c24' },
+                warning: { bg: '#fff3cd', border: '#ffeaa7', text: '#856404' },
+                info: { bg: '#d1ecf1', border: '#bee5eb', text: '#0c5460' }
+            };
+            
+            const colors = alertColors[type] || alertColors.info;
+            
+            // Create alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                background: ${colors.bg};
+                color: ${colors.text};
+                border: 1px solid ${colors.border};
+                border-radius: 8px;
+                padding: 16px 20px;
+                max-width: 400px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 3000;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                alertDiv.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        document.body.removeChild(alertDiv);
+                    }
+                }, 300);
+            }, 5000);
+            
+            // Add animation styles if not already present
+            if (!document.getElementById('alert-animations')) {
+                const style = document.createElement('style');
+                style.id = 'alert-animations';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOut {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(100%); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        // Handle making users admin (adds secondary_role)
+        async function handleMakeAdmin() {
+            const { data, error } = await window.supabase
+                .from('profiles')
+                .update({ secondary_role: 'admin' })
+                .in('id', selectedUsersForManagement);
+            
+            if (error) throw error;
+            
+            console.log('✅ Admin access granted to', selectedUsersForManagement.length, 'users');
+        }
+        
+        // Handle revoking admin access (removes secondary_role)
+        async function handleRevokeAdmin() {
+            const { data, error } = await window.supabase
+                .from('profiles')
+                .update({ secondary_role: null })
+                .in('id', selectedUsersForManagement);
+            
+            if (error) throw error;
+            
+            console.log('✅ Admin access revoked from', selectedUsersForManagement.length, 'users');
+        }
 
-        // Add/Edit Manager Submit
-        managerForm.onsubmit = function(e) {
-            e.preventDefault();
-            const name = document.getElementById('manager-name').value;
-            const email = document.getElementById('manager-email').value;
-            const department = document.getElementById('manager-department').value;
-            const status = document.getElementById('manager-status').value;
-            const editIndex = document.getElementById('manager-edit-index').value;
-            if (editIndex === '') {
-                // Add new manager
-                const newRow = managerTableBody.insertRow();
-                newRow.innerHTML = `<td style='padding:8px;border:1px solid #eee;'>${name}</td><td style='padding:8px;border:1px solid #eee;'>${email}</td><td style='padding:8px;border:1px solid #eee;'>${department}</td><td style='padding:8px;border:1px solid #eee;'>${status}</td><td style='padding:8px;border:1px solid #eee;'><button class='admin-button edit-manager-btn' style='background:#36b37e;padding:4px 12px;font-size:0.95em;'>Edit</button> <button class='admin-button delete-manager-btn' style='background:#e74c3c;padding:4px 12px;font-size:0.95em;'>Delete</button></td>`;
+        // Handle role changes (promotes/demotes)
+        async function handleRoleChange(newRole) {
+            const { data, error } = await window.supabase
+                .from('profiles')
+                .update({ role: newRole })
+                .in('id', selectedUsersForManagement);
+            
+            if (error) throw error;
+            
+            console.log('✅ Role changed to', newRole, 'for', selectedUsersForManagement.length, 'users');
+        }
+        
+        // Handle hierarchy assignment
+        async function handleHierarchyAssignment() {
+            const hierarchyId = document.getElementById('hierarchy-select').value;
+            
+            if (!hierarchyId) {
+                throw new Error('Please select a manager or supervisor to assign.');
+            }
+            
+            // Determine if assigning manager or supervisor based on current table
+            const updates = {};
+            if (currentTableType === 'user') {
+                updates.manager_id = hierarchyId;
+            } else if (currentTableType === 'manager') {
+                updates.supervisor_id = hierarchyId;
             } else {
-                // Edit existing manager
-                const row = managerTableBody.children[editIndex];
-                row.children[0].innerText = name;
-                row.children[1].innerText = email;
-                row.children[2].innerText = department;
-                row.children[3].innerText = status;
+                throw new Error('Hierarchy assignment not applicable for this user type.');
             }
-            managerModal.style.display = 'none';
-            managerForm.reset();
-        };
+            
+            const { data, error } = await window.supabase
+                .from('profiles')
+                .update(updates)
+                .in('id', selectedUsersForManagement);
+            
+            if (error) throw error;
+            
+            console.log('✅ Hierarchy assigned for', selectedUsersForManagement.length, 'users');
+        }
+          // Close management modal
+        function closeManageModal() {
+            document.getElementById('manage-modal').style.display = 'none';
+            selectedUsersForManagement = [];
+            currentTableType = '';
+            
+            // Reset form
+            document.getElementById('manage-form').reset();
+            document.getElementById('hierarchy-assignment').style.opacity = '0.5';
+            document.getElementById('hierarchy-search').disabled = true;
+            document.getElementById('hierarchy-search').value = '';
+            document.getElementById('hierarchy-select').disabled = true;
+            document.getElementById('hierarchy-select').value = '';
+            document.getElementById('hierarchy-dropdown-btn').disabled = true;
+            document.getElementById('hierarchy-dropdown').style.display = 'none';
+            
+            // Reset visual feedback for role radio options
+            document.querySelectorAll('.role-radio-option').forEach(option => {
+                option.style.backgroundColor = 'transparent';
+                option.style.borderRadius = '0';
+            });
+            
+            // Reset visual feedback for admin radio options
+            document.querySelectorAll('.admin-radio-option').forEach(option => {
+                option.style.backgroundColor = 'transparent';
+                option.style.borderRadius = '0';
+            });
+            
+            // Clean up permission notes
+            const permissionNotes = document.querySelectorAll('.permission-note');
+            permissionNotes.forEach(note => note.remove());
+            
+            // Reset admin section for next use
+            const makeAdminSection = document.getElementById('make-admin-section');
+            if (makeAdminSection) {
+                makeAdminSection.style.display = 'block';
+                makeAdminSection.style.opacity = '1';
+                const adminRadios = makeAdminSection.querySelectorAll('input[type="radio"]');
+                adminRadios.forEach(radio => radio.disabled = false);
+            }
+        }
+        
+        // Function to reload all users (used after role updates)
+        async function loadAllUsers() {
+            console.log('🔄 Reloading all users...');
+            await loadUsersWithHierarchy();
+        }
 
-        // Supervisor Management Modal/Event Logic
-        const supervisorTableBody = document.getElementById('supervisor-table-body');
-        let editingSupervisorRow = null;
-        supervisorTableBody.addEventListener('click', function(e) {
-            if (e.target.classList.contains('edit-supervisor-btn')) {
-                const row = e.target.closest('tr');
-                editingSupervisorRow = row;
-                // For demo: prompt for new values
-                const name = prompt('Edit Supervisor Name:', row.children[0].innerText);
-                const email = prompt('Edit Supervisor Email:', row.children[1].innerText);
-                const team = prompt('Edit Supervisor Team:', row.children[2].innerText);
-                const status = prompt('Edit Supervisor Status (Active/Suspended):', row.children[3].innerText);
-                if (name && email && team && status) {
-                    row.children[0].innerText = name;
-                    row.children[1].innerText = email;
-                    row.children[2].innerText = team;
-                    row.children[3].innerText = status;
-                }
+        // Function to start user impersonation (called by row buttons)
+        function startUserImpersonation(user) {
+            console.log('🎭 Starting impersonation for user:', user);
+            
+            // Check if user impersonation system is available
+            if (window.userImpersonation && typeof window.userImpersonation.startImpersonation === 'function') {
+                // Use the enhanced impersonation system
+                window.userImpersonation.startImpersonation(user, 'dashboard.html');
+            } else {
+                console.error('❌ User impersonation system not available');
+                alert('Impersonation system not loaded. Please refresh the page.');
             }
-            if (e.target.classList.contains('delete-supervisor-btn')) {
-                if (confirm('Delete supervisor ' + e.target.closest('tr').children[0].innerText + '?')) {
-                    e.target.closest('tr').remove();
-                }
-            }
-        });
+        }
 
-        // Admin Management Modal/Event Logic
-        const adminTableBody = document.getElementById('admin-table-body');
-        let editingAdminRow = null;
-        adminTableBody.addEventListener('click', function(e) {
-            if (e.target.classList.contains('edit-admin-btn')) {
-                const row = e.target.closest('tr');
-                editingAdminRow = row;
-                // For demo: prompt for new values
-                const name = prompt('Edit Admin Name:', row.children[0].innerText);
-                const email = prompt('Edit Admin Email:', row.children[1].innerText);
-                const level = prompt('Edit Admin Level:', row.children[2].innerText);
-                const status = prompt('Edit Admin Status (Active/Suspended):', row.children[3].innerText);
-                if (name && email && level && status) {
-                    row.children[0].innerText = name;
-                    row.children[1].innerText = email;
-                    row.children[2].innerText = level;
-                    row.children[3].innerText = status;
-                }
-            }
-            if (e.target.classList.contains('delete-admin-btn')) {
-                if (confirm('Delete admin ' + e.target.closest('tr').children[0].innerText + '?')) {
-                    e.target.closest('tr').remove();
-                }
-            }
+        // Initialize user impersonation system when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // The user impersonation system should auto-initialize from user_impersonation.js
+            console.log('🎭 Admin panel loaded, impersonation system should be ready');
         });
     </script>
-    <script src="static/global-nav.js"></script>
 </body>
 </html>

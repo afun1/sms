@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sparky Messaging</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 500px;
+        }
+        .login-info {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .login-info h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+        .login-info p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .features-list {
+            list-style: none;
+            margin-top: 20px;
+            padding-left: 0;
+        }
+        .features-list li {
+            padding: 8px 0;
+            opacity: 0.95;
+        }
+        .features-list li:before {
+            content: "✓ ";
+            color: #fff;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .login-form {
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .form-header h2 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .form-header p {
+            color: #666;
+        }
+        .form-group {
+            margin-bottom: 25px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+        .login-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+        }
+        .form-links {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .form-links a {
+            color: #ff6b6b;
+            text-decoration: none;
+            margin: 0 10px;
+            font-weight: 500;
+        }
+        .form-links a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .login-container {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+            }
+            .login-info {
+                padding: 40px 30px;
+                text-align: center;
+            }
+            .login-info h1 {
+                font-size: 2em;
+            }
+            .login-form {
+                padding: 40px 30px;
+            }
+        }
+        /* Show/Hide password button inside input */
+        .show-hide-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #888;
+            font-size: 1.1em;
+            padding: 0 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-info">
+            <h1>Sparky Messaging</h1>
+            <p>Welcome to the Multi-Channel Marketing Powerhouse</p>
+            <p>Access your comprehensive messaging platform with advanced AI capabilities, multi-provider support, and professional campaign management tools.</p>
+            <ul class="features-list">
+                <li>Sparky-Powered content Generation</li>
+                <li>Multi-Provider SMS & Email</li>
+                <li>Ringless Voicemail (RVM)</li>
+                <li>Campaign Automation</li>
+                <li>Sparky AI Systems Integration</li>
+                <li>Real-time Analytics</li>
+            </ul>
+        </div>
+        <div class="login-form" id="loginFormPanel">
+            <div class="form-header">
+                <h2>Log In</h2>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-input" required placeholder="Enter your email" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div style="position:relative;">
+                        <input type="password" id="password" name="password" class="form-input" required placeholder="Enter your password" autocomplete="current-password">
+                        <button type="button" id="toggleLoginPassword" class="show-hide-btn">Show</button>
+                    </div>
+                </div>
+                <button type="submit" class="login-btn">Log In</button>
+            </form>
+            <div class="form-links">
+                <a href="#" id="showForgot">Forgot Password?</a>
+                <a href="#" id="showSignup">Sign Up</a>
+            </div>
+        </div>
+        <div class="login-form" id="signupFormPanel" style="display:none; flex-direction:column;">
+            <div style="background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 1em; text-align:center; font-weight:600;">
+                ⚠️ All login data must match Sparky AI or account will not be approved.
+            </div>
+            <div class="form-header">
+                <h2>Sign Up</h2>
+            </div>
+            <form id="signupForm">
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" name="firstName" class="form-input" required placeholder="Enter your first name">
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" name="lastName" class="form-input" required placeholder="Enter your last name">
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" name="signupEmail" class="form-input" required placeholder="john@tpnlife.com" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="signupPhone">Phone</label>
+                    <input type="tel" id="signupPhone" name="signupPhone" class="form-input" required placeholder="Enter your phone number">
+                </div>
+                <div class="form-group">
+                    <label for="plainTextField" style="position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;">Do not fill</label>
+                    <span style="display:block; color:#333; font-weight:500; margin-bottom:8px;">Sparky Username</span>
+                    <input type="text" id="plainTextField" name="plainTextField" class="form-input" required placeholder="Your username from Phghub.ai" autocomplete="off" inputmode="text" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <div style="position:relative;">
+                        <input type="password" id="signupPassword" name="signupPassword" class="form-input" required placeholder="Create a password" minlength="8" style="padding-right:40px;" autocomplete="new-password">
+                        <button type="button" id="toggleSignupPassword" class="show-hide-btn">Show</button>
+                    </div>
+                </div>
+                <div style="font-size:0.98em; color:#666; margin-bottom:18px;">
+                    <b>Password Format:</b>
+                    <ul style="margin: 8px 0 0 18px; padding: 0;">
+                        <li>At least 8 characters</li>
+                        <li>At least 1 CAPITAL letter</li>
+                        <li>At least 1 lower case letter</li>
+                        <li>At least 1 number (0-9)</li>
+                        <li>At least 1 special character ~!@#$%^&*()_+</li>
+                    </ul>
+                </div>
+                <button type="submit" class="login-btn" id="signupBtn">Create Account</button>
+                <div class="form-links" style="margin-top:10px;">
+                    <a href="#" id="showLogin">Back to Log In</a>
+                </div>
+            </form>
+        </div>
+        <div class="login-form" id="resetPasswordPanel" style="display:none; flex-direction:column;">
+            <div class="form-header">
+                <h2>Reset Password</h2>
+            </div>
+            <form id="resetPasswordForm">
+                <input type="email" name="email" id="resetEmail" style="display:none;" autocomplete="username">
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <div style="position:relative;">
+                        <input type="password" id="newPassword" name="newPassword" class="form-input" required placeholder="Enter new password" minlength="8" style="padding-right:40px;" autocomplete="new-password">
+                        <button type="button" id="toggleNewPassword" class="show-hide-btn">Show</button>
+                    </div>
+                </div>
+                <button type="submit" class="login-btn">Set New Password</button>
+            </form>
+        </div>
+    </div>
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:9999;">
+        <div style="background:#fff; padding:36px 32px; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center; max-width:400px; min-width:300px;">
+            <h2 style="color:#1976ff; margin-bottom:18px;">Check Your Email</h2>
+            <p style="color:#333; font-size:1.1em; margin-bottom:18px;">
+                If you don't see the link in your inbox, please check spam.<br><br>
+                If you want to have the link resent click the button below after <span id="confirmationCountdown">60</span> seconds.
+            </p>
+            <button id="resendConfirmationBtn" style="background:#1976ff; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:1em; cursor:pointer; margin-bottom:12px;" disabled>Resend Confirmation Email</button><br>
+            <span id="confirmationResendStatus" style="display:block; margin-bottom:12px; color:#28a745; font-size:0.98em;"></span>
+            <button id="closeConfirmationModal" style="background:#eee; color:#333; border:none; border-radius:8px; padding:8px 20px; font-size:1em; cursor:pointer;">Close</button>
+        </div>
+    </div>
+    <!-- Password Reset Modal -->
+    <div id="resetModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; z-index:9999;">
+        <div style="background:#fff; padding:36px 32px; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center; max-width:400px; min-width:300px;">
+            <h2 style="color:#1976ff; margin-bottom:18px;">Reset Link Sent</h2>
+            <p id="resetModalText" style="color:#333; font-size:1.1em; margin-bottom:18px;">
+                If you don't see the link in your inbox, please check spam.<br><br>
+                If you want to have the link resent click the button below after <span id="resetCountdown">60</span> seconds.
+            </p>
+            <button id="resendResetBtn" style="background:#1976ff; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:1em; cursor:pointer; margin-bottom:12px;" disabled>Resend Reset Email</button><br>
+            <span id="resetResendStatus" style="display:block; margin-bottom:12px; color:#28a745; font-size:0.98em;"></span>
+            <button id="closeResetModal" style="background:#eee; color:#333; border:none; border-radius:8px; padding:8px 20px; font-size:1em; cursor:pointer;">Close</button>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.6/dist/umd/supabase.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+            alert('Supabase library failed to load.');
+            return;
+        }
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Show/hide password for login
+        const toggleLoginPassword = document.getElementById('toggleLoginPassword');
+        if (toggleLoginPassword) {
+            toggleLoginPassword.addEventListener('click', function() {
+                const pwd = document.getElementById('password');
+                if (pwd.type === 'password') {
+                    pwd.type = 'text';
+                    this.textContent = 'Hide';
+                } else {
+                    pwd.type = 'password';
+                    this.textContent = 'Show';
+                }
+            });
+        }
+        // Show/hide password for signup
+        const toggleSignupPassword = document.getElementById('toggleSignupPassword');
+        if (toggleSignupPassword) {
+            toggleSignupPassword.addEventListener('click', function() {
+                const pwd = document.getElementById('signupPassword');
+                if (pwd.type === 'password') {
+                    pwd.type = 'text';
+                    this.textContent = 'Hide';
+                } else {
+                    pwd.type = 'password';
+                    this.textContent = 'Show';
+                }
+            });
+        }
+        // Show/hide password for reset
+        const toggleNewPassword = document.getElementById('toggleNewPassword');
+        if (toggleNewPassword) {
+            toggleNewPassword.addEventListener('click', function() {
+                const pwd = document.getElementById('newPassword');
+                if (pwd.type === 'password') {
+                    pwd.type = 'text';
+                    this.textContent = 'Hide';
+                } else {
+                    pwd.type = 'password';
+                    this.textContent = 'Show';
+                }
+            });
+        }
+
+        // Signup form handler
+        const signupForm = document.getElementById('signupForm');
+        if (signupForm) {
+            signupForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const email = document.getElementById('signupEmail').value;
+                const password = document.getElementById('signupPassword').value;
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const phone = document.getElementById('signupPhone').value;
+                const sparkyUsername = document.getElementById('plainTextField').value;
+
+                // Sign up with Supabase Auth, store extra fields in user_metadata
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            display_name: `${firstName} ${lastName}`,
+                            phone,
+                            sparky_username: sparkyUsername
+                        }
+                    }
+                });
+                if (error) {
+                    alert('Sign up error: ' + error.message);
+                    return;
+                }
+                alert('Sign up successful! Please check your email to confirm your account.');
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('loginFormPanel').style.display = 'flex';
+            });
+        }
+
+        // Login form handler
+        const loginForm = document.getElementById('loginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) {
+                    alert('Login error: ' + error.message);
+                    return;
+                }
+                window.location.href = 'index.html';
+            });
+        }
+
+        // Switch to signup
+        const showSignup = document.getElementById('showSignup');
+        if (showSignup) {
+            showSignup.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('loginFormPanel').style.display = 'none';
+                document.getElementById('signupFormPanel').style.display = 'flex';
+            });
+        }
+        // Switch to login
+        const showLogin = document.getElementById('showLogin');
+        if (showLogin) {
+            showLogin.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('loginFormPanel').style.display = 'flex';
+            });
+        }
+
+        // Password reset handler (show modal to collect email)
+        const showForgot = document.getElementById('showForgot');
+        if (showForgot) {
+            showForgot.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const emailModal = document.createElement('div');
+                emailModal.style.position = 'fixed';
+                emailModal.style.top = '0';
+                emailModal.style.left = '0';
+                emailModal.style.width = '100vw';
+                emailModal.style.height = '100vh';
+                emailModal.style.background = 'rgba(0,0,0,0.4)';
+                emailModal.style.display = 'flex';
+                emailModal.style.alignItems = 'center';
+                emailModal.style.justifyContent = 'center';
+                emailModal.style.zIndex = '10000';
+                emailModal.innerHTML = `
+                    <div style="background:#fff; padding:32px 28px; border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center; max-width:350px; min-width:260px;">
+                        <h2 style="color:#1976ff; margin-bottom:16px;">Reset Password</h2>
+                        <p style="color:#333; font-size:1.05em; margin-bottom:18px;">Enter your email address to receive a password reset link.</p>
+                        <input type="email" id="modalResetEmail" class="form-input" style="margin-bottom:18px; width:90%;" placeholder="Enter your email" required autofocus />
+                        <div id="modalResetError" style="color:#d33; font-size:0.98em; min-height:20px; margin-bottom:10px;"></div>
+                        <button id="modalResetSendBtn" style="background:#1976ff; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:1em; cursor:pointer; margin-bottom:8px;">Send Reset Link</button><br>
+                        <button id="modalResetCancelBtn" style="background:#eee; color:#333; border:none; border-radius:8px; padding:8px 20px; font-size:1em; cursor:pointer;">Cancel</button>
+                    </div>
+                `;
+                document.body.appendChild(emailModal);
+                document.getElementById('modalResetEmail').focus();
+                document.getElementById('modalResetCancelBtn').onclick = function() {
+                    document.body.removeChild(emailModal);
+                };
+                document.getElementById('modalResetSendBtn').onclick = async function() {
+                    const email = document.getElementById('modalResetEmail').value.trim();
+                    const errorDiv = document.getElementById('modalResetError');
+                    if (!email) {
+                        errorDiv.textContent = 'Please enter your email address.';
+                        return;
+                    }
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: window.location.origin + '/login.html'
+                    });
+                    if (error) {
+                        errorDiv.textContent = error.message;
+                    } else {
+                        document.body.removeChild(emailModal);
+                        alert('Reset link sent! Please check your email.');
+                    }
+                };
+                document.getElementById('modalResetEmail').addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        document.getElementById('modalResetSendBtn').click();
+                    }
+                });
+            });
+        }
+
+        // Password reset flow detection (support query string and hash)
+        function getSupabaseTokenParam(name) {
+            const url = new URL(window.location.href);
+            let value = url.searchParams.get(name);
+            if (value) return value;
+            if (window.location.hash) {
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                return hashParams.get(name);
+            }
+            return null;
+        }
+        async function handlePasswordReset() {
+            const accessToken = getSupabaseTokenParam('access_token');
+            const type = getSupabaseTokenParam('type');
+            if (accessToken && type === 'recovery') {
+                document.getElementById('loginFormPanel').style.display = 'none';
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('resetPasswordPanel').style.display = 'flex';
+                await supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: getSupabaseTokenParam('refresh_token')
+                });
+            } else {
+                document.getElementById('loginFormPanel').style.display = 'flex';
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('resetPasswordPanel').style.display = 'none';
+            }
+        }
+        handlePasswordReset();
+    });
+    </script>
+</body>
+</html>

@@ -253,6 +253,50 @@
       background: linear-gradient(135deg, #85939a 0%, #6f7c7d 100%) !important;
       opacity: 0.8;
     }
+
+    /* Variable Category Links Styles */
+    .variables-links-container {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 12px;
+    }
+
+    .variables-links-inline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .variable-category-link {
+      color: #1976ff;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 16px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .variable-category-link:hover {
+      color: #1565c0;
+      background-color: rgba(25, 118, 255, 0.1);
+      text-decoration: none;
+    }
+
+    .variable-category-link:active {
+      color: #0d47a1;
+      background-color: rgba(25, 118, 255, 0.2);
+    }
+
+    .link-separator {
+      color: #ccc;
+      font-weight: 300;
+      font-size: 16px;
+    }
     
     /* Template Snippets Styles */
     .templates-grid {
@@ -2062,127 +2106,22 @@
               </div>
             </div>
             
-            <!-- Insertable Variables Section -->
+            <!-- Template Variables Section -->
             <div class="form-group">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <label>Template Variables:</label>
-                <button type="button" id="refresh-variables-btn" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">
-                  🔄 Reload from Profile
-                </button>
-              </div>
-              <div class="variables-container">
-                
-                <!-- Profile Variables -->
-                <div style="margin-bottom: 20px;">
-                  <h4 style="margin-bottom: 8px; color: #1976ff; font-size: 0.95em; display: flex; align-items: center;">
-                    👤 Your Profile Variables
-                  </h4>
-                  <p class="variables-help" style="margin-bottom: 12px;">Your personal information from profile settings:</p>
-                  <div class="variables-grid" id="dynamic-variables-grid">
-                    <!-- Variables will be loaded dynamically from user settings -->
-                    <div style="text-align: center; color: #666; padding: 20px;">
-                      <span>Loading your profile variables...</span>
-                    </div>
-                  </div>
+              <div class="variables-links-container">
+                <div style="text-align: center; margin-bottom: 16px;">
+                  <label style="margin: 0; font-size: 16px; font-weight: 600;">Template Variables</label>
                 </div>
-                
-                <!-- Contact/Client Variables -->
-                <div style="margin-bottom: 16px; padding-top: 16px; border-top: 1px solid #eee;">
-                  <h4 style="margin-bottom: 8px; color: #e91e63; font-size: 0.95em; display: flex; align-items: center;">
-                    👥 Contact/Client Variables
-                  </h4>
-                  <p class="variables-help" style="margin-bottom: 12px;">Recipient-specific information (populated when sending to contacts):</p>
-                  <div class="variables-grid">
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{First Name}}')" title="Contact's First Name">
-                      {{First Name}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's first name</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Last Name}}')" title="Contact's Last Name">
-                      {{Last Name}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's last name</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{E-mail}}')" title="Contact's Email">
-                      {{E-mail}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's email</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Phone}}')" title="Contact's Phone">
-                      {{Phone}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's phone</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Address}}')" title="Contact's Address">
-                      {{Address}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's address</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{City}}')" title="Contact's City">
-                      {{City}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's city</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{State}}')" title="Contact's State">
-                      {{State}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's state</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Zip}}')" title="Contact's Zip Code">
-                      {{Zip}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's zip code</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Country}}')" title="Contact's Country">
-                      {{Country}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's country</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Timezone}}')" title="Contact Timezone">
-                      {{Timezone}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact timezone</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Carrier}}')" title="Phone Carrier">
-                      {{Carrier}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Phone carrier</small>
-                    </button>
-                  </div>
+                <div class="variables-links-inline">
+                  <a href="#" class="variable-category-link" onclick="showVariablesModal('profile'); return false;" title="Your Profile Variables">Profile</a>
+                  <span class="link-separator">|</span>
+                  <a href="#" class="variable-category-link" onclick="showVariablesModal('contact'); return false;" title="Contact/Client Variables">Contact</a>
+                  <span class="link-separator">|</span>
+                  <a href="#" class="variable-category-link" onclick="showVariablesModal('sponsor'); return false;" title="Sponsor Variables">Sponsor</a>
+                  <span class="link-separator">|</span>
+                  <a href="#" class="variable-category-link" onclick="showVariablesModal('system'); return false;" title="System Variables">System</a>
                 </div>
-                
-                <!-- Sponsor Variables -->
-                <div style="margin-bottom: 16px; padding-top: 16px; border-top: 1px solid #eee;">
-                  <h4 style="margin-bottom: 8px; color: #ff9800; font-size: 0.95em; display: flex; align-items: center;">
-                    🏢 Sponsor Variables
-                  </h4>
-                  <p class="variables-help" style="margin-bottom: 12px;">Sponsor Username:</p>
-                  <div class="variables-grid">
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Sponsor}}')" title="Full Sponsor Name">
-                      {{Sponsor}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Full sponsor name</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Sponsor First}}')" title="Sponsor First Name">
-                      {{Sponsor First}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Sponsor first name</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Sponsor Last}}')" title="Sponsor Last Name">
-                      {{Sponsor Last}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Sponsor last name</small>
-                    </button>
-                  </div>
-                </div>
-                
-                <!-- System Variables -->
-                <div style="padding-top: 16px; border-top: 1px solid #eee;">
-                  <h4 style="margin-bottom: 8px; color: #666; font-size: 0.95em; display: flex; align-items: center;">
-                    ⚙️ System Variables
-                  </h4>
-                  <p class="variables-help" style="margin-bottom: 12px;">Automatically populated system information:</p>
-                  <div class="variables-grid">
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Current Date}}')" title="Insert Current Date">
-                      {{Current Date}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Today's date</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Current Time}}')" title="Insert Current Time">
-                      {{Current Time}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Current time</small>
-                    </button>
-                    <button type="button" class="variable-btn" onclick="insertVariable('{{Unsubscribe}}')" title="Insert Unsubscribe Link">
-                      {{Unsubscribe}}
-                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Unsubscribe link</small>
-                    </button>
-                  </div>
-                </div>
+                <p class="variables-help" style="margin-top: 16px; margin-bottom: 0; color: #666; font-size: 0.9em; text-align: center;">Click any category to insert variables into your message</p>
               </div>
             </div>
             
@@ -2393,7 +2332,7 @@
     <div id="save-message-modal" class="modal-overlay">
       <div class="modal-container" style="max-width: 500px;">
         <div class="modal-header">
-          <h2 class="modal-title">💾 Save SMS Message</h2>
+          <h2 class="modal-title">💾 Save as Template</h2>
           <button class="modal-close" onclick="closeSaveModal()">&times;</button>
         </div>
         <div class="modal-content">
@@ -2424,9 +2363,24 @@
             
             <div class="setup-actions">
               <button type="button" onclick="closeSaveModal()" class="btn-secondary">Cancel</button>
-              <button type="submit" class="btn-setup-save">💾 Save to Assets</button>
+              <button type="submit" class="btn-setup-save">💾 Save as Template</button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variables Modal -->
+    <div id="variables-modal" class="modal-overlay">
+      <div class="modal-container" style="max-width: 800px;">
+        <div class="modal-header">
+          <h2 class="modal-title" id="variables-modal-title">Template Variables</h2>
+          <button class="modal-close" onclick="closeVariablesModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div id="variables-modal-content">
+            <!-- Variable content will be populated by JavaScript -->
+          </div>
         </div>
       </div>
     </div>
@@ -2469,6 +2423,250 @@
     console.log('[DEBUG] Supabase client initialized in sms_editor.html');
 
     let selectedProvider = null;
+
+    // Variables Modal Functions
+    function showVariablesModal(category) {
+      const modal = document.getElementById('variables-modal');
+      const modalTitle = document.getElementById('variables-modal-title');
+      const modalContent = document.getElementById('variables-modal-content');
+      
+      // Set title and content based on category
+      switch(category) {
+        case 'profile':
+          modalTitle.textContent = 'Profile Variables';
+          modalContent.innerHTML = generateProfileVariablesContent();
+          break;
+        case 'contact':
+          modalTitle.textContent = 'Contact Variables';
+          modalContent.innerHTML = generateContactVariablesContent();
+          break;
+        case 'sponsor':
+          modalTitle.textContent = 'Sponsor Variables';
+          modalContent.innerHTML = generateSponsorVariablesContent();
+          break;
+        case 'system':
+          modalTitle.textContent = 'System Variables';
+          modalContent.innerHTML = generateSystemVariablesContent();
+          break;
+      }
+      
+      modal.style.display = 'flex';
+      
+      // If profile category, load user data
+      if (category === 'profile') {
+        loadProfileVariablesInModal();
+      }
+    }
+
+    function closeVariablesModal() {
+      const modal = document.getElementById('variables-modal');
+      modal.style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(event) {
+      const modal = document.getElementById('variables-modal');
+      if (event.target === modal) {
+        closeVariablesModal();
+      }
+    });
+
+    function generateProfileVariablesContent() {
+      return `
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <p class="variables-help" style="margin: 0; color: #666; font-size: 0.9em;">
+              Your personal information from profile settings. Click any variable to insert it into your message:
+            </p>
+            <button type="button" id="modal-refresh-variables-btn" onclick="refreshProfileVariables()" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">
+              🔄 Reload from Profile
+            </button>
+          </div>
+          <div class="variables-grid" id="modal-profile-variables">
+            <div style="text-align: center; color: #666; padding: 20px; grid-column: 1 / -1;">
+              <span>Loading your profile variables...</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function generateContactVariablesContent() {
+      const contactVariables = [
+        { key: 'First Name', desc: "Contact's first name" },
+        { key: 'Last Name', desc: "Contact's last name" },
+        { key: 'E-mail', desc: "Contact's email" },
+        { key: 'Phone', desc: "Contact's phone" },
+        { key: 'Address', desc: "Contact's address" },
+        { key: 'City', desc: "Contact's city" },
+        { key: 'State', desc: "Contact's state" },
+        { key: 'Zip', desc: "Contact's zip code" },
+        { key: 'Country', desc: "Contact's country" },
+        { key: 'Timezone', desc: "Contact timezone" },
+        { key: 'Carrier', desc: "Phone carrier" }
+      ];
+
+      return `
+        <div style="margin-bottom: 16px;">
+          <p class="variables-help" style="margin-bottom: 16px; color: #666; font-size: 0.9em;">
+            Recipient-specific information (populated when sending to contacts):
+          </p>
+          <div class="variables-grid">
+            ${contactVariables.map(variable => `
+              <button type="button" class="variable-btn" onclick="insertVariableAndClose('{{${variable.key}}}')" title="${variable.desc}">
+                {{${variable.key}}}
+                <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">${variable.desc}</small>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function generateSponsorVariablesContent() {
+      const sponsorVariables = [
+        { key: 'Sponsor', desc: 'Full sponsor name' },
+        { key: 'Sponsor First', desc: 'Sponsor first name' },
+        { key: 'Sponsor Last', desc: 'Sponsor last name' }
+      ];
+
+      return `
+        <div style="margin-bottom: 16px;">
+          <p class="variables-help" style="margin-bottom: 16px; color: #666; font-size: 0.9em;">
+            Sponsor information:
+          </p>
+          <div class="variables-grid">
+            ${sponsorVariables.map(variable => `
+              <button type="button" class="variable-btn" onclick="insertVariableAndClose('{{${variable.key}}}')" title="${variable.desc}">
+                {{${variable.key}}}
+                <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">${variable.desc}</small>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function generateSystemVariablesContent() {
+      const systemVariables = [
+        { key: 'Current Date', desc: "Today's date" },
+        { key: 'Current Time', desc: 'Current time' },
+        { key: 'Unsubscribe', desc: 'Unsubscribe link' }
+      ];
+
+      return `
+        <div style="margin-bottom: 16px;">
+          <p class="variables-help" style="margin-bottom: 16px; color: #666; font-size: 0.9em;">
+            Automatically populated system information:
+          </p>
+          <div class="variables-grid">
+            ${systemVariables.map(variable => `
+              <button type="button" class="variable-btn" onclick="insertVariableAndClose('{{${variable.key}}}')" title="${variable.desc}">
+                {{${variable.key}}}
+                <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">${variable.desc}</small>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function insertVariableAndClose(variable) {
+      insertVariable(variable);
+      closeVariablesModal();
+    }
+
+    function refreshProfileVariables() {
+      const button = document.getElementById('modal-refresh-variables-btn');
+      const originalText = button.innerHTML;
+      button.innerHTML = '✅ Reloaded';
+      loadProfileVariablesInModal();
+      setTimeout(() => {
+        if (button) {
+          button.innerHTML = originalText;
+        }
+      }, 2000);
+    }
+
+    async function loadProfileVariablesInModal() {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          document.getElementById('modal-profile-variables').innerHTML = `
+            <div style="text-align: center; color: #666; padding: 20px; grid-column: 1 / -1;">
+              <p>Please log in to access your profile variables. <a href="login.html" style="color: #1976ff;">Log in →</a></p>
+            </div>
+          `;
+          return;
+        }
+
+        const { data: settings, error } = await supabase
+          .from('settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error loading settings:', error);
+          document.getElementById('modal-profile-variables').innerHTML = `
+            <div style="text-align: center; color: #666; padding: 20px; grid-column: 1 / -1;">
+              <p>Error loading profile variables. <a href="assets.html" style="color: #1976ff;">Set up your profile →</a></p>
+            </div>
+          `;
+          return;
+        }
+
+        if (!settings) {
+          document.getElementById('modal-profile-variables').innerHTML = `
+            <div style="text-align: center; color: #666; padding: 20px; grid-column: 1 / -1;">
+              <p>No profile settings found. <a href="assets.html" style="color: #1976ff;">Set up your profile →</a></p>
+            </div>
+          `;
+          return;
+        }
+
+        // Create variable buttons with actual values
+        const variables = [
+          { key: 'My Prefix', value: settings.prefix, display: settings.prefix || 'Not set' },
+          { key: 'My First Name', value: settings.first_name, display: settings.first_name || 'Not set' },
+          { key: 'My Middle Initial', value: settings.middle_initial, display: settings.middle_initial || 'Not set' },
+          { key: 'My Last Name', value: settings.last_name, display: settings.last_name || 'Not set' },
+          { key: 'My Suffix', value: settings.suffix, display: settings.suffix || 'Not set' },
+          { key: 'My Email', value: settings.email, display: settings.email || 'Not set' },
+          { key: 'My Phone', value: settings.phone, display: settings.phone || 'Not set' },
+          { key: 'My Sparky Phone', value: settings.sparky_phone, display: settings.sparky_phone || 'Not set' },
+          { key: 'My Sparky Username', value: settings.sparky_username, display: settings.sparky_username || 'Not set' },
+          { key: 'My Support', value: settings.support, display: settings.support || 'Not set' },
+          { key: 'My City', value: settings.city, display: settings.city || 'Not set' },
+          { key: 'My State', value: settings.state, display: settings.state || 'Not set' },
+          { key: 'My Country', value: settings.country, display: settings.country || 'Not set' },
+          { key: 'My Website', value: settings.website, display: settings.website || 'Not set' },
+          { key: 'My Hot Link', value: settings.hot_link, display: settings.hot_link || 'Not set' },
+          { key: 'My Bio', value: settings.bio, display: settings.bio ? (settings.bio.length > 30 ? settings.bio.substring(0, 30) + '...' : settings.bio) : 'Not set' }
+        ];
+
+        document.getElementById('modal-profile-variables').innerHTML = variables.map(variable => {
+          const hasValue = variable.value && variable.value.trim();
+          return `
+            <button type="button" 
+                    class="variable-btn ${hasValue ? '' : 'variable-btn-empty'}" 
+                    onclick="insertVariableAndClose('{{${variable.key}}}')" 
+                    title="Insert ${variable.key}: ${variable.display}">
+              {{${variable.key}}}
+              <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">${variable.display}</small>
+            </button>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Error loading user profile variables:', error);
+        document.getElementById('modal-profile-variables').innerHTML = `
+          <div style="text-align: center; color: #666; padding: 20px; grid-column: 1 / -1;">
+            <p>Error loading profile variables. <a href="assets.html" style="color: #1976ff;">Set up your profile →</a></p>
+          </div>
+        `;
+      }
+    }
 
     // Load user profile variables from settings
     async function loadUserProfileVariables() {
@@ -2633,6 +2831,8 @@
             user_id: user.id,
             title: title,
             content: messageText,
+            description: null,
+            tags: [],
             created_at: new Date().toISOString()
           });
 
@@ -2703,20 +2903,8 @@
 
     // Provider Selection Functionality
     document.addEventListener('DOMContentLoaded', function() {
-      // Load user profile variables
-      loadUserProfileVariables();
-      
       // Load message templates
       loadMessageTemplates();
-      
-      // Set up refresh variables button
-      document.getElementById('refresh-variables-btn').addEventListener('click', function() {
-        loadUserProfileVariables();
-        this.textContent = '✅ Reloaded';
-        setTimeout(() => {
-          this.innerHTML = '🔄 Reload from Profile';
-        }, 2000);
-      });
       
       // Set up template management buttons
       document.getElementById('save-template-btn').addEventListener('click', saveCurrentMessageAsTemplate);
@@ -4618,7 +4806,6 @@
       const messageName = document.getElementById('message-name').value.trim();
       const messageDescription = document.getElementById('message-description').value.trim();
       const messageTags = document.getElementById('message-tags').value.trim();
-      const selectedCarrier = document.querySelector('.carrier-button.selected')?.textContent || 'Unknown';
       
       if (!messageText || !messageName) {
         alert('Please provide both a message and a name.');
@@ -4630,51 +4817,43 @@
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError || !user) {
-          alert('Please log in to save messages to your assets.');
+          alert('Please log in to save templates.');
           console.error('User authentication error:', userError);
           return;
         }
         
-        // Prepare save data for assets table
-        const assetData = {
-          user_id: user.id,
-          name: messageName,
-          description: messageDescription || null,
-          type: 'sms_message',
-          content: JSON.stringify({
-            message: messageText,
-            carrier: selectedCarrier,
-            character_count: messageText.length,
-            sms_segments: messageText.length <= 160 ? 1 : Math.ceil(messageText.length / 153),
-            variables_used: (messageText.match(/\{\{[^}]+\}\}/g) || []).length,
-            tags: messageTags ? messageTags.split(',').map(tag => tag.trim()) : []
-          }),
-          tags: messageTags ? messageTags.split(',').map(tag => tag.trim()) : [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
+        // Prepare tags array
+        const tagsArray = messageTags ? messageTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
         
-        console.log('Saving to assets table:', assetData);
-        
-        // Save to Supabase assets table
+        // Save to message_templates table
         const { data, error } = await supabase
-          .from('assets')
-          .insert([assetData])
+          .from('message_templates')
+          .insert({
+            user_id: user.id,
+            title: messageName,
+            content: messageText,
+            description: messageDescription || null,
+            tags: tagsArray,
+            created_at: new Date().toISOString()
+          })
           .select();
         
         if (error) {
-          console.error('Error saving to Supabase assets:', error);
-          alert(`Error saving message: ${error.message}`);
+          console.error('Error saving template:', error);
+          alert(`Error saving template: ${error.message}`);
           return;
         }
         
-        console.log('Saved to Supabase assets successfully:', data);
-        showSaveSuccess(`Message "${messageName}" saved to your assets successfully!`);
+        console.log('Template saved successfully:', data);
+        showSaveSuccess(`Template "${messageName}" saved successfully!`);
         closeSaveModal();
         
+        // Reload templates to show the new one
+        loadMessageTemplates();
+        
       } catch (error) {
-        console.error('Error saving message:', error);
-        alert(`Error saving message: ${error.message}`);
+        console.error('Error saving template:', error);
+        alert(`Error saving template: ${error.message}`);
       }
     }
     

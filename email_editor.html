@@ -279,7 +279,8 @@ Your Team</textarea>
         const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Use global Supabase client if available, otherwise create one
+        const supabase = window.globalSupabase || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log('[DEBUG] Supabase client initialized in email_editor.html');
     </script>
 </body>

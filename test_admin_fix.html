@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel Test - Tables Fix</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="static/user_impersonation.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+        
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.8em;
+        }
+        
+        .admin { background: #e74c3c; }
+        .manager { background: #3498db; }
+        .user { background: #95a5a6; }
+        
+        .test-controls {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel - Tables Test</h1>
+    
+    <div class="test-controls">
+        <h3>Test Controls</h3>
+        <button onclick="setAdminRole()">Set Admin Role</button>
+        <button onclick="loadMockData()">Load Mock Data</button>
+        <button onclick="clearTables()">Clear Tables</button>
+        
+        <div style="margin-top: 10px;">
+            <strong>Current Role:</strong> <span id="current-role">Loading...</span><br>
+            <strong>User ID:</strong> <span id="current-user-id">Loading...</span>
+        </div>
+    </div>
+    
+    <div id="admin-section">
+        <h2>Admin Users</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Username</th>
+                    <th>Primary Role</th>
+                    <th>Secondary Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="admin-table-body">
+                <tr><td colspan="8" style="text-align:center;padding:20px;color:#666;">No admin users found</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div id="manager-section">
+        <h2>Manager Users</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Username</th>
+                    <th>Primary Role</th>
+                    <th>Secondary Role</th>
+                    <th>Manager</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="manager-table-body">
+                <tr><td colspan="9" style="text-align:center;padding:20px;color:#666;">No manager users found</td></tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div id="user-section">
+        <h2>Regular Users</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Username</th>
+                    <th>Primary Role</th>
+                    <th>Secondary Role</th>
+                    <th>Manager</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="user-table-body">
+                <tr><td colspan="9" style="text-align:center;padding:20px;color:#666;">No regular users found</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Mock users for testing
+        const mockUsers = [
+            {
+                id: 'mock-admin-1',
+                first_name: 'John',
+                last_name: 'Admin',
+                email: 'admin@example.com',
+                phone: '555-0001',
+                sparky_username: 'johnadmin',
+                role: 'admin',
+                secondary_role: null
+            },
+            {
+                id: 'mock-admin-2',
+                first_name: 'Sarah',
+                last_name: 'SuperAdmin',
+                email: 'superadmin@example.com',
+                phone: '555-0004',
+                sparky_username: 'sarahsuper',
+                role: 'admin',
+                secondary_role: null
+            },
+            {
+                id: 'mock-manager-1',
+                first_name: 'Jane',
+                last_name: 'Manager',
+                email: 'manager@example.com',
+                phone: '555-0002',
+                sparky_username: 'janemanager',
+                role: 'manager',
+                secondary_role: null
+            },
+            {
+                id: 'mock-user-1',
+                first_name: 'Bob',
+                last_name: 'User',
+                email: 'user@example.com',
+                phone: '555-0003',
+                sparky_username: 'bobuser',
+                role: 'user',
+                secondary_role: null
+            },
+            {
+                id: 'mock-user-2',
+                first_name: 'Alice',
+                last_name: 'Smith',
+                email: 'alice@example.com',
+                phone: '555-0005',
+                sparky_username: 'alicesmith',
+                role: 'user',
+                secondary_role: null
+            }
+        ];
+
+        function setAdminRole() {
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('username', 'AdminUser');
+            localStorage.setItem('userId', 'test-admin-123');
+            updateRoleDisplay();
+            console.log('✅ Admin role set in localStorage');
+        }
+
+        function updateRoleDisplay() {
+            document.getElementById('current-role').textContent = localStorage.getItem('userRole') || 'user';
+            document.getElementById('current-user-id').textContent = localStorage.getItem('userId') || 'none';
+        }
+
+        function clearTables() {
+            const tableIds = ['admin-table-body', 'manager-table-body', 'user-table-body'];
+            tableIds.forEach(id => {
+                const tbody = document.getElementById(id);
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#666;">No users found</td></tr>';
+                }
+            });
+            console.log('🧹 Tables cleared');
+        }
+
+        function createRoleBadge(role) {
+            const colors = {
+                'admin': '#e74c3c',
+                'supervisor': '#f7b731', 
+                'manager': '#36b37e',
+                'user': '#2980b9'
+            };
+            return `<span style="background:${colors[role] || '#6c757d'};color:white;padding:2px 8px;border-radius:12px;font-size:0.8em;">${role}</span>`;
+        }
+
+        function populateUserTable(user, canEdit) {
+            console.log('🔄 populateUserTable called for user:', user.email, 'primary role:', user.role);
+            
+            // Determine which table to add to
+            let tableId;
+            let showHierarchy = false;
+            
+            switch(user.role.toLowerCase()) {
+                case 'admin':
+                    tableId = 'admin-table-body';
+                    break;
+                case 'manager':
+                    tableId = 'manager-table-body';
+                    showHierarchy = true;
+                    break;
+                case 'user':
+                default:
+                    tableId = 'user-table-body';
+                    showHierarchy = true;
+                    break;
+            }
+            
+            const tbody = document.getElementById(tableId);
+            if (!tbody) {
+                console.error('❌ Table body not found:', tableId);
+                return;
+            }
+            
+            // Clear "no users found" message if this is the first user
+            if (tbody.children.length === 1 && tbody.children[0].textContent.includes('No ')) {
+                tbody.innerHTML = '';
+            }
+            
+            // Create role displays
+            const primaryRoleBadge = createRoleBadge(user.role);
+            const secondaryRoleBadge = user.secondary_role ? createRoleBadge(user.secondary_role) : '<span style="color:#6c757d;font-style:italic;">None</span>';
+
+            let rowHtml = `
+                <tr data-user-id="${user.id}">
+                    <td style="padding:8px;border:1px solid #eee;">${user.first_name || ''}</td>
+                    <td style="padding:8px;border:1px solid #eee;">${user.last_name || ''}</td>
+                    <td style="padding:8px;border:1px solid #eee;">${user.email || ''}</td>
+                    <td style="padding:8px;border:1px solid #eee;">${user.phone || ''}</td>
+                    <td style="padding:8px;border:1px solid #eee;">${user.sparky_username || ''}</td>
+                    <td style="padding:8px;border:1px solid #eee;">${primaryRoleBadge}</td>
+                    <td style="padding:8px;border:1px solid #eee;">${secondaryRoleBadge}</td>
+            `;
+            
+            // Add hierarchy column if needed
+            if (showHierarchy) {
+                const hierarchyInfo = user.manager ? `${user.manager.first_name} ${user.manager.last_name}` : '';
+                rowHtml += `<td style="padding:8px;border:1px solid #eee;">${hierarchyInfo}</td>`;
+            }
+            
+            // Add action column
+            rowHtml += `<td style="padding:8px;border:1px solid #eee;text-align:center;">`;
+            
+            if (canEdit) {
+                rowHtml += `<a href="#" onclick="editUser('${user.id}')" style="color:#3498db;text-decoration:none;font-weight:500;margin-right:10px;">Edit</a>`;
+            }
+            
+            // Always add impersonation button
+            rowHtml += `<button onclick="startUserImpersonation({id:'${user.id}', email:'${user.email}', display_name:'${user.first_name} ${user.last_name}', role:'${user.role}'})" 
+                        style="color:#e74c3c;background:none;border:1px solid #e74c3c;border-radius:4px;padding:4px 8px;font-size:0.8em;cursor:pointer;"
+                        title="Impersonate this user">
+                    🎭
+                </button>`;
+            
+            rowHtml += `</td></tr>`;
+            
+            tbody.innerHTML += rowHtml;
+            console.log(`✅ Added user to table: ${tableId}`);
+        }
+
+        function loadMockData() {
+            console.log('🔄 Loading mock data...');
+            
+            // Clear tables first
+            clearTables();
+            
+            // Process each mock user
+            mockUsers.forEach(user => {
+                populateUserTable(user, true);
+            });
+            
+            console.log('✅ Mock data loaded successfully');
+        }
+
+        function editUser(userId) {
+            alert(`Edit user: ${userId}`);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateRoleDisplay();
+            
+            // Set admin role by default for testing
+            if (!localStorage.getItem('userRole')) {
+                setAdminRole();
+            }
+            
+            console.log('✅ Test page initialized');
+        });
+    </script>
+</body>
+</html>

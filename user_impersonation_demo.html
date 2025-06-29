@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Impersonation Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #2c3e50;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1em;
+            transition: background 0.2s;
+            margin: 5px;
+        }
+        
+        .button:hover {
+            background: #2980b9;
+        }
+        
+        .button.danger {
+            background: #e74c3c;
+        }
+        
+        .button.danger:hover {
+            background: #c0392b;
+        }
+        
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .user-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .user-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+            color: white;
+            margin: 2px;
+        }
+        
+        .role-admin { background: #e74c3c; }
+        .role-supervisor { background: #f39c12; }
+        .role-manager { background: #3498db; }
+        .role-user { background: #95a5a6; }
+        
+        .current-user-info {
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .impersonation-note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .demo-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 User Impersonation System Demo</h1>
+            <p>GHL-style user impersonation for customer support</p>
+        </div>
+        
+        <div class="current-user-info">
+            <h3>Current User Status</h3>
+            <div id="current-user-display">
+                <strong>Name:</strong> <span id="current-name">Loading...</span><br>
+                <strong>Email:</strong> <span id="current-email">Loading...</span><br>
+                <strong>Role:</strong> <span id="current-role">Loading...</span><br>
+                <strong>Impersonating:</strong> <span id="impersonation-status">No</span>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h3>📋 Demo Controls</h3>
+            <div class="demo-controls">
+                <button class="button" onclick="userImpersonation.openImpersonationModal()">
+                    🎭 Open Impersonation Modal
+                </button>
+                <button class="button" onclick="userImpersonation.debugSystemState()">
+                    🔍 Debug System
+                </button>
+                <button class="button" onclick="refreshUserStatus()">
+                    🔄 Refresh Status
+                </button>
+                <button class="button" onclick="loadDemoUsers()">
+                    📥 Load Demo Users
+                </button>
+                <button class="button danger" onclick="clearImpersonation()">
+                    🧹 Clear Impersonation
+                </button>
+            </div>
+            
+            <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                <h4 style="margin: 0 0 10px 0;">🔄 Test Different Roles</h4>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="button" onclick="switchToRole('admin', 'admin-1')">Test as Admin</button>
+                    <button class="button" onclick="switchToRole('supervisor', 'supervisor-1')">Test as Supervisor</button>
+                    <button class="button" onclick="switchToRole('manager', 'manager-1')">Test as Manager</button>
+                    <button class="button" onclick="switchToRole('user', 'user-1')">Test as User</button>
+                </div>
+                <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #666;">
+                    Switch roles to test different impersonation permissions
+                </p>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h3>👥 Available Demo Users</h3>
+            <p>These users are available for impersonation testing:</p>
+            <div class="user-grid" id="demo-users-grid">
+                <!-- Demo users will be populated here -->
+            </div>
+        </div>
+        
+        <div class="impersonation-note">
+            <h4>🔒 Hierarchical User Impersonation System</h4>
+            <ul>
+                <li><strong>🔴 Admin Access:</strong> Can impersonate any user in the system</li>
+                <li><strong>🟡 Supervisor Access:</strong> Can impersonate managers assigned to them and users under those managers</li>
+                <li><strong>🔵 Manager Access:</strong> Can impersonate only users directly assigned to them</li>
+                <li><strong>⚫ User Access:</strong> Cannot impersonate other users</li>
+            </ul>
+            <h5>🎯 Key Features:</h5>
+            <ul>
+                <li><strong>GHL-Style Experience:</strong> Click "Log In As User" → search users → immediate switch with banner</li>
+                <li><strong>Hierarchy Filtering:</strong> Only shows users you have permission to impersonate</li>
+                <li><strong>Session Management:</strong> Original user info is preserved for switching back</li>
+                <li><strong>Visual Feedback:</strong> Clear impersonation banner shows current state</li>
+                <li><strong>Easy Return:</strong> One-click "Switch to my account" button</li>
+                <li><strong>Role Indicators:</strong> Shows relationship between you and impersonatable users</li>
+            </ul>
+        </div>
+        
+        <div class="demo-section">
+            <h3>🛠️ Test Features</h3>
+            <div id="test-results" style="background: white; border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-top: 10px; font-family: monospace; font-size: 0.9em;">
+                Click buttons above to test the impersonation system...
+            </div>
+        </div>
+    </div>
+
+    <script src="user_impersonation.js"></script>
+    <script>
+        // Demo users for testing hierarchical permissions
+        const demoUsers = [
+            // Admin users
+            {
+                id: 'admin-1',
+                first_name: 'System',
+                last_name: 'Administrator',
+                email: 'admin@company.com',
+                role: 'admin',
+                display_name: 'System Administrator'
+            },
+            
+            // Supervisors
+            {
+                id: 'supervisor-1',
+                first_name: 'Sarah',
+                last_name: 'Johnson',
+                email: 'sarah.johnson@company.com',
+                role: 'supervisor',
+                display_name: 'Sarah Johnson'
+            },
+            {
+                id: 'supervisor-2',
+                first_name: 'Mark',
+                last_name: 'Williams',
+                email: 'mark.williams@company.com',
+                role: 'supervisor',
+                display_name: 'Mark Williams'
+            },
+            
+            // Managers under supervisors
+            {
+                id: 'manager-1',
+                first_name: 'John',
+                last_name: 'Smith',
+                email: 'john.smith@company.com',
+                role: 'manager',
+                secondary_role: null,
+                supervisor_id: 'supervisor-1',
+                display_name: 'John Smith'
+            },
+            {
+                id: 'manager-2',
+                first_name: 'Lisa',
+                last_name: 'Davis',
+                email: 'lisa.davis@company.com',
+                role: 'manager',
+                supervisor_id: 'supervisor-1',
+                display_name: 'Lisa Davis'
+            },
+            {
+                id: 'manager-3',
+                first_name: 'Robert',
+                last_name: 'Brown',
+                email: 'robert.brown@company.com',
+                role: 'manager',
+                supervisor_id: 'supervisor-2',
+                display_name: 'Robert Brown'
+            },
+            
+            // Users under managers
+            {
+                id: 'user-1',
+                first_name: 'Mike',
+                last_name: 'Anderson',
+                email: 'mike.anderson@company.com',
+                role: 'user',
+                manager_id: 'manager-1',
+                display_name: 'Mike Anderson'
+            },
+            {
+                id: 'user-2',
+                first_name: 'Emma',
+                last_name: 'Wilson',
+                email: 'emma.wilson@company.com',
+                role: 'user',
+                manager_id: 'manager-1',
+                display_name: 'Emma Wilson'
+            },
+            {
+                id: 'user-3',
+                first_name: 'Tom',
+                last_name: 'Miller',
+                email: 'tom.miller@company.com',
+                role: 'user',
+                manager_id: 'manager-2',
+                display_name: 'Tom Miller'
+            },
+            {
+                id: 'user-4',
+                first_name: 'Jenny',
+                last_name: 'Garcia',
+                email: 'jenny.garcia@company.com',
+                role: 'user',
+                manager_id: 'manager-3',
+                display_name: 'Jenny Garcia'
+            },
+            {
+                id: 'user-5',
+                first_name: 'David',
+                last_name: 'Taylor',
+                email: 'david.taylor@company.com',
+                role: 'user',
+                manager_id: 'manager-3',
+                display_name: 'David Taylor'
+            }
+        ];
+
+        // Initialize demo
+        function initializeDemo() {
+            // Set default admin user if none exists
+            if (!localStorage.getItem('userRole')) {
+                console.log('🔧 Setting default admin user...');
+                localStorage.setItem('userRole', 'admin');
+                localStorage.setItem('username', 'Admin User');
+                localStorage.setItem('userEmail', 'admin@company.com');
+                localStorage.setItem('userId', 'admin-1');
+            }
+            
+            // Load demo users into global scope
+            window.allUsers = demoUsers;
+            console.log('📚 Loaded demo users:', demoUsers.length);
+            
+            // Display demo users
+            loadDemoUsers();
+            
+            // Update current user display
+            refreshUserStatus();
+            
+            // Debug system state
+            setTimeout(() => {
+                console.log('🔍 Initial system state:');
+                if (window.userImpersonation) {
+                    userImpersonation.debugSystemState();
+                } else {
+                    console.error('❌ userImpersonation not available');
+                }
+            }, 100);
+            
+            log('Demo initialized with ' + demoUsers.length + ' test users');
+        }
+
+        function loadDemoUsers() {
+            const grid = document.getElementById('demo-users-grid');
+            
+            const userCards = demoUsers.map(user => {
+                const roleClass = `role-${user.role}`;
+                const secondaryRole = user.secondary_role ? ` + ${user.secondary_role}` : '';
+                
+                // Add hierarchy information
+                let hierarchyInfo = '';
+                if (user.supervisor_id) {
+                    const supervisor = demoUsers.find(u => u.id === user.supervisor_id);
+                    if (supervisor) {
+                        hierarchyInfo += `<p><strong>Supervisor:</strong> ${supervisor.display_name}</p>`;
+                    }
+                }
+                if (user.manager_id) {
+                    const manager = demoUsers.find(u => u.id === user.manager_id);
+                    if (manager) {
+                        hierarchyInfo += `<p><strong>Manager:</strong> ${manager.display_name}</p>`;
+                    }
+                }
+                
+                return `
+                    <div class="user-card">
+                        <h4>${user.display_name}</h4>
+                        <p><strong>Email:</strong> ${user.email}</p>
+                        <p><strong>Role:</strong> 
+                            <span class="role-badge ${roleClass}">${user.role}${secondaryRole}</span>
+                        </p>
+                        ${hierarchyInfo}
+                        <button class="button" onclick="quickImpersonate('${user.id}')">
+                            🎭 Quick Impersonate
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            
+            grid.innerHTML = userCards;
+            log('Demo users loaded into grid with hierarchy information');
+        }
+
+        function switchToRole(role, userId) {
+            // Clear any existing impersonation
+            clearImpersonation();
+            
+            // Set new role
+            localStorage.setItem('userRole', role);
+            localStorage.setItem('userId', userId);
+            
+            const user = demoUsers.find(u => u.id === userId);
+            if (user) {
+                localStorage.setItem('username', user.display_name);
+                localStorage.setItem('userEmail', user.email);
+            }
+            
+            // Refresh status and reinitialize impersonation system
+            refreshUserStatus();
+            
+            // Reinitialize the impersonation system to check new permissions
+            if (window.userImpersonation) {
+                window.userImpersonation.isImpersonating = false;
+                window.userImpersonation.currentImpersonatedUser = null;
+                window.userImpersonation.originalUserInfo = null;
+            }
+            
+            log(`🔄 Switched to ${role} role (${user ? user.display_name : userId})`);
+            
+            // Show what users this role can impersonate
+            setTimeout(() => {
+                const canImpersonate = userImpersonation.canImpersonate();
+                if (canImpersonate) {
+                    log(`✅ ${role} can impersonate users - permissions granted`);
+                } else {
+                    log(`❌ ${role} cannot impersonate users - permissions denied`);
+                }
+            }, 100);
+        }
+
+        function refreshUserStatus() {
+            const name = localStorage.getItem('username') || 'Unknown';
+            const email = localStorage.getItem('userEmail') || 'Unknown';
+            const role = localStorage.getItem('userRole') || 'Unknown';
+            const isImpersonating = localStorage.getItem('impersonationData') ? 'Yes' : 'No';
+            
+            document.getElementById('current-name').textContent = name;
+            document.getElementById('current-email').textContent = email;
+            document.getElementById('current-role').textContent = role;
+            document.getElementById('impersonation-status').textContent = isImpersonating;
+            
+            if (isImpersonating === 'Yes') {
+                document.getElementById('impersonation-status').style.color = '#e74c3c';
+                document.getElementById('impersonation-status').style.fontWeight = 'bold';
+            } else {
+                document.getElementById('impersonation-status').style.color = '#27ae60';
+                document.getElementById('impersonation-status').style.fontWeight = 'normal';
+            }
+        }
+
+        function quickImpersonate(userId) {
+            if (!userImpersonation.canImpersonate()) {
+                log('❌ Access denied: Only admin and supervisor roles can impersonate users');
+                return;
+            }
+            
+            const user = demoUsers.find(u => u.id === userId);
+            if (user) {
+                userImpersonation.impersonateUser(userId);
+                log(`🎭 Quick impersonating: ${user.display_name} (${user.email})`);
+                setTimeout(refreshUserStatus, 500);
+            }
+        }
+
+        function clearImpersonation() {
+            localStorage.removeItem('impersonationData');
+            userImpersonation.switchBackToOriginalUser();
+            setTimeout(refreshUserStatus, 500);
+            log('🧹 Impersonation data cleared');
+        }
+
+        function log(message) {
+            const results = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.innerHTML += `[${timestamp}] ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeDemo);
+        
+        // Refresh status when impersonation changes
+        document.addEventListener('storage', refreshUserStatus);
+        
+        // Check for impersonation changes every 2 seconds
+        setInterval(refreshUserStatus, 2000);
+    </script>
+</body>
+</html>

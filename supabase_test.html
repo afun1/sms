@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Test & User Creation</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #e8f5e8; border-color: #4caf50; }
+        .error { background: #ffebee; border-color: #f44336; }
+        .info { background: #e3f2fd; border-color: #2196f3; }
+        button { background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #1976d2; }
+        .output { background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <h1>Supabase Connection Test & User Management</h1>
+    
+    <div class="section info">
+        <h3>🔧 Connection Test</h3>
+        <button onclick="testConnection()">Test Supabase Connection</button>
+        <div id="connection-output" class="output"></div>
+    </div>
+    
+    <div class="section">
+        <h3>👥 Current Users</h3>
+        <button onclick="loadUsers()">Load All Users</button>
+        <button onclick="clearUsers()">Clear All Test Users</button>
+        <div id="users-output" class="output"></div>
+        <table id="users-table" style="display:none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Secondary Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="users-table-body"></tbody>
+        </table>
+    </div>
+    
+    <div class="section">
+        <h3>➕ Create Test Users</h3>
+        <button onclick="createTestUsers()">Create Sample Users</button>
+        <div id="create-output" class="output"></div>
+    </div>
+    
+    <div class="section">
+        <h3>🎭 Test Impersonation</h3>
+        <button onclick="testImpersonation()">Test Impersonation System</button>
+        <div id="impersonation-output" class="output"></div>
+    </div>
+
+    <script>
+        let supabase;
+        
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            element.textContent += `[${timestamp}] ${message}\n`;
+            console.log(message);
+        }
+        
+        function clearLog(elementId) {
+            document.getElementById(elementId).textContent = '';
+        }
+        
+        function initializeSupabase() {
+            try {
+                supabase = window.supabase.createClient(
+                    'https://kdrjpgmzjufgdjxyzhnz.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcmpwZ216anVmZ2RqeHl6aG56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUwNTQzMDgsImV4cCI6MjA1MDYzMDMwOH0.V4lO6m4b7k6KXsrVbR9YJB5f1n3KMBsPDFaEKYnX7Y0'
+                );
+                return true;
+            } catch (error) {
+                console.error('Failed to initialize Supabase:', error);
+                return false;
+            }
+        }
+        
+        async function testConnection() {
+            clearLog('connection-output');
+            log('connection-output', '🔄 Testing Supabase connection...');
+            
+            if (!initializeSupabase()) {
+                log('connection-output', '❌ Failed to initialize Supabase client', 'error');
+                return;
+            }
+            
+            try {
+                // Test basic connection
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    log('connection-output', `❌ Connection error: ${error.message}`, 'error');
+                    log('connection-output', `Error details: ${JSON.stringify(error, null, 2)}`, 'error');
+                } else {
+                    log('connection-output', `✅ Connection successful! Found ${data} records in profiles table`, 'success');
+                }
+                
+            } catch (error) {
+                log('connection-output', `💥 Unexpected error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadUsers() {
+            clearLog('users-output');
+            log('users-output', '📊 Loading all users...');
+            
+            if (!supabase) {
+                if (!initializeSupabase()) {
+                    log('users-output', '❌ Supabase not initialized', 'error');
+                    return;
+                }
+            }
+            
+            try {
+                const { data: users, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    log('users-output', `❌ Error loading users: ${error.message}`, 'error');
+                    return;
+                }
+                
+                log('users-output', `✅ Loaded ${users ? users.length : 0} users`);
+                
+                if (!users || users.length === 0) {
+                    log('users-output', '⚠️ No users found in database - you may need to create some test users');
+                    document.getElementById('users-table').style.display = 'none';
+                    return;
+                }
+                
+                // Display users in table
+                const tableBody = document.getElementById('users-table-body');
+                tableBody.innerHTML = '';
+                
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.id.substring(0, 8)}...</td>
+                        <td>${user.first_name || ''} ${user.last_name || ''}</td>
+                        <td>${user.email || 'N/A'}</td>
+                        <td>${user.role || 'N/A'}</td>
+                        <td>${user.secondary_role || 'N/A'}</td>
+                        <td>
+                            <button onclick="deleteUser('${user.id}')" style="background:#f44336;">Delete</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+                document.getElementById('users-table').style.display = 'table';
+                log('users-output', '✅ Users table populated');
+                
+            } catch (error) {
+                log('users-output', `💥 Unexpected error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createTestUsers() {
+            clearLog('create-output');
+            log('create-output', '➕ Creating test users...');
+            
+            if (!supabase) {
+                if (!initializeSupabase()) {
+                    log('create-output', '❌ Supabase not initialized', 'error');
+                    return;
+                }
+            }
+            
+            const testUsers = [
+                {
+                    id: 'admin-001',
+                    email: 'admin@test.com',
+                    first_name: 'Admin',
+                    last_name: 'User',
+                    role: 'admin',
+                    display_name: 'Admin User'
+                },
+                {
+                    id: 'supervisor-001', 
+                    email: 'supervisor@test.com',
+                    first_name: 'Supervisor',
+                    last_name: 'User',
+                    role: 'supervisor',
+                    display_name: 'Supervisor User'
+                },
+                {
+                    id: 'manager-001',
+                    email: 'manager@test.com', 
+                    first_name: 'Manager',
+                    last_name: 'User',
+                    role: 'manager',
+                    display_name: 'Manager User'
+                },
+                {
+                    id: 'user-001',
+                    email: 'user1@test.com',
+                    first_name: 'Regular',
+                    last_name: 'User',
+                    role: 'user',
+                    display_name: 'Regular User'
+                },
+                {
+                    id: 'user-002',
+                    email: 'user2@test.com',
+                    first_name: 'Another',
+                    last_name: 'User',
+                    role: 'user',
+                    secondary_role: 'admin',
+                    display_name: 'User with Admin Access'
+                }
+            ];
+            
+            try {
+                for (const user of testUsers) {
+                    log('create-output', `Creating user: ${user.email}...`);
+                    
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .upsert(user, { onConflict: 'id' });
+                    
+                    if (error) {
+                        log('create-output', `❌ Error creating ${user.email}: ${error.message}`, 'error');
+                    } else {
+                        log('create-output', `✅ Created ${user.email}`);
+                    }
+                }
+                
+                log('create-output', '✅ Test user creation completed!');
+                log('create-output', '💡 Now try loading users or going to the admin panel');
+                
+            } catch (error) {
+                log('create-output', `💥 Unexpected error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function clearUsers() {
+            clearLog('users-output');
+            log('users-output', '🗑️ Clearing test users...');
+            
+            if (!confirm('Are you sure you want to delete all test users?')) {
+                log('users-output', '❌ Cancelled by user');
+                return;
+            }
+            
+            if (!supabase) {
+                if (!initializeSupabase()) {
+                    log('users-output', '❌ Supabase not initialized', 'error');
+                    return;
+                }
+            }
+            
+            try {
+                const testUserIds = ['admin-001', 'supervisor-001', 'manager-001', 'user-001', 'user-002'];
+                
+                for (const userId of testUserIds) {
+                    const { error } = await supabase
+                        .from('profiles')
+                        .delete()
+                        .eq('id', userId);
+                    
+                    if (error) {
+                        log('users-output', `❌ Error deleting ${userId}: ${error.message}`, 'error');
+                    } else {
+                        log('users-output', `✅ Deleted ${userId}`);
+                    }
+                }
+                
+                log('users-output', '✅ Test users cleared!');
+                document.getElementById('users-table').style.display = 'none';
+                
+            } catch (error) {
+                log('users-output', `💥 Unexpected error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function deleteUser(userId) {
+            if (!confirm(`Delete user ${userId}?`)) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('profiles')
+                    .delete()
+                    .eq('id', userId);
+                
+                if (error) {
+                    alert(`Error deleting user: ${error.message}`);
+                } else {
+                    alert('User deleted successfully!');
+                    loadUsers(); // Refresh the list
+                }
+            } catch (error) {
+                alert(`Unexpected error: ${error.message}`);
+            }
+        }
+        
+        async function testImpersonation() {
+            clearLog('impersonation-output');
+            log('impersonation-output', '🎭 Testing impersonation system...');
+            
+            // Test if the impersonation script is loaded
+            if (typeof window.startUserImpersonation === 'function') {
+                log('impersonation-output', '✅ Impersonation system is loaded');
+                
+                // Test with a mock user
+                const testUser = {
+                    id: 'test-user-123',
+                    email: 'test@example.com',
+                    display_name: 'Test User',
+                    role: 'user'
+                };
+                
+                log('impersonation-output', '🔄 Testing impersonation modal...');
+                
+                try {
+                    // This should open the modal
+                    window.startUserImpersonation(testUser);
+                    log('impersonation-output', '✅ Impersonation modal opened successfully');
+                } catch (error) {
+                    log('impersonation-output', `❌ Error opening impersonation modal: ${error.message}`, 'error');
+                }
+                
+            } else {
+                log('impersonation-output', '❌ Impersonation system not loaded', 'error');
+                log('impersonation-output', '💡 You may need to include the user_impersonation.js script', 'info');
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            log('connection-output', '🚀 Page loaded, ready to test Supabase connection');
+        });
+    </script>
+    
+    <!-- Load the impersonation script for testing -->
+    <script src="static/user_impersonation.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Load</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Admin Load Test</h1>
+    <div id="output" style="font-family: monospace; white-space: pre-wrap; background: #f0f0f0; padding: 20px;"></div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            console.log(message);
+        }
+        
+        async function testAdminLoad() {
+            try {
+                log('🚀 Starting admin load test...');
+                
+                // Initialize Supabase
+                log('🔧 Initializing Supabase...');
+                const supabase = window.supabase.createClient(
+                    'https://kdrjpgmzjufgdjxyzhnz.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcmpwZ216anVmZ2RqeHl6aG56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUwNTQzMDgsImV4cCI6MjA1MDYzMDMwOH0.V4lO6m4b7k6KXsrVbR9YJB5f1n3KMBsPDFaEKYnX7Y0'
+                );
+                log('✅ Supabase initialized');
+                
+                // Test connection
+                log('🧪 Testing database connection...');
+                const { data: testData, error: testError } = await supabase
+                    .from('profiles')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (testError) {
+                    log('❌ Connection test failed: ' + testError.message);
+                    log('Error details: ' + JSON.stringify(testError, null, 2));
+                    return;
+                }
+                
+                log('✅ Connection successful, records: ' + testData);
+                
+                // Try to load profiles
+                log('📊 Loading profiles...');
+                const { data: profiles, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('email');
+                
+                if (profileError) {
+                    log('❌ Profile load failed: ' + profileError.message);
+                    log('Error details: ' + JSON.stringify(profileError, null, 2));
+                    return;
+                }
+                
+                log('✅ Profiles loaded: ' + (profiles ? profiles.length : 0));
+                
+                if (profiles && profiles.length > 0) {
+                    log('👥 Users found:');
+                    profiles.forEach((user, index) => {
+                        log(`  ${index + 1}. ${user.email} (${user.role || 'no role'}) - ${user.first_name} ${user.last_name}`);
+                    });
+                } else {
+                    log('⚠️ No users found in database');
+                    log('💡 You may need to create test users first');
+                }
+                
+                // Test auth session
+                log('🔐 Checking auth session...');
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                
+                if (sessionError) {
+                    log('❌ Session check failed: ' + sessionError.message);
+                } else if (session) {
+                    log('✅ Active session: ' + session.user.email);
+                } else {
+                    log('⚠️ No active session');
+                }
+                
+                log('✅ Test completed!');
+                
+            } catch (error) {
+                log('💥 Unexpected error: ' + error.message);
+                log('Stack trace: ' + error.stack);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', testAdminLoad);
+    </script>
+</body>
+</html>

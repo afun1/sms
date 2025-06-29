@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Account Analysis</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { margin: 30px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .login-section { background: #e3f2fd; }
+        .accounts-section { background: #f8f9fa; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background: #f8f9fa; font-weight: bold; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        button { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .admin-user { background: #d4edda !important; }
+        .current-user { background: #fff3cd !important; }
+        .missing-user { background: #f8d7da !important; }
+        input { padding: 10px; margin: 5px; border: 1px solid #ddd; border-radius: 5px; width: 200px; }
+        .summary { background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Complete Account Analysis</h1>
+        
+        <!-- Login Section -->
+        <div class="section login-section">
+            <h2>1️⃣ Admin Login</h2>
+            <input type="email" id="email" placeholder="Admin Email">
+            <input type="password" id="password" placeholder="Admin Password">
+            <button onclick="analyzeAccounts()">🔍 Analyze All Accounts</button>
+        </div>
+        
+        <!-- Summary Section -->
+        <div id="summary-section" class="summary" style="display: none;">
+            <h2>📊 Summary</h2>
+            <div id="summary-content"></div>
+        </div>
+        
+        <!-- All Accounts Section -->
+        <div class="section accounts-section">
+            <h2>2️⃣ All Accounts in Database</h2>
+            <div id="all-accounts"></div>
+        </div>
+        
+        <!-- Filtered Accounts Section -->
+        <div class="section" id="filtered-section" style="display: none;">
+            <h2>3️⃣ Accounts Available for Switching</h2>
+            <div id="filtered-accounts"></div>
+        </div>
+        
+        <!-- Missing Accounts Section -->
+        <div class="section" id="missing-section" style="display: none;">
+            <h2>4️⃣ Missing Accounts Analysis</h2>
+            <div id="missing-accounts"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let adminUser = null;
+        let allUsers = [];
+        
+        async function analyzeAccounts() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('Please enter email and password');
+                return;
+            }
+            
+            try {
+                // Step 1: Login admin
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (authError) {
+                    alert(`Login failed: ${authError.message}`);
+                    return;
+                }
+                
+                // Step 2: Get admin profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', authData.user.id)
+                    .single();
+                
+                if (profileError) {
+                    alert(`Profile error: ${profileError.message}`);
+                    return;
+                }
+                
+                adminUser = { ...authData.user, ...profile };
+                
+                // Step 3: Load all users
+                await loadAllUsers();
+                
+                // Step 4: Analyze filtering
+                await analyzeFiltering();
+                
+                // Step 5: Show summary
+                showSummary();
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+        
+        async function loadAllUsers() {
+            const { data: users, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .order('email');
+            
+            if (error) {
+                document.getElementById('all-accounts').innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+                return;
+            }
+            
+            allUsers = users || [];
+            
+            let html = `<p><strong>Total users in database: ${allUsers.length}</strong></p><table>
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Display Name</th>
+                        <th>Role</th>
+                        <th>Organization ID</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            
+            allUsers.forEach(user => {
+                let rowClass = '';
+                let status = 'Regular User';
+                
+                if (user.id === adminUser.id) {
+                    rowClass = 'current-user';
+                    status = 'CURRENT ADMIN';
+                } else if (['admin', 'super_admin', 'manager'].includes(user.role)) {
+                    rowClass = 'admin-user';
+                    status = 'Admin/Manager';
+                }
+                
+                html += `
+                    <tr class="${rowClass}">
+                        <td>${user.email || 'No email'}</td>
+                        <td>${user.display_name || 'No display name'}</td>
+                        <td>${user.role || 'null'}</td>
+                        <td>${user.organization_id || 'null'}</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('all-accounts').innerHTML = html;
+        }
+        
+        async function analyzeFiltering() {
+            // Simulate the same filtering logic as account switcher
+            let filteredUsers;
+            
+            if (adminUser.role === 'manager') {
+                filteredUsers = allUsers.filter(user => 
+                    user.organization_id === adminUser.organization_id && 
+                    user.id !== adminUser.id
+                );
+            } else {
+                filteredUsers = allUsers.filter(user => user.id !== adminUser.id);
+            }
+            
+            // Show filtered accounts
+            let html = `<p><strong>Accounts available for switching: ${filteredUsers.length}</strong></p>
+                <p>Filter applied: ${adminUser.role === 'manager' ? 'Manager (same organization only)' : 'Admin (all users except self)'}</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Display Name</th>
+                            <th>Role</th>
+                            <th>Organization ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+            
+            filteredUsers.forEach(user => {
+                html += `
+                    <tr>
+                        <td>${user.email || 'No email'}</td>
+                        <td>${user.display_name || 'No display name'}</td>
+                        <td>${user.role || 'null'}</td>
+                        <td>${user.organization_id || 'null'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('filtered-accounts').innerHTML = html;
+            document.getElementById('filtered-section').style.display = 'block';
+            
+            // Find missing accounts
+            const expectedTotal = allUsers.length - 1; // All users minus admin
+            const actualFiltered = filteredUsers.length;
+            
+            if (actualFiltered < expectedTotal) {
+                const missingCount = expectedTotal - actualFiltered;
+                const missingUsers = allUsers.filter(user => 
+                    user.id !== adminUser.id && 
+                    !filteredUsers.some(filtered => filtered.id === user.id)
+                );
+                
+                let missingHtml = `<p><strong>Missing ${missingCount} accounts!</strong></p>
+                    <p>These accounts exist in database but are not shown in switcher:</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Display Name</th>
+                                <th>Role</th>
+                                <th>Organization ID</th>
+                                <th>Possible Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                
+                missingUsers.forEach(user => {
+                    let reason = 'Unknown';
+                    if (adminUser.role === 'manager' && user.organization_id !== adminUser.organization_id) {
+                        reason = 'Different organization (manager limitation)';
+                    } else if (!user.email) {
+                        reason = 'Missing email';
+                    } else if (!user.display_name) {
+                        reason = 'Missing display name (ordering issue)';
+                    }
+                    
+                    missingHtml += `
+                        <tr class="missing-user">
+                            <td>${user.email || 'MISSING'}</td>
+                            <td>${user.display_name || 'MISSING'}</td>
+                            <td>${user.role || 'null'}</td>
+                            <td>${user.organization_id || 'null'}</td>
+                            <td>${reason}</td>
+                        </tr>
+                    `;
+                });
+                
+                missingHtml += '</tbody></table>';
+                document.getElementById('missing-accounts').innerHTML = missingHtml;
+                document.getElementById('missing-section').style.display = 'block';
+            }
+        }
+        
+        function showSummary() {
+            const totalUsers = allUsers.length;
+            const adminCount = allUsers.filter(u => ['admin', 'super_admin', 'manager'].includes(u.role)).length;
+            const regularUsers = totalUsers - adminCount;
+            
+            const expectedSwitchable = totalUsers - 1; // All except current admin
+            const actualSwitchable = adminUser.role === 'manager' 
+                ? allUsers.filter(u => u.organization_id === adminUser.organization_id && u.id !== adminUser.id).length
+                : allUsers.filter(u => u.id !== adminUser.id).length;
+            
+            const summaryHtml = `
+                <strong>📊 Account Analysis Summary</strong><br>
+                • Total users in database: ${totalUsers}<br>
+                • Admin/Manager accounts: ${adminCount}<br>
+                • Regular user accounts: ${regularUsers}<br>
+                • Current admin: ${adminUser.email} (role: ${adminUser.role})<br>
+                • Expected switchable accounts: ${expectedSwitchable}<br>
+                • Actually switchable accounts: ${actualSwitchable}<br>
+                • Missing accounts: ${expectedSwitchable - actualSwitchable}<br>
+                ${actualSwitchable < expectedSwitchable ? '<br><strong style="color: red;">❌ Issue found: Some accounts are missing from switcher!</strong>' : '<br><strong style="color: green;">✅ All accounts are visible in switcher</strong>'}
+            `;
+            
+            document.getElementById('summary-content').innerHTML = summaryHtml;
+            document.getElementById('summary-section').style.display = 'block';
+        }
+        
+        // Auto-load all users on page load
+        window.addEventListener('load', async () => {
+            try {
+                const { data: users, error } = await supabase.from('profiles').select('*').order('email');
+                if (!error && users) {
+                    allUsers = users;
+                    document.getElementById('all-accounts').innerHTML = `
+                        <p><strong>Found ${users.length} total users</strong> (login as admin to see detailed analysis)</p>
+                        <table>
+                            <thead><tr><th>Email</th><th>Display Name</th><th>Role</th></tr></thead>
+                            <tbody>
+                                ${users.map(u => `<tr><td>${u.email || 'No email'}</td><td>${u.display_name || 'No display name'}</td><td>${u.role || 'null'}</td></tr>`).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+            } catch (e) {
+                document.getElementById('all-accounts').innerHTML = '<p>Error loading preview</p>';
+            }
+        });
+    </script>
+</body>
+</html>

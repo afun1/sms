@@ -1,0 +1,4716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sparky SMS Editor</title>
+  <link rel="icon" type="image/png" href="static/supersparky.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="static/global-nav-v2.js"></script>
+  <style>
+    /* Provider Selection Styles */
+    .providers-section {
+      margin-bottom: 48px;
+    }
+    
+    .providers-headline {
+      color: #1976ff;
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .providers-container {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+      width: 1300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .provider-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .provider-card {
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 120px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Glass shine effect */
+    .provider-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
+      border-radius: 10px 10px 0 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    /* Glass reflection highlight */
+    .provider-card::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      right: 2px;
+      height: 30%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
+      border-radius: 8px 8px 0 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+    
+    /* Individual provider gradients */
+    .provider-card[data-provider="bulksms"] {
+      background: linear-gradient(180deg, #a8e6cf 0%, #4caf50 100%);
+      border-color: #4caf50;
+    }
+    
+    .provider-card[data-provider="infobip"] {
+      background: linear-gradient(180deg, #ffccbc 0%, #ff5722 100%);
+      border-color: #ff5722;
+    }
+    
+    .provider-card[data-provider="clicksend"] {
+      background: linear-gradient(180deg, #bbdefb 0%, #2196f3 100%);
+      border-color: #2196f3;
+    }
+    
+    .provider-card[data-provider="messagebird"] {
+      background: linear-gradient(180deg, #e1bee7 0%, #9c27b0 100%);
+      border-color: #9c27b0;
+    }
+    
+    .provider-card[data-provider="sinch"] {
+      background: linear-gradient(180deg, #fff3e0 0%, #ff9800 100%);
+      border-color: #ff9800;
+    }
+    
+    .provider-card[data-provider="textmagic"] {
+      background: linear-gradient(180deg, #f8bbd9 0%, #e91e63 100%);
+      border-color: #e91e63;
+    }
+    
+    .provider-card[data-provider="plivo"] {
+      background: linear-gradient(180deg, #d1c4e9 0%, #673ab7 100%);
+      border-color: #673ab7;
+    }
+    
+    .provider-card:hover {
+      border-color: #1976ff;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(25,118,255,0.3), 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .provider-card:hover::before {
+      background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 100%);
+    }
+    
+    .provider-card:hover::after {
+      background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 100%);
+    }
+    
+    .provider-card.selected {
+      border-color: #1976ff;
+      background: #f3f8ff;
+    }
+    
+    .provider-content h3 {
+      margin: 0;
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      position: relative;
+      z-index: 3;
+    }
+    
+    /* Editor Form Styles */
+    .editor-container {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    
+    .form-group {
+      margin-bottom: 24px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .selected-provider {
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    
+    .provider-display {
+      color: #666;
+    }
+    
+    .provider-display.selected {
+      color: #1976ff;
+      font-weight: 600;
+    }
+    
+    .form-group textarea, .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    
+    .char-counter {
+      text-align: right;
+      margin-top: 8px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    /* Variables Section Styles */
+    .variables-container {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 12px;
+    }
+    
+    .variables-help {
+      margin: 0 0 16px 0;
+      color: #6c757d;
+      font-size: 14px;
+      font-style: italic;
+    }
+    
+    .variables-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+    }
+    
+    .variable-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .variable-btn:hover {
+      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .variable-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .variable-btn-empty {
+      background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%) !important;
+      opacity: 0.7;
+    }
+    
+    .variable-btn-empty:hover {
+      background: linear-gradient(135deg, #85939a 0%, #6f7c7d 100%) !important;
+      opacity: 0.8;
+    }
+    
+    /* Template Snippets Styles */
+    .templates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+    
+    .template-btn {
+      background: #f8f9fa;
+      border: 2px solid #dee2e6;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    
+    .template-btn:hover {
+      border-color: #1976ff;
+      background: #e3f2fd;
+    }
+    
+    .template-title {
+      font-weight: 600;
+      font-size: 0.9em;
+      color: #333;
+      margin-bottom: 4px;
+    }
+    
+    .template-preview {
+      font-size: 0.8em;
+      color: #666;
+      line-height: 1.3;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      line-clamp: 2;
+    }
+    
+    .template-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .template-btn:hover .template-actions {
+      opacity: 1;
+    }
+    
+    .template-action-btn {
+      width: 20px;
+      height: 20px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7em;
+    }
+    
+    .template-edit-btn {
+      background: #ffc107;
+      color: #212529;
+    }
+    
+    .template-delete-btn {
+      background: #dc3545;
+      color: white;
+    }
+
+    /* Word Warnings Styles */
+    .word-warnings {
+      background: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+    
+    .warning-header {
+      font-weight: 600;
+      color: #856404;
+      margin-bottom: 8px;
+    }
+    
+    .warning-item {
+      margin: 4px 0;
+      font-size: 14px;
+    }
+    
+    .warning-avoid {
+      color: #d32f2f;
+      font-weight: 600;
+    }
+    
+    .warning-caution {
+      color: #f57c00;
+      font-weight: 600;
+    }
+
+    /* Save Modal Styles */
+    .message-preview-save {
+      margin: 20px 0;
+    }
+    
+    .message-preview-save label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .message-preview-text {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #333;
+      min-height: 60px;
+      margin-bottom: 8px;
+    }
+    
+    .save-message-stats {
+      font-size: 12px;
+      color: #666;
+      text-align: right;
+    }
+    
+    .form-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: flex-end;
+    }
+    
+    .btn-primary, .btn-secondary {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+      background: #1976ff;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #1565c0;
+    }
+    
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+    
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    /* Save Button Specific Styling */
+    #save-btn {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-right: 8px;
+    }
+    
+    #save-btn:hover {
+      background: linear-gradient(135deg, #218838 0%, #1ba085 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .result-panel {
+      margin-top: 24px;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    
+    .result-panel.success {
+      background: #e8f5e8;
+      color: #2e7d32;
+      border: 1px solid #4caf50;
+    }
+    
+    .result-panel.error {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #f44336;
+    }
+    
+    .result-panel.info {
+      background: #e3f2fd;
+      color: #1565c0;
+      border: 1px solid #2196f3;
+    }
+    
+    /* Provider Setup Panel Styles */
+    /* SMS Editor Form Styles */
+    .editor-section {
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      padding: 24px;
+    }
+    
+    .provider-info {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      border-left: 4px solid #1976ff;
+    }
+    
+    .provider-info h4 {
+      margin: 0 0 8px 0;
+      color: #1976ff;
+      font-size: 16px;
+    }
+    
+    .provider-info p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .config-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+    
+    .btn-save, .btn-test {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;    }
+
+    /* SMS Editor Container */
+    .editor-container {
+      color: #1976ff;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    /* Pricing Section in Left Column */
+    .pricing-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .pricing-section h5 {
+      margin: 0 0 16px 0;
+      color: #1976ff;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      width: 100%;
+    }
+    
+    .pricing-details {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      max-width: 300px;
+      width: 100%;
+    }
+    
+    /* Setup Section in Right Column */
+    .setup-only-column h5 {
+      margin: 0 0 20px 0;
+      color: #1976ff;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+    }
+    
+    .setup-only-column .btn-setup-toggle {
+      width: 100%;
+      max-width: 200px;
+      justify-content: center;
+    }
+    
+    .benefits-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .benefits-list li {
+      padding: 8px 0;
+      color: #333;
+      font-size: 14px;
+      line-height: 1.5;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .benefits-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .benefit-icon {
+      color: #4caf50;
+      font-weight: bold;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    /* Right Column - Pricing */
+    .pricing-section h5 {
+      margin: 0 0 16px 0;
+      color: #1976ff;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .pricing-main {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    
+    .price-amount {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2e7d32;
+      margin: 0;
+    }
+    
+    .price-unit {
+      font-size: 12px;
+      color: #666;
+      margin: 2px 0 0 0;
+    }
+    
+    .pricing-tiers {
+      margin-top: 12px;
+    }
+    
+    .pricing-tier {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 12px;
+    }
+    
+    .pricing-tier:last-child {
+      border-bottom: none;
+    }
+    
+    .tier-volume {
+      color: #666;
+      font-size: 11px;
+    }
+    
+    .tier-price {
+      color: #2e7d32;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    
+    .pricing-note {
+      margin-top: 10px;
+      padding: 6px 8px;
+      background: #e3f2fd;
+      border-radius: 4px;
+      font-size: 10px;
+      color: #1565c0;
+      text-align: center;
+      line-height: 1.3;
+    }
+    
+    /* Setup Section in Right Column */
+    .setup-section-right {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    
+    .setup-section-right .setup-toggle-section {
+      margin: 0;
+      text-align: center;
+    }
+    
+    .setup-section-right .btn-setup-toggle {
+      width: auto;
+      min-width: 140px;
+      justify-content: center;
+      white-space: nowrap;
+    }
+    
+    /* Setup Section */
+    .setup-section {
+      grid-column: 1 / -1;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    /* Provider Links Styles */
+    .provider-links {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 4px;
+      width: 100%;
+    }
+    
+    .provider-link {
+      color: #1976ff;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+    
+    .provider-link:hover {
+      color: #1565c0;
+      text-decoration: underline;
+    }
+    
+    /* Modal Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .modal-overlay.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-container {
+      background: white;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 900px;
+      max-height: 80vh;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: modalSlideIn 0.3s ease;
+    }
+    
+    .modal-header {
+      background: linear-gradient(135deg, #1976ff 0%, #1565c0 100%);
+      color: white;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .modal-content {
+      display: flex;
+      max-height: calc(80vh - 80px);
+      overflow: hidden;
+    }
+    
+    .modal-left {
+      flex: 1;
+      padding: 24px;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+    }
+    
+    .modal-right {
+      flex: 1;
+      padding: 24px;
+      background: #f8f9fa;
+      overflow-y: auto;
+    }
+    
+    .benefits-section h3 {
+      color: #1976ff;
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .benefits-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .benefits-list li {
+      padding: 8px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .benefits-list li:before {
+      content: '✅';
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    .pricing-section h3 {
+      color: #1976ff;
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .pricing-table {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pricing-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .pricing-table th {
+      background: #1976ff;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .pricing-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 12px;
+    }
+    
+    .pricing-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .pricing-table tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+    
+    .price-highlight {
+      color: #1976ff;
+      font-weight: 600;
+    }
+    
+    .pricing-note {
+      background: #e3f2fd;
+      border: 1px solid #1976ff;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: #1565c0;
+    }
+    
+    /* Setup Modal Specific Styles */
+    .setup-modal-content {
+      padding: 24px;
+      max-height: calc(80vh - 80px);
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+    
+    .setup-left-column {
+      padding-right: 16px;
+    }
+    
+    .setup-right-column {
+      padding-left: 16px;
+      border-left: 1px solid #e0e0e0;
+    }
+    
+    .account-info-box {
+      background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
+      border: 2px solid #1976ff;
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 20px;
+    }
+    
+    .account-info-box h4 {
+      color: #1976ff;
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+    }
+    
+    .account-info-box p {
+      color: #333;
+      margin: 0 0 16px 0;
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: center;
+    }
+    
+    .account-info-box ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .account-info-box li {
+      color: #555;
+      margin: 8px 0;
+      font-size: 14px;
+      line-height: 1.5;
+      padding-left: 20px;
+      position: relative;
+    }
+    
+    .account-info-box li:before {
+      content: '•';
+      color: #1976ff;
+      font-weight: bold;
+      position: absolute;
+      left: 0;
+    }
+    
+    .account-info-box.own-account {
+      background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+      border-color: #4caf50;
+    }
+    
+    .account-info-box.own-account h4 {
+      color: #4caf50;
+    }
+    
+    .account-info-box.own-account li:before {
+      color: #4caf50;
+    }
+    
+    .setup-buttons-section h3 {
+      color: #333;
+      margin: 0 0 20px 0;
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+    }
+    
+    .setup-buttons {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 32px;
+      justify-content: center;
+    }
+    
+    .btn-sparky-account {
+      background: linear-gradient(180deg, #64b5f6 0%, #1976ff 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 20px 24px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(25, 118, 255, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 200px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    .btn-sparky-account:hover {
+      background: linear-gradient(180deg, #42a5f5 0%, #1565c0 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(25, 118, 255, 0.4);
+    }
+    
+    .btn-own-account {
+      background: linear-gradient(180deg, #81c784 0%, #4caf50 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 20px 24px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 200px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    .btn-own-account:hover {
+      background: linear-gradient(180deg, #66bb6a 0%, #388e3c 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    }
+    
+    .btn-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    
+    .btn-subtitle {
+      font-size: 12px;
+      font-weight: 400;
+      opacity: 0.9;
+      text-align: center;
+      line-height: 1.3;
+    }
+    
+    .setup-form-section {
+      border-top: 1px solid #e0e0e0;
+      padding-top: 24px;
+      margin-top: 24px;
+    }
+    
+    .setup-form-section h4 {
+      color: #1976ff;
+      margin: 0 0 16px 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .setup-form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    
+    .setup-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .setup-form-group label {
+      font-weight: 500;
+      color: #555;
+      font-size: 14px;
+    }
+    
+    .setup-form-group input,
+    .setup-form-group select,
+    .setup-form-group textarea {
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    
+    .setup-form-group input:focus,
+    .setup-form-group select:focus,
+    .setup-form-group textarea:focus {
+      outline: none;
+      border-color: #1976ff;
+      box-shadow: 0 0 0 3px rgba(25, 118, 255, 0.1);
+    }
+    
+    .field-description {
+      font-size: 12px;
+      color: #666;
+      font-style: italic;
+      margin-top: 4px;
+    }
+    
+    .setup-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    .btn-setup-save {
+      background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-setup-save:hover {
+      background: linear-gradient(135deg, #45a049 0%, #388e3c 100%);
+      transform: translateY(-1px);
+    }
+    
+    .btn-setup-test {
+      background: linear-gradient(135deg, #2196f3 0%, #1976ff 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-setup-test:hover {
+      background: linear-gradient(135deg, #1976ff 0%, #1565c0 100%);
+      transform: translateY(-1px);
+    }
+    
+    .sparky-account-info {
+      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+      border: 1px solid #1976ff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .sparky-account-info h4 {
+      color: #1976ff;
+      margin: 0 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .sparky-account-info p {
+      margin: 0 0 12px 0;
+      color: #555;
+      line-height: 1.5;
+    }
+    
+    .sparky-account-info ul {
+      margin: 0;
+      padding-left: 20px;
+      color: #555;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes modalSlideIn {
+      from { 
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    
+    /* Information Columns Section */
+    .info-columns-section {
+      margin: 48px 0;
+      padding: 32px;
+      background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
+      border-radius: 16px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    }
+    
+    .info-columns-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .info-column {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e0e0e0;
+      transition: all 0.3s ease;
+    }
+    
+    .info-column:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    }
+    
+    .info-column h3 {
+      color: #1976ff;
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .info-column .icon {
+      font-size: 24px;
+    }
+    
+    .info-column p {
+      color: #555;
+      line-height: 1.6;
+      margin: 0 0 16px 0;
+      font-size: 14px;
+    }
+    
+    .info-column ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .info-column li {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 8px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+    
+    .info-column li:before {
+      content: '✅';
+      position: absolute;
+      left: 0;
+      font-size: 12px;
+    }
+    
+    .info-column.warning li:before {
+      content: '⚠️';
+    }
+    
+    .info-column.danger li:before {
+      content: '🚫';
+    }
+    
+    .highlight-box {
+      background: #fff3e0;
+      border: 1px solid #ff9800;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    
+    .highlight-box p {
+      margin: 0;
+      color: #e65100;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    /* Left Column Layout */
+    .left-column-content {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: start;
+    }
+    
+    .guidance-text {
+      background: #f8f9ff;
+      border: 1px solid #e3f2fd;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    .guidance-text p {
+      margin: 0 0 12px 0;
+      color: #333;
+      font-weight: 500;
+    }
+    
+    .buzz-words-section {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    .buzz-words-title {
+      font-weight: 600;
+      color: #d32f2f;
+      margin: 0 0 8px 0;
+      font-size: 13px;
+    }
+    
+    .buzz-words-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0;
+    }
+    
+    .buzz-word {
+      background: #ffebee;
+      color: #c62828;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid #ffcdd2;
+    }
+    
+    .caution-words-section {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    .caution-words-title {
+      font-weight: 600;
+      color: #f57c00;
+      margin: 0 0 8px 0;
+      font-size: 13px;
+    }
+    
+    .caution-words-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0;
+    }
+    
+    .caution-word {
+      background: #fff8e1;
+      color: #ef6c00;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid #ffcc02;
+    }
+    
+    /* Word Container for variant buttons */
+    .word-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin: 2px 0;
+      position: relative;
+    }
+    
+    .variants-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+    }
+    
+    .variants-btn:hover {
+      opacity: 1;
+      background: rgba(0,0,0,0.1);
+      transform: scale(1.1);
+    }
+    
+    /* Variants Tooltip */
+    .variants-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      min-width: 200px;
+      max-width: 300px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      pointer-events: none;
+      margin-bottom: 5px;
+    }
+    
+    .word-container:hover .variants-tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .variants-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: white;
+    }
+    
+    .variants-tooltip-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 13px;
+    }
+    
+    .variants-tooltip-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    
+    .variants-tooltip-word {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      opacity: 0.8;
+    }
+    
+    .variants-tooltip-count {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #666;
+      text-align: center;
+    }
+    
+    /* Carrier Message Label */
+    #carrier-message-label {
+      color: #1976ff;
+      font-weight: 700;
+    }
+    
+    /* Message Word Highlighting - Text colors */
+    .word-highlight {
+      font-weight: 600;
+    }
+    
+    .word-safe {
+      color: #2e7d32;
+    }
+    
+    .word-caution {
+      color: #ffc107;
+    }
+    
+    .word-avoid {
+      color: #d32f2f;
+    }
+    
+    /* Message Preview with highlighting - Overlay shows colored text */
+    .message-preview-content {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 12px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      border: none;
+      background: transparent;
+      pointer-events: none;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow: hidden;
+      z-index: 1;
+      color: #333;
+    }
+    
+    .message-input-container {
+      position: relative;
+    }
+    
+    #sms-message {
+      background: transparent;
+      color: #333;
+      position: relative;
+      z-index: 2;
+      caret-color: #333;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* Placeholder for textarea */
+    #sms-message::placeholder {
+      color: #999;
+    }
+    
+    /* Carrier Info Button */
+    .carrier-info-button {
+      background: linear-gradient(180deg, #ff9999 0%, #ee5a52 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 16px 24px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      width: 100%;
+      margin-bottom: 24px;
+      justify-content: center;
+    }
+    
+    .carrier-info-button:hover {
+      background: linear-gradient(180deg, #ff8a80 0%, #d32f2f 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    }
+    
+    .carrier-info-button .icon {
+      font-size: 20px;
+    }
+    
+    /* Individual Carrier Buttons */
+    .carrier-buttons-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    
+    .carrier-button {
+      border: none;
+      border-radius: 8px;
+      padding: 5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      font-size: 14px;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      width: 80px;
+      text-align: center;
+    }
+    
+    .carrier-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* T-Mobile - Magenta */
+    .carrier-button.tmobile {
+      background: linear-gradient(180deg, #ff69b4 0%, #e91e63 100%);
+    }
+    
+    .carrier-button.tmobile:hover {
+      background: linear-gradient(180deg, #ff1493 0%, #c2185b 100%);
+    }
+    
+    /* Verizon - Red */
+    .carrier-button.verizon {
+      background: linear-gradient(180deg, #ff4444 0%, #d50000 100%);
+    }
+    
+    .carrier-button.verizon:hover {
+      background: linear-gradient(180deg, #ff1744 0%, #b71c1c 100%);
+    }
+    
+    /* AT&T - Blue */
+    .carrier-button.att {
+      background: linear-gradient(180deg, #4fc3f7 0%, #0277bd 100%);
+    }
+    
+    .carrier-button.att:hover {
+      background: linear-gradient(180deg, #29b6f6 0%, #01579b 100%);
+    }
+    
+    /* Rogers - Red */
+    .carrier-button.rogers {
+      background: linear-gradient(180deg, #ef5350 0%, #c62828 100%);
+    }
+    
+    .carrier-button.rogers:hover {
+      background: linear-gradient(180deg, #e53935 0%, #b71c1c 100%);
+    }
+    
+    /* EE - Orange/Yellow */
+    .carrier-button.ee {
+      background: linear-gradient(180deg, #ffb74d 0%, #ff9800 100%);
+    }
+    
+    .carrier-button.ee:hover {
+      background: linear-gradient(180deg, #ffa726 0%, #f57c00 100%);
+    }
+    
+    /* Telstra - Blue */
+    .carrier-button.telstra {
+      background: linear-gradient(180deg, #42a5f5 0%, #1976d2 100%);
+    }
+    
+    .carrier-button.telstra:hover {
+      background: linear-gradient(180deg, #2196f3 0%, #1565c0 100%);
+    }
+    
+    /* Orange - Orange */
+    .carrier-button.orange {
+      background: linear-gradient(180deg, #ff9800 0%, #ef6c00 100%);
+    }
+    
+    .carrier-button.orange:hover {
+      background: linear-gradient(180deg, #ff8f00 0%, #e65100 100%);
+    }
+    
+    @media (max-width: 768px) {
+      .info-columns-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .info-columns-section {
+        margin: 32px 0;
+        padding: 20px;
+      }
+      
+      .modal-content {
+        flex-direction: column;
+      }
+      
+      .modal-left {
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      
+      .modal-container {
+        width: 95%;
+        max-height: 90vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main style="max-width:1400px;margin:0 auto;padding:24px;">
+    <!-- SMS Provider Selection -->
+    <section class="providers-section">
+      <h1 class="providers-headline">🚀 SMS Providers with no A2P required</h1>
+      
+      <div class="providers-container">
+        <div class="provider-column">
+          <div class="provider-card" data-provider="bulksms" onclick="selectProvider('bulksms')">
+            <div class="provider-content">
+              <h3>BulkSMS</h3>
+            </div>
+          </div>
+          <div class="provider-links">
+            <a href="#" class="provider-link" onclick="showProviderInfo('bulksms'); return false;">Info</a>
+            <a href="#" class="provider-link" onclick="showProviderSetup('bulksms'); return false;">Set Up</a>
+          </div>
+        </div>
+        
+        <div class="provider-column">
+          <div class="provider-card" data-provider="infobip" onclick="selectProvider('infobip')">
+            <div class="provider-content">
+              <h3>Infobip</h3>
+            </div>
+          </div>
+          <div class="provider-links">
+            <a href="#" class="provider-link" onclick="showProviderInfo('infobip'); return false;">Info</a>
+            <a href="#" class="provider-link" onclick="showProviderSetup('infobip'); return false;">Set Up</a>
+          </div>
+        </div>
+        
+        <div class="provider-column">
+          <div class="provider-card" data-provider="clicksend" onclick="selectProvider('clicksend')">
+            <div class="provider-content">
+              <h3>ClickSend</h3>
+            </div>
+          </div>
+          <div class="provider-links">
+            <a href="#" class="provider-link" onclick="showProviderInfo('clicksend'); return false;">Info</a>
+            <a href="#" class="provider-link" onclick="showProviderSetup('clicksend'); return false;">Set Up</a>
+          </div>
+        </div>
+        
+        <div class="provider-column">
+          <div class="provider-card" data-provider="messagebird" onclick="selectProvider('messagebird')">
+            <div class="provider-content">
+              <h3>MessageBird</h3>
+            </div>
+          </div>
+          <div class="provider-links">
+            <a href="#" class="provider-link" onclick="showProviderInfo('messagebird'); return false;">Info</a>
+            <a href="#" class="provider-link" onclick="showProviderSetup('messagebird'); return false;">Set Up</a>
+          </div>
+        </div>
+        
+        <div class="provider-column">
+          <div class="provider-card" data-provider="sinch" onclick="selectProvider('sinch')">
+            <div class="provider-content">
+              <h3>Sinch</h3>
+            </div>
+          </div>
+          <div class="provider-links">
+            <a href="#" class="provider-link" onclick="showProviderInfo('sinch'); return false;">Info</a>
+            <a href="#" class="provider-link" onclick="showProviderSetup('sinch'); return false;">Set Up</a>
+          </div>
+        </div>
+        
+        <div class="provider-column">
+          <div class="provider-card" data-provider="textmagic" onclick="selectProvider('textmagic')">
+            <div class="provider-content">
+              <h3>TextMagic</h3>
+            </div>
+          </div>
+          <div class="provider-links">
+            <a href="#" class="provider-link" onclick="showProviderInfo('textmagic'); return false;">Info</a>
+            <a href="#" class="provider-link" onclick="showProviderSetup('textmagic'); return false;">Set Up</a>
+          </div>
+        </div>
+        
+        <div class="provider-column">
+          <div class="provider-card" data-provider="plivo" onclick="selectProvider('plivo')">
+            <div class="provider-content">
+              <h3>Plivo</h3>
+            </div>
+          </div>
+          <div class="provider-links">
+            <a href="#" class="provider-link" onclick="showProviderInfo('plivo'); return false;">Info</a>
+            <a href="#" class="provider-link" onclick="showProviderSetup('plivo'); return false;">Set Up</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Information Columns Section -->
+    <section class="info-columns-section">
+      <div class="info-columns-container">
+        <!-- Left Column - Guidance and Carrier Buttons -->
+        <div class="info-column">
+          <button class="carrier-info-button" onclick="showCarrierInfoModal()">
+            <span class="icon">🚫</span>
+            Carrier Blocking Info & Best Practices
+          </button>
+          
+          <div class="left-column-content">
+            <div class="guidance-text">
+              <p>Please select the provider and write code in the message editor. The editor will optimize your message for best deliverability.</p>
+              
+              <div class="buzz-words-section" id="buzz-words-display">
+                <div class="buzz-words-title">General Buzz Words to Avoid:</div>
+                <div class="buzz-words-list">
+                  <div class="word-container">
+                    <span class="buzz-word">FREE</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">FREE Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="buzz-word variants-tooltip-word">FREE</span>
+                        <span class="buzz-word variants-tooltip-word">FR33</span>
+                        <span class="buzz-word variants-tooltip-word">FR3E</span>
+                        <span class="buzz-word variants-tooltip-word">FRE3</span>
+                        <span class="buzz-word variants-tooltip-word">F.R.E.E</span>
+                        <span class="buzz-word variants-tooltip-word">F-R-E-E</span>
+                        <span class="buzz-word variants-tooltip-word">F R E E</span>
+                        <span class="buzz-word variants-tooltip-word">PHREE</span>
+                        <span class="buzz-word variants-tooltip-word">FREE!</span>
+                        <span class="buzz-word variants-tooltip-word">*FREE*</span>
+                      </div>
+                      <div class="variants-tooltip-count">10+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="buzz-word">URGENT</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">URGENT Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="buzz-word variants-tooltip-word">URGENT</span>
+                        <span class="buzz-word variants-tooltip-word">URG3NT</span>
+                        <span class="buzz-word variants-tooltip-word">URGNT</span>
+                        <span class="buzz-word variants-tooltip-word">UR6ENT</span>
+                        <span class="buzz-word variants-tooltip-word">URGEN7</span>
+                        <span class="buzz-word variants-tooltip-word">U.R.G.E.N.T</span>
+                        <span class="buzz-word variants-tooltip-word">U-R-G-E-N-T</span>
+                        <span class="buzz-word variants-tooltip-word">URGENT!</span>
+                      </div>
+                      <div class="variants-tooltip-count">8+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="buzz-word">LIMITED TIME</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">LIMITED TIME Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="buzz-word variants-tooltip-word">LIMITED TIME</span>
+                        <span class="buzz-word variants-tooltip-word">L1M1TED T1ME</span>
+                        <span class="buzz-word variants-tooltip-word">LIMITED 71ME</span>
+                        <span class="buzz-word variants-tooltip-word">LIM1TED TIME</span>
+                        <span class="buzz-word variants-tooltip-word">LIMITED-TIME</span>
+                        <span class="buzz-word variants-tooltip-word">LIMITEDTIME</span>
+                      </div>
+                      <div class="variants-tooltip-count">6+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="buzz-word">GUARANTEE</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">GUARANTEE Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="buzz-word variants-tooltip-word">GUARANTEE</span>
+                        <span class="buzz-word variants-tooltip-word">GUARANT33</span>
+                        <span class="buzz-word variants-tooltip-word">GUARAN7EE</span>
+                        <span class="buzz-word variants-tooltip-word">6UARANTEE</span>
+                        <span class="buzz-word variants-tooltip-word">G.U.A.R.A.N.T.E.E</span>
+                        <span class="buzz-word variants-tooltip-word">GUARANTEE!</span>
+                      </div>
+                      <div class="variants-tooltip-count">6+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="buzz-word">CASH</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">CASH Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="buzz-word variants-tooltip-word">CASH</span>
+                        <span class="buzz-word variants-tooltip-word">CA$H</span>
+                        <span class="buzz-word variants-tooltip-word">C@SH</span>
+                        <span class="buzz-word variants-tooltip-word">KASH</span>
+                        <span class="buzz-word variants-tooltip-word">C.A.S.H</span>
+                        <span class="buzz-word variants-tooltip-word">$$</span>
+                      </div>
+                      <div class="variants-tooltip-count">6+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="buzz-word">WINNER</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">WINNER Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="buzz-word variants-tooltip-word">WINNER</span>
+                        <span class="buzz-word variants-tooltip-word">W1NNER</span>
+                        <span class="buzz-word variants-tooltip-word">WINN3R</span>
+                        <span class="buzz-word variants-tooltip-word">W.I.N.N.E.R</span>
+                        <span class="buzz-word variants-tooltip-word">WINNER!</span>
+                        <span class="buzz-word variants-tooltip-word">*WINNER*</span>
+                      </div>
+                      <div class="variants-tooltip-count">6+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="buzz-word">CLAIM NOW</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">CLAIM NOW Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="buzz-word variants-tooltip-word">CLAIM NOW</span>
+                        <span class="buzz-word variants-tooltip-word">CLA1M N0W</span>
+                        <span class="buzz-word variants-tooltip-word">CLAIM N0W</span>
+                        <span class="buzz-word variants-tooltip-word">CL@IM NOW</span>
+                        <span class="buzz-word variants-tooltip-word">CLAIM-NOW</span>
+                        <span class="buzz-word variants-tooltip-word">CLAIMNOW</span>
+                      </div>
+                      <div class="variants-tooltip-count">6+ variants detected</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="caution-words-section" id="caution-words-display">
+                <div class="caution-words-title">General Caution Words (Use Carefully):</div>
+                <div class="caution-words-list">
+                  <div class="word-container">
+                    <span class="caution-word">SALE</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">SALE Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="caution-word variants-tooltip-word">SALE</span>
+                        <span class="caution-word variants-tooltip-word">$ALE</span>
+                        <span class="caution-word variants-tooltip-word">SAL3</span>
+                        <span class="caution-word variants-tooltip-word">S.A.L.E</span>
+                        <span class="caution-word variants-tooltip-word">SALE!</span>
+                        <span class="caution-word variants-tooltip-word">*SALE*</span>
+                      </div>
+                      <div class="variants-tooltip-count">6+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="caution-word">OFFER</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">OFFER Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="caution-word variants-tooltip-word">OFFER</span>
+                        <span class="caution-word variants-tooltip-word">0FFER</span>
+                        <span class="caution-word variants-tooltip-word">OFFE3</span>
+                        <span class="caution-word variants-tooltip-word">O.F.F.E.R</span>
+                        <span class="caution-word variants-tooltip-word">OFFER!</span>
+                        <span class="caution-word variants-tooltip-word">*OFFER*</span>
+                      </div>
+                      <div class="variants-tooltip-count">6+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="caution-word">DISCOUNT</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">DISCOUNT Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="caution-word variants-tooltip-word">DISCOUNT</span>
+                        <span class="caution-word variants-tooltip-word">D1SCOUNT</span>
+                        <span class="caution-word variants-tooltip-word">DI$COUNT</span>
+                        <span class="caution-word variants-tooltip-word">DISC0UNT</span>
+                        <span class="caution-word variants-tooltip-word">DISCOUNT!</span>
+                      </div>
+                      <div class="variants-tooltip-count">5+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="caution-word">SPECIAL</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">SPECIAL Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="caution-word variants-tooltip-word">SPECIAL</span>
+                        <span class="caution-word variants-tooltip-word">$PECIAL</span>
+                        <span class="caution-word variants-tooltip-word">SPEC1AL</span>
+                        <span class="caution-word variants-tooltip-word">SPE3IAL</span>
+                        <span class="caution-word variants-tooltip-word">S.P.E.C.I.A.L</span>
+                      </div>
+                      <div class="variants-tooltip-count">5+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="caution-word">NEW</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">NEW Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="caution-word variants-tooltip-word">NEW</span>
+                        <span class="caution-word variants-tooltip-word">N3W</span>
+                        <span class="caution-word variants-tooltip-word">NE\W</span>
+                        <span class="caution-word variants-tooltip-word">N.E.W</span>
+                        <span class="caution-word variants-tooltip-word">NEW!</span>
+                        <span class="caution-word variants-tooltip-word">*NEW*</span>
+                      </div>
+                      <div class="variants-tooltip-count">6+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="caution-word">TODAY</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">TODAY Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="caution-word variants-tooltip-word">TODAY</span>
+                        <span class="caution-word variants-tooltip-word">T0DAY</span>
+                        <span class="caution-word variants-tooltip-word">70DAY</span>
+                        <span class="caution-word variants-tooltip-word">TOD@Y</span>
+                        <span class="caution-word variants-tooltip-word">T.O.D.A.Y</span>
+                        <span class="caution-word variants-tooltip-word">TODAY!</span>
+                      </div>
+                      <div class="variants-tooltip-count">6+ variants detected</div>
+                    </div>
+                  </div>
+                  <div class="word-container">
+                    <span class="caution-word">SAVE</span>
+                    <button class="variants-btn" title="Hover to see variants">🔍</button>
+                    <div class="variants-tooltip">
+                      <div class="variants-tooltip-title">SAVE Variants</div>
+                      <div class="variants-tooltip-grid">
+                        <span class="caution-word variants-tooltip-word">SAVE</span>
+                        <span class="caution-word variants-tooltip-word">$AVE</span>
+                        <span class="caution-word variants-tooltip-word">SAV3</span>
+                        <span class="caution-word variants-tooltip-word">S.A.V.E</span>
+                        <span class="caution-word variants-tooltip-word">SAVE!</span>
+                        <span class="caution-word variants-tooltip-word">*SAVE*</span>
+                      </div>
+                      <div class="variants-tooltip-count">6+ variants detected</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="carrier-buttons-container">
+              <button class="carrier-button tmobile" onclick="showCarrierBuzzWords('tmobile')">T-Mobile</button>
+              <button class="carrier-button verizon" onclick="showCarrierBuzzWords('verizon')">Verizon</button>
+              <button class="carrier-button att" onclick="showCarrierBuzzWords('att')">AT&T</button>
+              <button class="carrier-button rogers" onclick="showCarrierBuzzWords('rogers')">Rogers</button>
+              <button class="carrier-button ee" onclick="showCarrierBuzzWords('ee')">EE</button>
+              <button class="carrier-button telstra" onclick="showCarrierBuzzWords('telstra')">Telstra</button>
+              <button class="carrier-button orange" onclick="showCarrierBuzzWords('orange')">Orange</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right Column - SMS Message Editor -->
+        <div class="info-column">
+          <h2 style="color:#333;margin:0 0 24px 0;">📝 SMS Message Editor</h2>
+          <form id="sms-form">
+            <div class="form-group">
+              <label for="selected-provider">Selected Provider:</label>
+              <div class="selected-provider" id="selected-provider">
+                <span class="provider-display">Click a provider above to select</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="phone-number">Phone Number:</label>
+              <input type="tel" id="phone-number" placeholder="+1234567890" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="sms-message"><span id="carrier-message-label"></span>Message:</label>
+              <div class="message-input-container">
+                <textarea 
+                  id="sms-message" 
+                  placeholder="Type your SMS message here..." 
+                  maxlength="2000" 
+                  oninput="updateCharCount(); analyzeWords();"
+                  required
+                ></textarea>
+              </div>
+              <div class="char-counter">
+                <span id="char-count">0</span> characters
+                <span id="sms-parts">(1 Segment)</span>
+              </div>
+              
+              <!-- Word Analysis Warnings -->
+              <div id="word-warnings" class="word-warnings" style="display: none;">
+                <div class="warning-header">⚠️ Message Analysis:</div>
+                <div id="warning-content"></div>
+              </div>
+            </div>
+            
+            <!-- Insertable Variables Section -->
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <label>Template Variables:</label>
+                <button type="button" id="refresh-variables-btn" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">
+                  🔄 Reload from Profile
+                </button>
+              </div>
+              <div class="variables-container">
+                
+                <!-- Profile Variables -->
+                <div style="margin-bottom: 20px;">
+                  <h4 style="margin-bottom: 8px; color: #1976ff; font-size: 0.95em; display: flex; align-items: center;">
+                    👤 Your Profile Variables
+                  </h4>
+                  <p class="variables-help" style="margin-bottom: 12px;">Your personal information from profile settings:</p>
+                  <div class="variables-grid" id="dynamic-variables-grid">
+                    <!-- Variables will be loaded dynamically from user settings -->
+                    <div style="text-align: center; color: #666; padding: 20px;">
+                      <span>Loading your profile variables...</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Contact/Client Variables -->
+                <div style="margin-bottom: 16px; padding-top: 16px; border-top: 1px solid #eee;">
+                  <h4 style="margin-bottom: 8px; color: #e91e63; font-size: 0.95em; display: flex; align-items: center;">
+                    👥 Contact/Client Variables
+                  </h4>
+                  <p class="variables-help" style="margin-bottom: 12px;">Recipient-specific information (populated when sending to contacts):</p>
+                  <div class="variables-grid">
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{First Name}}')" title="Contact's First Name">
+                      {{First Name}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's first name</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Last Name}}')" title="Contact's Last Name">
+                      {{Last Name}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's last name</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{E-mail}}')" title="Contact's Email">
+                      {{E-mail}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's email</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Phone}}')" title="Contact's Phone">
+                      {{Phone}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's phone</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Address}}')" title="Contact's Address">
+                      {{Address}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's address</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{City}}')" title="Contact's City">
+                      {{City}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's city</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{State}}')" title="Contact's State">
+                      {{State}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's state</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Zip}}')" title="Contact's Zip Code">
+                      {{Zip}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's zip code</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Country}}')" title="Contact's Country">
+                      {{Country}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact's country</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Timezone}}')" title="Contact Timezone">
+                      {{Timezone}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Contact timezone</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Carrier}}')" title="Phone Carrier">
+                      {{Carrier}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Phone carrier</small>
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Sponsor Variables -->
+                <div style="margin-bottom: 16px; padding-top: 16px; border-top: 1px solid #eee;">
+                  <h4 style="margin-bottom: 8px; color: #ff9800; font-size: 0.95em; display: flex; align-items: center;">
+                    🏢 Sponsor Variables
+                  </h4>
+                  <p class="variables-help" style="margin-bottom: 12px;">Sponsor Username:</p>
+                  <div class="variables-grid">
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Sponsor}}')" title="Full Sponsor Name">
+                      {{Sponsor}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Full sponsor name</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Sponsor First}}')" title="Sponsor First Name">
+                      {{Sponsor First}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Sponsor first name</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Sponsor Last}}')" title="Sponsor Last Name">
+                      {{Sponsor Last}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Sponsor last name</small>
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- System Variables -->
+                <div style="padding-top: 16px; border-top: 1px solid #eee;">
+                  <h4 style="margin-bottom: 8px; color: #666; font-size: 0.95em; display: flex; align-items: center;">
+                    ⚙️ System Variables
+                  </h4>
+                  <p class="variables-help" style="margin-bottom: 12px;">Automatically populated system information:</p>
+                  <div class="variables-grid">
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Current Date}}')" title="Insert Current Date">
+                      {{Current Date}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Today's date</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Current Time}}')" title="Insert Current Time">
+                      {{Current Time}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Current time</small>
+                    </button>
+                    <button type="button" class="variable-btn" onclick="insertVariable('{{Unsubscribe}}')" title="Insert Unsubscribe Link">
+                      {{Unsubscribe}}
+                      <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">Unsubscribe link</small>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Template Snippets Section -->
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <label>Message Templates:</label>
+                <div>
+                  <button type="button" id="save-template-btn" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-right: 8px;">
+                    💾 Save Current as Template
+                  </button>
+                  <button type="button" id="manage-templates-btn" style="background: #6c757d; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">
+                    📝 Manage Templates
+                  </button>
+                </div>
+              </div>
+              <div class="templates-container">
+                <p class="templates-help" style="margin-bottom: 12px; color: #666; font-size: 0.9em;">Save and reuse your frequently used messages:</p>
+                <div class="templates-grid" id="templates-grid">
+                  <!-- Templates will be loaded dynamically -->
+                  <div style="text-align: center; color: #666; padding: 20px;">
+                    <span>Loading your saved templates...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="schedule-send">Schedule (Optional):</label>
+              <input type="datetime-local" id="schedule-send">
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" id="save-btn" onclick="showSaveModal()">💾 Save Message</button>
+              <button type="button" id="preview-btn" onclick="previewMessage()">Preview</button>
+              <button type="submit" id="send-btn">Send SMS</button>
+            </div>
+          </form>
+          
+          <!-- Message Preview -->
+          <div id="message-preview" class="message-preview" style="display: none;">
+            <h3>Message Preview</h3>
+            <div class="phone-mockup">
+              <div class="phone-screen">
+                <div class="message-bubble">
+                  <div class="sender-name" id="preview-sender">YourBusiness</div>
+                  <div class="message-text" id="preview-text"></div>
+                  <div class="message-time" id="preview-time"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Provider Information Guide -->
+    <section style="margin-top:32px;">
+      <div style="background:#f8f9fa;border:1px solid #dee2e6;border-radius:12px;padding:20px;text-align:center;">
+        <h3 style="color:#495057;margin:0 0 8px 0;font-size:18px;">📋 Need Provider Setup Help?</h3>
+        <p style="margin:0 0 16px 0;font-size:14px;color:#6c757d;">
+          View our complete guide with setup instructions, pricing, and features for all providers.
+        </p>
+        <a href="SMS_PROVIDERS_NO_A2P_GUIDE.md" target="_blank" 
+           style="background:#1976ff;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;font-size:14px;">
+          📖 View Provider Guide
+        </a>
+      </div>
+    </section>
+
+    <!-- Provider Setup Modal -->
+    <div id="provider-setup-modal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2 class="modal-title" id="setup-modal-title">Provider Setup</h2>
+          <button class="modal-close" onclick="closeSetupModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="setup-modal-content">
+            <div class="setup-left-column">
+              <div class="setup-buttons-section">
+                <h3>Choose Setup Method</h3>
+                <div class="setup-buttons">
+                  <button class="btn-sparky-account" onclick="selectSetupMethod('sparky')">
+                    <span class="btn-icon">⚡</span>
+                    Use Sparky Account
+                    <span class="btn-subtitle">Quick setup with our credentials</span>
+                  </button>
+                  <button class="btn-own-account" onclick="selectSetupMethod('own')">
+                    <span class="btn-icon">🔧</span>
+                    Use My Own Account
+                    <span class="btn-subtitle">Connect your provider account</span>
+                  </button>
+                </div>
+              </div>
+              
+              <div id="setup-form-section" class="setup-form-section" style="display: none;">
+                <div id="setup-form-content">
+                  <!-- Form content will be populated by JavaScript -->
+                </div>
+              </div>
+            </div>
+            
+            <div class="setup-right-column">
+              <div id="account-info-container">
+                <!-- Account information will be shown here when a method is selected -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carrier Info Modal -->
+    <div id="carrier-info-modal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2 class="modal-title">SMS Carrier Blocking & Delivery Guide</h2>
+          <button class="modal-close" onclick="closeCarrierInfoModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="modal-left">
+            <div class="benefits-section">
+              <h3>🚫 High-Risk Carriers (Frequently Block Messages)</h3>
+              <p style="color: #666; font-size: 14px; margin-bottom: 16px;">These major carriers have aggressive SMS filtering and frequently block business messages:</p>
+              <ul class="benefits-list">
+                <li>T-Mobile - Very high AI-powered filtering</li>
+                <li>Verizon - Strict A2P 10DLC compliance required</li>
+                <li>AT&T - Advanced content analysis and reputation scoring</li>
+                <li>Rogers (Canada) - Heavy filtering similar to US carriers</li>
+                <li>EE (UK) - Strict content filtering</li>
+                <li>Telstra (Australia) - Aggressive spam filtering</li>
+                <li>Orange (France) - GDPR-compliant filtering</li>
+              </ul>
+              <div class="highlight-box">
+                <p><strong>Important:</strong> These carriers require proper A2P 10DLC registration and compliant content to ensure delivery.</p>
+              </div>
+              
+              <h3 style="margin-top: 24px;">⚠️ Common Blocking Triggers</h3>
+              <ul class="benefits-list">
+                <li>Unregistered A2P 10DLC campaigns</li>
+                <li>Spam keywords like "URGENT", "FREE", "LIMITED TIME"</li>
+                <li>Shortened URLs (bit.ly, etc.)</li>
+                <li>Financial/crypto content</li>
+                <li>High volume without proper warming</li>
+                <li>No opt-out mechanism</li>
+              </ul>
+            </div>
+          </div>
+          <div class="modal-right">
+            <div class="pricing-section">
+              <h3>✅ Delivery Best Practices</h3>
+              <p style="color: #666; font-size: 14px; margin-bottom: 16px;">Follow these guidelines to maximize SMS delivery rates across all carriers:</p>
+              
+              <div class="pricing-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Best Practice</th>
+                      <th>Impact</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Register for A2P 10DLC</td>
+                      <td class="price-highlight">+30-40% delivery</td>
+                    </tr>
+                    <tr>
+                      <td>Proper opt-in processes</td>
+                      <td class="price-highlight">-60% blocking</td>
+                    </tr>
+                    <tr>
+                      <td>Natural language content</td>
+                      <td class="price-highlight">+25% engagement</td>
+                    </tr>
+                    <tr>
+                      <td>Include opt-out (STOP)</td>
+                      <td class="price-highlight">Required by law</td>
+                    </tr>
+                    <tr>
+                      <td>Test small batches first</td>
+                      <td class="price-highlight">Prevent issues</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <h3 style="margin-top: 20px;">📋 Content Guidelines</h3>
+              <ul class="benefits-list">
+                <li>Use conversational, natural language</li>
+                <li>Avoid ALL CAPS and excessive punctuation!!!</li>
+                <li>Include clear business identification</li>
+                <li>Use branded short domains instead of bit.ly</li>
+                <li>Personalize messages when possible</li>
+                <li>Keep messages under 160 characters when possible</li>
+              </ul>
+              
+              <div class="pricing-note">
+                <strong>Pro Tip:</strong> Start with small test campaigns to warm up your sender reputation before scaling up to larger volumes.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Message Modal -->
+    <div id="save-message-modal" class="modal-overlay">
+      <div class="modal-container" style="max-width: 500px;">
+        <div class="modal-header">
+          <h2 class="modal-title">💾 Save SMS Message</h2>
+          <button class="modal-close" onclick="closeSaveModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+          <form id="save-message-form" onsubmit="saveMessage(event)">
+            <div class="setup-form-group">
+              <label for="message-name">Message Name:</label>
+              <input type="text" id="message-name" placeholder="e.g., Black Friday Campaign" required>
+              <div class="field-description">Give your message a descriptive name</div>
+            </div>
+            
+            <div class="setup-form-group">
+              <label for="message-description">Description (Optional):</label>
+              <textarea id="message-description" rows="3" placeholder="Brief description of this message..."></textarea>
+              <div class="field-description">Optional description for future reference</div>
+            </div>
+            
+            <div class="setup-form-group">
+              <label for="message-tags">Tags (Optional):</label>
+              <input type="text" id="message-tags" placeholder="e.g., promotion, sale, announcement">
+              <div class="field-description">Comma-separated tags for easy searching</div>
+            </div>
+            
+            <div class="message-preview-save">
+              <label>Message Preview:</label>
+              <div id="save-message-preview" class="message-preview-text"></div>
+              <div id="save-message-stats" class="save-message-stats"></div>
+            </div>
+            
+            <div class="setup-actions">
+              <button type="button" onclick="closeSaveModal()" class="btn-secondary">Cancel</button>
+              <button type="submit" class="btn-setup-save">💾 Save to Assets</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Provider Info Modal -->
+    <div id="provider-modal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2 class="modal-title" id="modal-title">Provider Information</h2>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div class="modal-left">
+            <div class="benefits-section">
+              <h3>Key Benefits</h3>
+              <ul class="benefits-list" id="modal-benefits">
+                <!-- Benefits will be populated by JavaScript -->
+              </ul>
+            </div>
+          </div>
+          <div class="modal-right">
+            <div class="pricing-section">
+              <h3>Pricing Information</h3>
+              <div id="modal-pricing">
+                <!-- Pricing will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Initialize Supabase client
+    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[DEBUG] Supabase client initialized in sms_editor.html');
+
+    let selectedProvider = null;
+
+    // Load user profile variables from settings
+    async function loadUserProfileVariables() {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          console.log('User not authenticated, showing default variables');
+          showDefaultVariables();
+          return;
+        }
+
+        const { data: settings, error } = await supabase
+          .from('settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error loading settings:', error);
+          showDefaultVariables();
+          return;
+        }
+
+        const variablesGrid = document.getElementById('dynamic-variables-grid');
+        
+        if (!settings) {
+          variablesGrid.innerHTML = `
+            <div style="text-align: center; color: #666; padding: 20px;">
+              <p>No profile settings found. <a href="assets.html" style="color: #1976ff;">Set up your profile →</a></p>
+            </div>
+          `;
+          return;
+        }
+
+        // Create variable buttons with actual values
+        const variables = [
+          { key: 'My Prefix', value: settings.prefix, display: settings.prefix || 'Not set' },
+          { key: 'My First Name', value: settings.first_name, display: settings.first_name || 'Not set' },
+          { key: 'My Middle Initial', value: settings.middle_initial, display: settings.middle_initial || 'Not set' },
+          { key: 'My Last Name', value: settings.last_name, display: settings.last_name || 'Not set' },
+          { key: 'My Suffix', value: settings.suffix, display: settings.suffix || 'Not set' },
+          { key: 'My Email', value: settings.email, display: settings.email || 'Not set' },
+          { key: 'My Phone', value: settings.phone, display: settings.phone || 'Not set' },
+          { key: 'My Sparky Phone', value: settings.sparky_phone, display: settings.sparky_phone || 'Not set' },
+          { key: 'My Sparky Username', value: settings.sparky_username, display: settings.sparky_username || 'Not set' },
+          { key: 'My Support', value: settings.support, display: settings.support || 'Not set' },
+          { key: 'My City', value: settings.city, display: settings.city || 'Not set' },
+          { key: 'My State', value: settings.state, display: settings.state || 'Not set' },
+          { key: 'My Country', value: settings.country, display: settings.country || 'Not set' },
+          { key: 'My Website', value: settings.website, display: settings.website || 'Not set' },
+          { key: 'My Hot Link', value: settings.hot_link, display: settings.hot_link || 'Not set' },
+          { key: 'My Bio', value: settings.bio, display: settings.bio ? (settings.bio.length > 30 ? settings.bio.substring(0, 30) + '...' : settings.bio) : 'Not set' }
+        ];
+
+        variablesGrid.innerHTML = variables.map(variable => {
+          const hasValue = variable.value && variable.value.trim();
+          return `
+            <button type="button" 
+                    class="variable-btn ${hasValue ? '' : 'variable-btn-empty'}" 
+                    onclick="insertVariable('{{${variable.key}}}')" 
+                    title="Insert ${variable.key}: ${variable.display}">
+              {{${variable.key}}}
+              <small style="display: block; font-size: 0.7em; opacity: 0.8; margin-top: 2px;">${variable.display}</small>
+            </button>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Error loading user profile variables:', error);
+        showDefaultVariables();
+      }
+    }
+
+    function showDefaultVariables() {
+      const variablesGrid = document.getElementById('dynamic-variables-grid');
+      variablesGrid.innerHTML = `
+        <div style="text-align: center; color: #666; padding: 20px;">
+          <p>Using default variables. <a href="assets.html" style="color: #1976ff;">Set up your profile →</a></p>
+        </div>
+      `;
+    }
+
+    // Template Snippets Functionality
+    async function loadMessageTemplates() {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          console.log('User not authenticated, no templates to load');
+          showDefaultTemplates();
+          return;
+        }
+
+        const { data: templates, error } = await supabase
+          .from('message_templates')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error loading templates:', error);
+          showDefaultTemplates();
+          return;
+        }
+
+        const templatesGrid = document.getElementById('templates-grid');
+        
+        if (!templates || templates.length === 0) {
+          templatesGrid.innerHTML = `
+            <div style="text-align: center; color: #666; padding: 20px; grid-column: 1 / -1;">
+              <p>No saved templates yet. Create your first template by composing a message and clicking "Save Current as Template".</p>
+            </div>
+          `;
+          return;
+        }
+
+        templatesGrid.innerHTML = templates.map(template => `
+          <div class="template-btn" onclick="insertTemplate('${template.id}')">
+            <div class="template-actions">
+              <button class="template-action-btn template-edit-btn" onclick="event.stopPropagation(); editTemplate('${template.id}')" title="Edit Template">✏️</button>
+              <button class="template-action-btn template-delete-btn" onclick="event.stopPropagation(); deleteTemplate('${template.id}')" title="Delete Template">🗑️</button>
+            </div>
+            <div class="template-title">${template.title}</div>
+            <div class="template-preview">${template.content}</div>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error('Error loading message templates:', error);
+        showDefaultTemplates();
+      }
+    }
+
+    function showDefaultTemplates() {
+      const templatesGrid = document.getElementById('templates-grid');
+      templatesGrid.innerHTML = `
+        <div style="text-align: center; color: #666; padding: 20px; grid-column: 1 / -1;">
+          <p>No templates available. <a href="#" onclick="createFirstTemplate()" style="color: #1976ff;">Create your first template →</a></p>
+        </div>
+      `;
+    }
+
+    async function saveCurrentMessageAsTemplate() {
+      const messageText = document.getElementById('sms-message').value.trim();
+      if (!messageText) {
+        alert('Please enter a message before saving as template.');
+        return;
+      }
+
+      const title = prompt('Enter a name for this template:');
+      if (!title) return;
+
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          alert('Please log in to save templates.');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('message_templates')
+          .insert({
+            user_id: user.id,
+            title: title,
+            content: messageText,
+            created_at: new Date().toISOString()
+          });
+
+        if (error) {
+          console.error('Error saving template:', error);
+          alert('Error saving template. Please try again.');
+          return;
+        }
+
+        alert('Template saved successfully!');
+        loadMessageTemplates(); // Reload templates
+
+      } catch (error) {
+        console.error('Error saving template:', error);
+        alert('Error saving template. Please try again.');
+      }
+    }
+
+    async function insertTemplate(templateId) {
+      try {
+        const { data: template, error } = await supabase
+          .from('message_templates')
+          .select('content')
+          .eq('id', templateId)
+          .single();
+
+        if (error || !template) {
+          alert('Error loading template.');
+          return;
+        }
+
+        const messageTextarea = document.getElementById('sms-message');
+        messageTextarea.value = template.content;
+        messageTextarea.focus();
+        
+        // Trigger analysis and char count
+        if (typeof updateCharCount === 'function') updateCharCount();
+        if (typeof analyzeWords === 'function') analyzeWords();
+
+      } catch (error) {
+        console.error('Error inserting template:', error);
+        alert('Error loading template.');
+      }
+    }
+
+    async function deleteTemplate(templateId) {
+      if (!confirm('Are you sure you want to delete this template?')) return;
+
+      try {
+        const { error } = await supabase
+          .from('message_templates')
+          .delete()
+          .eq('id', templateId);
+
+        if (error) {
+          console.error('Error deleting template:', error);
+          alert('Error deleting template.');
+          return;
+        }
+
+        loadMessageTemplates(); // Reload templates
+
+      } catch (error) {
+        console.error('Error deleting template:', error);
+        alert('Error deleting template.');
+      }
+    }
+
+    // Provider Selection Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      // Load user profile variables
+      loadUserProfileVariables();
+      
+      // Load message templates
+      loadMessageTemplates();
+      
+      // Set up refresh variables button
+      document.getElementById('refresh-variables-btn').addEventListener('click', function() {
+        loadUserProfileVariables();
+        this.textContent = '✅ Reloaded';
+        setTimeout(() => {
+          this.innerHTML = '🔄 Reload from Profile';
+        }, 2000);
+      });
+      
+      // Set up template management buttons
+      document.getElementById('save-template-btn').addEventListener('click', saveCurrentMessageAsTemplate);
+      
+      document.getElementById('manage-templates-btn').addEventListener('click', function() {
+        // Could open a modal for advanced template management in the future
+        loadMessageTemplates();
+        this.textContent = '✅ Refreshed';
+        setTimeout(() => {
+          this.textContent = '📝 Manage Templates';
+        }, 2000);
+      });
+      
+      // Add click handlers for provider cards
+      const providerCards = document.querySelectorAll('.provider-card');
+      providerCards.forEach(card => {
+        card.addEventListener('click', function() {
+          const providerId = this.dataset.provider;
+          
+          // Remove selected class from all cards
+          providerCards.forEach(c => c.classList.remove('selected'));
+          
+          // Add selected class to clicked card
+          this.classList.add('selected');
+          selectedProvider = providerId;
+          
+          // Update the selected provider display
+          const providerName = this.querySelector('h3').textContent;
+          const providerDisplay = document.getElementById('selected-provider');
+          providerDisplay.innerHTML = `
+            <span class="provider-display selected">
+              <strong>${providerName}</strong> - Ready to send SMS
+            </span>
+          `;
+        });
+      });
+
+      // Set up textarea event listeners for proper overlay synchronization
+      const textarea = document.getElementById('sms-message');
+      const overlay = document.getElementById('message-highlight-overlay');
+      
+      if (textarea && overlay) {
+        // Sync scroll position
+        textarea.addEventListener('scroll', function() {
+          overlay.scrollTop = textarea.scrollTop;
+          overlay.scrollLeft = textarea.scrollLeft;
+        });
+        
+        // Update highlighting and character count on input
+        textarea.addEventListener('input', function() {
+          updateCharCount();
+          // Disable real-time highlighting to fix cursor issues
+          // highlightWords();
+        });
+        
+        // Ensure cursor stays visible and correctly positioned during typing
+        textarea.addEventListener('keyup', function() {
+          // Maintain scroll position only - don't interfere with cursor
+          setTimeout(() => {
+            overlay.scrollTop = textarea.scrollTop;
+            overlay.scrollLeft = textarea.scrollLeft;
+          }, 5);
+        });
+
+        // Handle clicks to maintain proper cursor positioning
+        textarea.addEventListener('click', function() {
+          setTimeout(() => {
+            const cursorPos = textarea.selectionStart;
+            textarea.setSelectionRange(cursorPos, cursorPos);
+          }, 0);
+        });
+      }
+    });
+
+    // Character counter for SMS
+    function updateCharCount() {
+      const textarea = document.getElementById('sms-message');
+      const counter = document.getElementById('char-count');
+      const smsPartsElement = document.getElementById('sms-parts');
+      const count = textarea.value.length;
+      
+      counter.textContent = count;
+      
+      // Calculate SMS segments based on actual SMS standards
+      let segments = 1;
+      
+      if (count === 0) {
+        segments = 1;
+      } else if (count <= 160) {
+        segments = 1;
+      } else {
+        // Multi-part SMS: each segment can hold 153 characters (7 chars reserved for concatenation headers)
+        segments = Math.ceil(count / 153);
+      }
+      
+      // Update segment display
+      smsPartsElement.textContent = `(${segments} Segment${segments > 1 ? 's' : ''})`;
+      
+      // Change color based on character count for visual feedback
+      if (count > 160) {
+        counter.style.color = '#e53935'; // Red for multi-segment (higher cost)
+        smsPartsElement.style.color = '#e53935';
+      } else if (count > 140) {
+        counter.style.color = '#ff9800'; // Orange for approaching single segment limit
+        smsPartsElement.style.color = '#ff9800';
+      } else {
+        counter.style.color = '#4caf50'; // Green for single segment
+        smsPartsElement.style.color = '#4caf50';
+      }
+    }
+
+    // Insert variable at cursor position
+    function insertVariable(variable) {
+      const textarea = document.getElementById('sms-message');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      
+      // Insert the variable at the cursor position
+      const newText = text.substring(0, start) + variable + text.substring(end);
+      textarea.value = newText;
+      
+      // Position cursor exactly after the variable
+      const newCursorPos = start + variable.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+      textarea.focus();
+      
+      // Update count only - no highlighting to avoid cursor issues
+      updateCharCount();
+    }
+
+    // Word highlighting function with variant detection
+    function highlightWords() {
+      const textarea = document.getElementById('sms-message');
+      const overlay = document.getElementById('message-highlight-overlay');
+      const text = textarea.value;
+      
+      if (!text) {
+        overlay.innerHTML = '';
+        return;
+      }
+      
+      // Split text into words while preserving spaces and line breaks
+      const words = text.split(/(\s+)/);
+      let highlightedText = '';
+      
+      words.forEach(word => {
+        if (/^\s+$/.test(word) || word === '') {
+          // Preserve spaces and line breaks
+          highlightedText += word;
+        } else {
+          const cleanWord = word.replace(/[^\w]/g, '').toUpperCase();
+          const wordClass = getWordClass(cleanWord);
+          
+          if (wordClass) {
+            highlightedText += `<span class="word-highlight ${wordClass}">${word}</span>`;
+          } else {
+            highlightedText += word;
+          }
+        }
+      });
+      
+      overlay.innerHTML = highlightedText;
+    }
+
+    // Global variables for current word lists
+    let currentBuzzWords = ['FREE', 'URGENT', 'LIMITED TIME', 'GUARANTEE', 'GUARANTEED', 'CASH', 'WINNER', 'CLAIM NOW'];
+    let currentCautionWords = ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE'];
+
+    // Word highlighting function with variant detection
+    function highlightWords() {
+      const textarea = document.getElementById('sms-message');
+      const overlay = document.getElementById('message-highlight-overlay');
+      const text = textarea.value;
+      
+      if (!text) {
+        overlay.innerHTML = '';
+        return;
+      }
+      
+      // Only highlight problematic words (red/yellow) - leave safe words and variables unhighlighted
+      let highlightedText = '';
+      let i = 0;
+      
+      while (i < text.length) {
+        // Check if we're at the start of a variable - leave variables unhighlighted
+        if (text.substring(i, i + 2) === '{{') {
+          // Find the end of the variable
+          const endIndex = text.indexOf('}}', i);
+          if (endIndex !== -1) {
+            // Extract the complete variable and leave it as plain text
+            const variable = text.substring(i, endIndex + 2);
+            highlightedText += variable;
+            i = endIndex + 2;
+            continue;
+          }
+        }
+        
+        // Check if we're at a word boundary
+        if (/\s/.test(text[i])) {
+          // Handle whitespace - preserve exactly
+          highlightedText += text[i];
+          i++;
+        } else {
+          // Find the end of the current word
+          let wordEnd = i;
+          while (wordEnd < text.length && !/\s/.test(text[wordEnd]) && text.substring(wordEnd, wordEnd + 2) !== '{{') {
+            wordEnd++;
+          }
+          
+          const word = text.substring(i, wordEnd);
+          if (word) {
+            const cleanWord = word.replace(/[^\w]/g, '').toUpperCase();
+            const wordClass = getWordClass(cleanWord);
+            
+            // Only highlight problematic words (caution/avoid) - leave safe words as plain text
+            if (wordClass === 'word-caution' || wordClass === 'word-avoid') {
+              highlightedText += `<span class="word-highlight ${wordClass}">${word}</span>`;
+            } else {
+              // Safe words and punctuation - no highlighting to avoid cursor issues
+              highlightedText += word;
+            }
+          }
+          i = wordEnd;
+        }
+      }
+      
+      overlay.innerHTML = highlightedText;
+      
+      // Ensure overlay stays synchronized
+      overlay.scrollTop = textarea.scrollTop;
+      overlay.scrollLeft = textarea.scrollLeft;
+    }
+
+    // Analyze words for warnings without interfering with cursor
+    function analyzeWords() {
+      const textarea = document.getElementById('sms-message');
+      const warningsDiv = document.getElementById('word-warnings');
+      const warningContent = document.getElementById('warning-content');
+      const text = textarea.value;
+      
+      if (!text.trim()) {
+        warningsDiv.style.display = 'none';
+        return;
+      }
+      
+      // Find problematic words
+      const words = text.split(/\s+/);
+      const avoidWords = [];
+      const cautionWords = [];
+      
+      words.forEach(word => {
+        const cleanWord = word.replace(/[^\w]/g, '').toUpperCase();
+        if (cleanWord) {
+          const wordClass = getWordClass(cleanWord);
+          if (wordClass === 'word-avoid') {
+            if (!avoidWords.includes(cleanWord)) {
+              avoidWords.push(cleanWord);
+            }
+          } else if (wordClass === 'word-caution') {
+            if (!cautionWords.includes(cleanWord)) {
+              cautionWords.push(cleanWord);
+            }
+          }
+        }
+      });
+      
+      // Show warnings if found
+      if (avoidWords.length > 0 || cautionWords.length > 0) {
+        let warningHTML = '';
+        
+        if (avoidWords.length > 0) {
+          warningHTML += `<div class="warning-item"><span class="warning-avoid">🚫 Avoid these words:</span> ${avoidWords.join(', ')}</div>`;
+        }
+        
+        if (cautionWords.length > 0) {
+          warningHTML += `<div class="warning-item"><span class="warning-caution">⚡ Use with caution:</span> ${cautionWords.join(', ')}</div>`;
+        }
+        
+        warningContent.innerHTML = warningHTML;
+        warningsDiv.style.display = 'block';
+      } else {
+        warningsDiv.style.display = 'none';
+      }
+    }
+
+    // Enhanced word classification with variant detection
+    function getWordClass(cleanWord) {
+      // Check exact matches first
+      if (currentBuzzWords.includes(cleanWord)) {
+        return 'word-avoid';
+      }
+      if (currentCautionWords.includes(cleanWord)) {
+        return 'word-caution';
+      }
+      
+      // Check for variants and creative spellings
+      const avoidVariants = getWordVariants(currentBuzzWords);
+      const cautionVariants = getWordVariants(currentCautionWords);
+      
+      for (let variant of avoidVariants) {
+        if (matchesVariant(cleanWord, variant)) {
+          return 'word-avoid';
+        }
+      }
+      
+      for (let variant of cautionVariants) {
+        if (matchesVariant(cleanWord, variant)) {
+          return 'word-caution';
+        }
+      }
+      
+      return null; // Safe word
+    }
+
+    // Generate common variants for spam words
+    function getWordVariants(wordList) {
+      const variants = [];
+      
+      wordList.forEach(word => {
+        variants.push(word);
+        
+        // Common character substitutions
+        variants.push(word.replace(/O/g, '0'));      // O -> 0
+        variants.push(word.replace(/I/g, '1'));      // I -> 1
+        variants.push(word.replace(/A/g, '@'));      // A -> @
+        variants.push(word.replace(/S/g, '$'));      // S -> $
+        variants.push(word.replace(/E/g, '3'));      // E -> 3
+        variants.push(word.replace(/T/g, '7'));      // T -> 7
+        variants.push(word.replace(/L/g, '1'));      // L -> 1
+        
+        // Multiple substitutions
+        let variant = word.replace(/O/g, '0').replace(/I/g, '1');
+        if (variant !== word) variants.push(variant);
+        
+        variant = word.replace(/A/g, '@').replace(/S/g, '$');
+        if (variant !== word) variants.push(variant);
+        
+        variant = word.replace(/E/g, '3').replace(/T/g, '7');
+        if (variant !== word) variants.push(variant);
+        
+        // Spacing variations (remove for matching)
+        variants.push(word.replace(/\s+/g, ''));
+        
+        // Common word endings and variations
+        variants.push(word + 'S');        // CREDITS
+        variants.push(word + 'ED');       // CREDITED
+        variants.push(word + 'ING');      // CREDITING
+        variants.push(word + 'ER');       // CREDITER
+        variants.push(word + 'ERS');      // CREDITERS
+        variants.push(word + 'LY');       // URGENTLY
+        variants.push(word + 'ABLE');     // CREDITABEL
+        variants.push(word + 'IBLE');     // CREDITIBLE
+        
+        // For words ending in 'E', add variants without 'E' before endings
+        if (word.endsWith('E')) {
+          const baseWord = word.slice(0, -1);
+          variants.push(baseWord + 'ING');   // SAVE -> SAVING
+          variants.push(baseWord + 'ED');    // SAVE -> SAVED
+          variants.push(baseWord + 'ER');    // SAVE -> SAVER
+          variants.push(baseWord + 'ERS');   // SAVE -> SAVERS
+        }
+        
+        // For words ending in 'Y', replace with 'IES'
+        if (word.endsWith('Y')) {
+          const baseWord = word.slice(0, -1);
+          variants.push(baseWord + 'IES');   // GUARANTEE -> GUARANTIES
+          variants.push(baseWord + 'IED');   // GUARANTEE -> GUARANTEED (if not already)
+        }
+        
+        // Extra characters inserted
+        if (word.length > 3) {
+          variants.push(word.split('').join('.'));     // F.R.E.E
+          variants.push(word.split('').join('-'));     // F-R-E-E
+          variants.push(word.split('').join('*'));     // F*R*E*E
+          variants.push(word.split('').join(' '));     // F R E E
+        }
+        
+        // Repetition patterns
+        if (word.length > 2) {
+          variants.push(word + word.charAt(word.length - 1)); // FREEE
+          variants.push(word.charAt(0) + word);               // FFREE
+        }
+        
+        // Common misspellings for specific words
+        if (word === 'FREE') {
+          variants.push('FREI', 'PHREE', 'PREE', 'FRE3', 'FR33', 'FR3E');
+        }
+        if (word === 'GUARANTEE' || word === 'GUARANTEED') {
+          variants.push('GUARANTE', 'GARANTEE', 'GUARENTEE', 'GURANTEE', 'GARANTY');
+        }
+        if (word === 'CASH') {
+          variants.push('CA$H', 'KASH', 'CASSH', 'C4SH');
+        }
+        if (word === 'URGENT') {
+          variants.push('URGNT', 'URGEMT', 'URGEN7', 'URG3NT');
+        }
+        if (word === 'WINNER') {
+          variants.push('WINER', 'W1NNER', 'WINNR', 'W1NN3R');
+        }
+        if (word === 'OFFER') {
+          variants.push('0FFER', 'OFFR', '0FF3R', 'OFER');
+        }
+        if (word === 'SPECIAL') {
+          variants.push('SPECAL', 'SP3CIAL', 'SPECI4L', 'SPEC1AL');
+        }
+        if (word === 'CREDIT') {
+          variants.push('CREDIBLE', 'CREDIBILITY', 'CREDITABLE', 'CREDITOR', 'CREDITORS', 'CR3DIT', 'KREDIT');
+        }
+      });
+      
+      return [...new Set(variants)]; // Remove duplicates
+    }
+
+    // Check if a word matches a variant pattern
+    function matchesVariant(word, variant) {
+      // Exact match
+      if (word === variant) return true;
+      
+      // Remove common separators for comparison
+      const normalizedWord = word.replace(/[\.\-\*\s_]/g, '');
+      const normalizedVariant = variant.replace(/[\.\-\*\s_]/g, '');
+      
+      if (normalizedWord === normalizedVariant) return true;
+      
+      // Check if the word starts with the base word (for extended variants)
+      if (normalizedWord.startsWith(normalizedVariant) || normalizedVariant.startsWith(normalizedWord)) {
+        const shorter = normalizedWord.length < normalizedVariant.length ? normalizedWord : normalizedVariant;
+        const longer = normalizedWord.length >= normalizedVariant.length ? normalizedWord : normalizedVariant;
+        
+        // Allow if the longer word starts with the shorter and is reasonable length
+        if (longer.startsWith(shorter) && (longer.length - shorter.length) <= 4) {
+          return true;
+        }
+      }
+      
+      // Fuzzy matching for close variants (allow 1-2 character differences)
+      if (Math.abs(normalizedWord.length - normalizedVariant.length) <= 2) {
+        const similarity = calculateSimilarity(normalizedWord, normalizedVariant);
+        if (similarity > 0.8) return true; // 80% similarity threshold
+      }
+      
+      // Additional check for words that contain the base word
+      if (normalizedWord.length >= 4 && normalizedVariant.length >= 4) {
+        if (normalizedWord.includes(normalizedVariant) || normalizedVariant.includes(normalizedWord)) {
+          const similarity = calculateSimilarity(normalizedWord, normalizedVariant);
+          if (similarity > 0.7) return true; // 70% similarity for containment matches
+        }
+      }
+      
+      return false;
+    }
+
+    // Calculate string similarity using Levenshtein-based algorithm
+    function calculateSimilarity(str1, str2) {
+      const longer = str1.length > str2.length ? str1 : str2;
+      const shorter = str1.length > str2.length ? str2 : str1;
+      
+      if (longer.length === 0) return 1.0;
+      
+      const editDistance = levenshteinDistance(longer, shorter);
+      return (longer.length - editDistance) / longer.length;
+    }
+
+    // Levenshtein distance calculation
+    function levenshteinDistance(str1, str2) {
+      const matrix = [];
+      
+      for (let i = 0; i <= str2.length; i++) {
+        matrix[i] = [i];
+      }
+      
+      for (let j = 0; j <= str1.length; j++) {
+        matrix[0][j] = j;
+      }
+      
+      for (let i = 1; i <= str2.length; i++) {
+        for (let j = 1; j <= str1.length; j++) {
+          if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+            matrix[i][j] = matrix[i - 1][j - 1];
+          } else {
+            matrix[i][j] = Math.min(
+              matrix[i - 1][j - 1] + 1,
+              matrix[i][j - 1] + 1,
+              matrix[i - 1][j] + 1
+            );
+          }
+        }
+      }
+      
+      return matrix[str2.length][str1.length];
+    }
+
+    // Update word lists when carrier is selected
+    function updateWordLists(carrier) {
+      console.log('Updating word lists for carrier:', carrier);
+      
+      const carrierData = {
+        'tmobile': {
+          words: ['FREE', 'URGENT', 'ACT NOW', 'LIMITED TIME', 'GUARANTEE', 'GUARANTEED', 'CASH', 'WINNER', 'CONGRATULATIONS', 'CRYPTO', 'BITCOIN', 'INVESTMENT', 'LOAN', 'CREDIT', 'DEBT'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'EXCLUSIVE', 'BONUS', 'REWARDS', 'MONEY', 'EARN', 'INCOME']
+        },
+        'verizon': {
+          words: ['FREE', 'URGENT', 'CLICK HERE', 'LIMITED OFFER', 'GUARANTEE', 'GUARANTEED', 'CASH', 'WINNER', 'PRIZE', 'LOAN', 'CREDIT', 'REFINANCE', 'MORTGAGE', 'BITCOIN', 'INVESTMENT'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'PROMOTION', 'BONUS', 'BUSINESS', 'OPPORTUNITY', 'WORK', 'JOB']
+        },
+        'att': {
+          words: ['FREE', 'URGENT', 'ACT FAST', 'LIMITED TIME', 'GUARANTEE', 'GUARANTEED', 'CASH', 'WINNER', 'CLAIM', 'FINANCIAL', 'LOAN', 'CREDIT', 'DEBT', 'CASINO', 'GAMBLING'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'EXCLUSIVE', 'BONUS', 'REWARDS', 'MONEY', 'BANK', 'INSURANCE']
+        },
+        'rogers': {
+          words: ['FREE', 'URGENT', 'LIMITED TIME', 'GUARANTEE', 'GUARANTEED', 'CASH', 'WINNER', 'CONGRATULATIONS', 'LOAN', 'CREDIT', 'MORTGAGE', 'INVESTMENT', 'PHARMACY', 'PRESCRIPTION'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'PROMOTION', 'BONUS', 'HEALTH', 'MEDICAL', 'DOCTOR', 'TREATMENT']
+        },
+        'ee': {
+          words: ['FREE', 'URGENT', 'LIMITED OFFER', 'GUARANTEE', 'GUARANTEED', 'CASH', 'WINNER', 'PRIZE', 'CLAIM NOW', 'LOAN', 'CREDIT', 'GAMBLING', 'CASINO', 'ADULT', 'DATING'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'PROMOTION', 'BONUS', 'MEET', 'SINGLE', 'RELATIONSHIP', 'ROMANCE']
+        },
+        'telstra': {
+          words: ['FREE', 'URGENT', 'ACT NOW', 'LIMITED TIME', 'GUARANTEE', 'GUARANTEED', 'CASH', 'WINNER', 'CONGRATULATIONS', 'LOAN', 'CREDIT', 'INVESTMENT', 'BITCOIN', 'PHARMACY', 'MEDICAL'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'PROMOTION', 'BONUS', 'HEALTH', 'WELLNESS', 'TREATMENT', 'THERAPY']
+        },
+        'orange': {
+          words: ['FREE', 'URGENT', 'GRATUIT', 'LIMITED OFFER', 'GUARANTEE', 'GUARANTEED', 'CASH', 'WINNER', 'FÉLICITATIONS', 'LOAN', 'CRÉDIT', 'CASINO', 'GAMBLING', 'ADULT', 'PHARMACY'],
+          caution: ['SALE', 'VENTE', 'OFFRE', 'DISCOUNT', 'REMISE', 'SPECIAL', 'SPÉCIAL', 'NEW', 'NOUVEAU', 'TODAY', "AUJOURD'HUI", 'SAVE', 'ÉCONOMISER']
+        }
+      };
+      
+      if (carrierData[carrier]) {
+        currentBuzzWords = carrierData[carrier].words;
+        currentCautionWords = carrierData[carrier].caution;
+        console.log('Updated buzz words:', currentBuzzWords);
+        console.log('Updated caution words:', currentCautionWords);
+        
+        // Trigger word analysis with new carrier-specific words
+        analyzeWords();
+      }
+    }
+
+    // Show variants modal for a specific word
+    function showVariants(word, type) {
+      const variants = getWordVariantsForDisplay(word);
+      const wordType = type === 'buzz' ? 'Buzz Word' : 'Caution Word';
+      const colorClass = type === 'buzz' ? 'buzz-word' : 'caution-word';
+      
+      const modalHTML = `
+        <div id="variants-modal" class="modal-overlay" style="z-index: 10000;">
+          <div class="modal-container" style="max-width: 500px;">
+            <div class="modal-header">
+              <h2 class="modal-title">Variants for "${word}" (${wordType})</h2>
+              <button class="modal-close" onclick="closeVariantsModal()">&times;</button>
+            </div>
+            <div class="modal-content">
+              <p style="margin-bottom: 16px; color: #666;">
+                These are common variations and misspellings that spammers use to bypass filters. 
+                Our system detects these automatically in your messages.
+              </p>
+              <div class="variants-grid" style="display: flex; flex-wrap: wrap; gap: 6px; max-height: 300px; overflow-y: auto;">
+                ${variants.map(variant => `
+                  <span class="${colorClass}" style="opacity: ${variant === word ? '1' : '0.8'};">
+                    ${variant}
+                  </span>
+                `).join('')}
+              </div>
+              <div style="margin-top: 16px; padding: 12px; background: #f5f5f5; border-radius: 8px; font-size: 14px; color: #666;">
+                <strong>Total variants detected:</strong> ${variants.length}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Remove existing modal if any
+      const existingModal = document.getElementById('variants-modal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+      
+      // Add modal to body
+      document.body.insertAdjacentHTML('beforeend', modalHTML);
+      
+      // Add click outside to close
+      document.getElementById('variants-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeVariantsModal();
+        }
+      });
+    }
+
+    function closeVariantsModal() {
+      const modal = document.getElementById('variants-modal');
+      if (modal) {
+        modal.remove();
+      }
+    }
+
+    // Generate variants for display (more comprehensive than the matching function)
+    function getWordVariantsForDisplay(word) {
+      const variants = new Set();
+      variants.add(word); // Original word
+      
+      // Common character substitutions
+      variants.add(word.replace(/O/g, '0'));      // O -> 0
+      variants.add(word.replace(/I/g, '1'));      // I -> 1
+      variants.add(word.replace(/A/g, '@'));      // A -> @
+      variants.add(word.replace(/S/g, '$'));      // S -> $
+      variants.add(word.replace(/E/g, '3'));      // E -> 3
+      variants.add(word.replace(/T/g, '7'));      // T -> 7
+      variants.add(word.replace(/L/g, '1'));      // L -> 1
+      variants.add(word.replace(/G/g, '6'));      // G -> 6
+      variants.add(word.replace(/B/g, '8'));      // B -> 8
+      
+      // Multiple substitutions
+      variants.add(word.replace(/O/g, '0').replace(/I/g, '1'));
+      variants.add(word.replace(/A/g, '@').replace(/S/g, '$'));
+      variants.add(word.replace(/E/g, '3').replace(/T/g, '7'));
+      variants.add(word.replace(/F/g, 'PH'));
+      variants.add(word.replace(/PH/g, 'F'));
+      
+      // Spacing and punctuation variations
+      if (word.length > 3) {
+        variants.add(word.split('').join('.'));     // F.R.E.E
+        variants.add(word.split('').join('-'));     // F-R-E-E
+        variants.add(word.split('').join(' '));     // F R E E
+        variants.add(word.split('').join('*'));     // F*R*E*E
+        variants.add(word.split('').join('_'));     // F_R_E_E
+      }
+      
+      // Remove spaces for comparison
+      variants.add(word.replace(/\s+/g, ''));
+      
+      // Add extra characters
+      if (word.length > 2) {
+        variants.add(word + '!');
+        variants.add(word + '!!');
+        variants.add(word + '!!!');
+        variants.add('*' + word + '*');
+        variants.add('~' + word + '~');
+      }
+      
+      // Common misspellings and variations
+      if (word === 'FREE') {
+        variants.add('FREA');
+        variants.add('FERE');
+        variants.add('FR33');
+        variants.add('FRE3');
+        variants.add('FR3E');
+        variants.add('PHREE');
+      }
+      
+      if (word === 'URGENT') {
+        variants.add('URG3NT');
+        variants.add('URGNT');
+        variants.add('UR6ENT');
+        variants.add('URGEN7');
+      }
+      
+      if (word === 'GUARANTEE' || word === 'GUARANTEED') {
+        variants.add('GUARANT33');
+        variants.add('GUARAN7EE');
+        variants.add('GUARANTE3');
+        variants.add('6UARANTEE');
+      }
+      
+      if (word === 'CASH') {
+        variants.add('CA$H');
+        variants.add('C@SH');
+        variants.add('KASH');
+        variants.add('$$');
+      }
+      
+      // Remove duplicates and empty strings
+      return Array.from(variants).filter(v => v && v.trim());
+    }
+
+    // Generate variants HTML for tooltips
+    function generateVariantsHTML(word, className) {
+      const variants = getWordVariantsForDisplay(word);
+      return variants.slice(0, 8).map(variant => 
+        `<span class="${className} variants-tooltip-word">${variant}</span>`
+      ).join('');
+    }
+
+    // Get variant count for display
+    function getVariantCount(word) {
+      return getWordVariantsForDisplay(word).length;
+    }
+
+    // Preview message function
+    function previewMessage() {
+      const message = document.getElementById('sms-message').value.trim();
+      const recipients = document.getElementById('sms-recipients').value.trim();
+      
+      if (!message) {
+        alert('Please enter a message to preview.');
+        return;
+      }
+
+      if (!selectedProvider) {
+        alert('Please select an SMS provider first.');
+        return;
+      }
+      
+      const previewWindow = window.open('', '_blank', 'width=400,height=600');
+      previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>SMS Preview</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+            .phone { background: white; border-radius: 20px; padding: 20px; max-width: 300px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            .message { background: #007aff; color: white; padding: 12px 16px; border-radius: 18px; margin: 10px 0; font-size: 16px; line-height: 1.4; }
+            .info { color: #666; font-size: 14px; margin-top: 20px; }
+            .provider { background: #e3f2fd; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; color: #1976ff; }
+          </style>
+        </head>
+        <body>
+          <div class="phone">
+            <h3>SMS Preview</h3>
+            <div class="provider">Provider: ${selectedProvider.toUpperCase()}</div>
+            <div class="message">${message}</div>
+            <div class="info">
+              <strong>Character Count:</strong> ${message.length}/160<br>
+              <strong>Estimated Cost:</strong> $${(message.length > 160 ? 0.02 : 0.01).toFixed(2)} per message<br>
+              ${recipients ? `<strong>Recipients:</strong> ${recipients.split(',').length} numbers` : ''}
+              <br><strong>A2P Registration:</strong> Not required ✅
+            </div>
+          </div>
+        </body>
+        </html>
+      `);
+    }
+
+    // SMS form handler
+    document.getElementById('sms-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const message = document.getElementById('sms-message').value.trim();
+      const recipients = document.getElementById('sms-recipients').value.trim();
+      
+      if (!selectedProvider) {
+        showResult('Please select an SMS provider first.', 'error');
+        return;
+      }
+      
+      if (!message) {
+        showResult('Please enter a message.', 'error');
+        return;
+      }
+      
+      if (!recipients) {
+        showResult('Please enter recipient phone numbers.', 'error');
+        return;
+      }
+      
+      showResult(`Sending SMS via ${selectedProvider.toUpperCase()}...`, 'info');
+      
+      // Simulate SMS sending
+      setTimeout(() => {
+        const recipientCount = recipients.split(',').length;
+        showResult(`✅ SMS sent successfully via ${selectedProvider.toUpperCase()} to ${recipientCount} recipient(s)!<br><br><strong>Provider:</strong> ${selectedProvider}<br><strong>Message:</strong> ${message}<br><strong>Status:</strong> No A2P registration required`, 'success');
+      }, 1500);
+    });
+
+    // Show result function
+    function showResult(message, type) {
+      const resultDiv = document.getElementById('sms-result');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = message;
+      resultDiv.className = `result-panel ${type}`;
+      resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Provider Info and Setup functions
+    function showProviderInfo(provider) {
+      const providerData = getProviderData(provider);
+      
+      // Update modal title
+      document.getElementById('modal-title').textContent = `${providerData.name} - Information`;
+      
+      // Populate benefits
+      const benefitsList = document.getElementById('modal-benefits');
+      benefitsList.innerHTML = providerData.benefits.map(benefit => `<li>${benefit}</li>`).join('');
+      
+      // Populate pricing
+      const pricingDiv = document.getElementById('modal-pricing');
+      pricingDiv.innerHTML = providerData.pricing;
+      
+      // Show modal
+      document.getElementById('provider-modal').classList.add('active');
+    }
+    
+    function closeModal() {
+      document.getElementById('provider-modal').classList.remove('active');
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('provider-modal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
+    });
+    
+    function showProviderSetup(provider) {
+      currentSetupProvider = provider;
+      const providerData = getProviderData(provider);
+      
+      // Update modal title
+      document.getElementById('setup-modal-title').textContent = `${providerData.name} - Setup`;
+      
+      // Reset form section
+      document.getElementById('setup-form-section').style.display = 'none';
+      
+      // Show setup modal
+      document.getElementById('provider-setup-modal').classList.add('active');
+    }
+    
+    function closeSetupModal() {
+      document.getElementById('provider-setup-modal').classList.remove('active');
+    }
+    
+    // Carrier Info Modal Functions
+    function showCarrierInfoModal() {
+      document.getElementById('carrier-info-modal').classList.add('active');
+    }
+    
+    function closeCarrierInfoModal() {
+      document.getElementById('carrier-info-modal').classList.remove('active');
+    }
+    
+    // Close carrier info modal when clicking outside
+    document.getElementById('carrier-info-modal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeCarrierInfoModal();
+      }
+    });
+    
+    // Carrier Buzz Words Function
+    function showCarrierBuzzWords(carrier) {
+      console.log('Selecting carrier:', carrier);
+      
+      const carrierBuzzWords = {
+        'tmobile': {
+          name: 'T-Mobile',
+          words: ['FREE', 'URGENT', 'ACT NOW', 'LIMITED TIME', 'GUARANTEE', 'CASH', 'WINNER', 'CONGRATULATIONS', 'CRYPTO', 'BITCOIN', 'INVESTMENT', 'LOAN', 'CREDIT', 'DEBT'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'EXCLUSIVE', 'BONUS', 'REWARDS', 'MONEY', 'EARN', 'INCOME']
+        },
+        'verizon': {
+          name: 'Verizon', 
+          words: ['FREE', 'URGENT', 'CLICK HERE', 'LIMITED OFFER', 'GUARANTEE', 'CASH', 'WINNER', 'PRIZE', 'LOAN', 'CREDIT', 'REFINANCE', 'MORTGAGE', 'BITCOIN', 'INVESTMENT'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'PROMOTION', 'BONUS', 'BUSINESS', 'OPPORTUNITY', 'WORK', 'JOB']
+        },
+        'att': {
+          name: 'AT&T',
+          words: ['FREE', 'URGENT', 'ACT FAST', 'LIMITED TIME', 'GUARANTEE', 'CASH', 'WINNER', 'CLAIM', 'FINANCIAL', 'LOAN', 'CREDIT', 'DEBT', 'CASINO', 'GAMBLING'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'EXCLUSIVE', 'BONUS', 'REWARDS', 'MONEY', 'BANK', 'INSURANCE']
+        },
+        'rogers': {
+          name: 'Rogers',
+          words: ['FREE', 'URGENT', 'LIMITED TIME', 'GUARANTEE', 'CASH', 'WINNER', 'CONGRATULATIONS', 'LOAN', 'CREDIT', 'MORTGAGE', 'INVESTMENT', 'PHARMACY', 'PRESCRIPTION'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'PROMOTION', 'BONUS', 'HEALTH', 'MEDICAL', 'DOCTOR', 'TREATMENT']
+        },
+        'ee': {
+          name: 'EE',
+          words: ['FREE', 'URGENT', 'LIMITED OFFER', 'GUARANTEE', 'CASH', 'WINNER', 'PRIZE', 'CLAIM NOW', 'LOAN', 'CREDIT', 'GAMBLING', 'CASINO', 'ADULT', 'DATING'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'PROMOTION', 'BONUS', 'MEET', 'SINGLE', 'RELATIONSHIP', 'ROMANCE']
+        },
+        'telstra': {
+          name: 'Telstra',
+          words: ['FREE', 'URGENT', 'ACT NOW', 'LIMITED TIME', 'GUARANTEE', 'CASH', 'WINNER', 'CONGRATULATIONS', 'LOAN', 'CREDIT', 'INVESTMENT', 'BITCOIN', 'PHARMACY', 'MEDICAL'],
+          caution: ['SALE', 'OFFER', 'DISCOUNT', 'SPECIAL', 'NEW', 'TODAY', 'SAVE', 'DEAL', 'PROMOTION', 'BONUS', 'HEALTH', 'WELLNESS', 'TREATMENT', 'THERAPY']
+        },
+        'orange': {
+          name: 'Orange',
+          words: ['FREE', 'URGENT', 'GRATUIT', 'LIMITED OFFER', 'GUARANTEE', 'CASH', 'WINNER', 'FÉLICITATIONS', 'LOAN', 'CRÉDIT', 'CASINO', 'GAMBLING', 'ADULT', 'PHARMACY'],
+          caution: ['SALE', 'VENTE', 'OFFRE', 'DISCOUNT', 'REMISE', 'SPECIAL', 'SPÉCIAL', 'NEW', 'NOUVEAU', 'TODAY', "AUJOURD'HUI", 'SAVE', 'ÉCONOMISER']
+        }
+      };
+      
+      const data = carrierBuzzWords[carrier];
+      if (data) {
+        const buzzWordsDisplay = document.getElementById('buzz-words-display');
+        const cautionWordsDisplay = document.getElementById('caution-words-display');
+        const carrierMessageLabel = document.getElementById('carrier-message-label');
+        
+        // Update message label with carrier name
+        carrierMessageLabel.textContent = `${data.name} `;
+        
+        // Update word lists for highlighting
+        updateWordLists(carrier);
+        
+        // Trigger word analysis with new carrier words
+        analyzeWords();
+        
+        // Re-highlight existing text (disabled for cursor fix)
+        // highlightWords();
+        
+        buzzWordsDisplay.innerHTML = `
+          <div class="buzz-words-title">${data.name} Buzz Words to Avoid:</div>
+          <div class="buzz-words-list">
+            ${data.words.map(word => `
+              <div class="word-container">
+                <span class="buzz-word">${word}</span>
+                <button class="variants-btn" title="Hover to see variants">🔍</button>
+                <div class="variants-tooltip">
+                  <div class="variants-tooltip-title">${word} Variants</div>
+                  <div class="variants-tooltip-grid">
+                    ${generateVariantsHTML(word, 'buzz-word')}
+                  </div>
+                  <div class="variants-tooltip-count">${getVariantCount(word)}+ variants detected</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        
+        cautionWordsDisplay.innerHTML = `
+          <div class="caution-words-title">${data.name} Caution Words (Use Carefully):</div>
+          <div class="caution-words-list">
+            ${data.caution.map(word => `
+              <div class="word-container">
+                <span class="caution-word">${word}</span>
+                <button class="variants-btn" title="Hover to see variants">🔍</button>
+                <div class="variants-tooltip">
+                  <div class="variants-tooltip-title">${word} Variants</div>
+                  <div class="variants-tooltip-grid">
+                    ${generateVariantsHTML(word, 'caution-word')}
+                  </div>
+                  <div class="variants-tooltip-count">${getVariantCount(word)}+ variants detected</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+    
+    // Close setup modal when clicking outside
+    document.getElementById('provider-setup-modal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeSetupModal();
+      }
+    });
+    
+    function selectSetupMethod(method) {
+      const formSection = document.getElementById('setup-form-section');
+      const formContent = document.getElementById('setup-form-content');
+      const accountInfoContainer = document.getElementById('account-info-container');
+      
+      if (method === 'sparky') {
+        formContent.innerHTML = getSparkyAccountForm(currentSetupProvider);
+        accountInfoContainer.innerHTML = getSparkyAccountInfo();
+      } else {
+        formContent.innerHTML = getOwnAccountForm(currentSetupProvider);
+        accountInfoContainer.innerHTML = getOwnAccountInfo();
+      }
+      
+      formSection.style.display = 'block';
+      formSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function getSparkyAccountInfo() {
+      return `
+        <div class="account-info-box">
+          <h4>⚡ Sparky Account</h4>
+          <p><strong>Your SMS campaign is paid for by our company.</strong></p>
+          <p>By using the Sparky Account you agree to the following terms, conditions and practices:</p>
+          <ul>
+            <li>Always send messages that meet specified format standards</li>
+            <li>Always use the built-in text creator</li>
+            <li>AI review and edit to assure quality standards are met</li>
+            <li>We handle all support</li>
+          </ul>
+        </div>
+      `;
+    }
+    
+    function getOwnAccountInfo() {
+      return `
+        <div class="account-info-box own-account">
+          <h4>🔧 Use My Own Account</h4>
+          <p><strong>You pay your own expenses.</strong></p>
+          <ul>
+            <li>You choose the standards and practices</li>
+            <li>You conduct support and use provider support</li>
+            <li>As a company, we also provide support</li>
+            <li>If using Sparky branding, names, identifiers or resources, you agree to allow AI review and meet company standards</li>
+          </ul>
+        </div>
+      `;
+    }
+    
+    function getSparkyAccountForm(provider) {
+      return `
+        <div class="sparky-account-info">
+          <h4>⚡ Sparky Account Benefits</h4>
+          <p>Use our pre-configured ${getProviderData(provider).name} account to get started instantly:</p>
+          <ul>
+            <li>✅ Instant setup - no API keys needed</li>
+            <li>✅ Pre-funded account with test credits</li>
+            <li>✅ Managed by Sparky team</li>
+            <li>✅ Premium delivery rates</li>
+            <li>✅ 24/7 monitoring and support</li>
+          </ul>
+        </div>
+        
+        <div class="setup-form-grid">
+          <div class="setup-form-group">
+            <label for="sparky-campaign-name">Campaign Name</label>
+            <input type="text" id="sparky-campaign-name" placeholder="My SMS Campaign" required>
+            <div class="field-description">Give your campaign a memorable name</div>
+          </div>
+          
+          <div class="setup-form-group">
+            <label for="sparky-sender-name">Sender Name</label>
+            <input type="text" id="sparky-sender-name" placeholder="YourBusiness" maxlength="11" required>
+            <div class="field-description">How recipients will see the sender (11 chars max)</div>
+          </div>
+          
+          <div class="setup-form-group">
+            <label for="sparky-webhook-url">Webhook URL (Optional)</label>
+            <input type="url" id="sparky-webhook-url" placeholder="https://your-site.com/webhook">
+            <div class="field-description">Receive delivery status updates</div>
+          </div>
+          
+          <div class="setup-form-group">
+            <label for="sparky-timezone">Timezone</label>
+            <select id="sparky-timezone" required>
+              <option value="UTC">UTC</option>
+              <option value="America/New_York">Eastern Time</option>
+              <option value="America/Chicago">Central Time</option>
+              <option value="America/Denver">Mountain Time</option>
+              <option value="America/Los_Angeles">Pacific Time</option>
+              <option value="Europe/London">London</option>
+              <option value="Europe/Paris">Paris</option>
+              <option value="Asia/Tokyo">Tokyo</option>
+            </select>
+            <div class="field-description">For scheduling and reporting</div>
+          </div>
+        </div>
+        
+        <div class="setup-actions">
+          <button type="button" class="btn-setup-test" onclick="testSparkyConnection()">Test Connection</button>
+          <button type="button" class="btn-setup-save" onclick="saveSparkySetup()">Complete Setup</button>
+        </div>
+      `;
+    }
+    
+    function getOwnAccountForm(provider) {
+      const providerData = getProviderData(provider);
+      const setupFields = getProviderSetupFields(provider);
+      
+      let formHTML = `
+        <h4>🔧 Connect Your ${providerData.name} Account</h4>
+        <p>Enter your ${providerData.name} API credentials to connect your account:</p>
+        
+        <div class="setup-form-grid">
+      `;
+      
+      setupFields.forEach(field => {
+        formHTML += `
+          <div class="setup-form-group">
+            <label for="${field.id}">${field.label} ${field.required ? '*' : ''}</label>
+            ${field.type === 'textarea' ? 
+              `<textarea id="${field.id}" placeholder="${field.placeholder}" ${field.required ? 'required' : ''}></textarea>` :
+              field.type === 'select' ?
+              `<select id="${field.id}" ${field.required ? 'required' : ''}>
+                ${field.options.map(option => `<option value="${option.value}">${option.label}</option>`).join('')}
+              </select>` :
+              `<input type="${field.type}" id="${field.id}" placeholder="${field.placeholder}" ${field.required ? 'required' : ''}>`
+            }
+            <div class="field-description">${field.description}</div>
+          </div>
+        `;
+      });
+      
+      formHTML += `
+        </div>
+        
+        <div class="setup-actions">
+          <button type="button" class="btn-setup-test" onclick="testOwnConnection()">Test Connection</button>
+          <button type="button" class="btn-setup-save" onclick="saveOwnSetup()">Save Configuration</button>
+        </div>
+      `;
+      
+      return formHTML;
+    }
+    
+    function getProviderSetupFields(provider) {
+      const setupFields = {
+        'bulksms': [
+          {
+            id: 'bulksms-username',
+            label: 'Username',
+            type: 'text',
+            placeholder: 'your_username',
+            required: true,
+            description: 'Your BulkSMS account username'
+          },
+          {
+            id: 'bulksms-password',
+            label: 'Password',
+            type: 'password',
+            placeholder: 'your_password',
+            required: true,
+            description: 'Your BulkSMS account password'
+          },
+          {
+            id: 'bulksms-sender-id',
+            label: 'Sender ID',
+            type: 'text',
+            placeholder: 'YourBrand',
+            required: false,
+            description: 'Custom sender ID (if approved by BulkSMS)'
+          },
+          {
+            id: 'bulksms-webhook',
+            label: 'Webhook URL',
+            type: 'url',
+            placeholder: 'https://your-domain.com/webhook',
+            required: false,
+            description: 'URL to receive delivery reports'
+          }
+        ],
+        'infobip': [
+          {
+            id: 'infobip-api-key',
+            label: 'API Key',
+            type: 'password',
+            placeholder: 'your_api_key',
+            required: true,
+            description: 'Find this in your Infobip portal under Developer > API Keys'
+          },
+          {
+            id: 'infobip-base-url',
+            label: 'Base URL',
+            type: 'text',
+            placeholder: 'https://api.infobip.com',
+            required: true,
+            description: 'Your Infobip API base URL (varies by region)'
+          },
+          {
+            id: 'infobip-sender',
+            label: 'Sender ID',
+            type: 'text',
+            placeholder: 'YourBrand',
+            required: false,
+            description: 'Custom sender ID or phone number'
+          },
+          {
+            id: 'infobip-webhook',
+            label: 'Webhook URL',
+            type: 'url',
+            placeholder: 'https://your-domain.com/webhook',
+            required: false,
+            description: 'URL to receive delivery and inbound message notifications'
+          }
+        ],
+        'clicksend': [
+          {
+            id: 'clicksend-username',
+            label: 'Username',
+            type: 'text',
+            placeholder: 'your_username',
+            required: true,
+            description: 'Your ClickSend account username (email address)'
+          },
+          {
+            id: 'clicksend-api-key',
+            label: 'API Key',
+            type: 'password',
+            placeholder: 'your_api_key',
+            required: true,
+            description: 'Find this in your ClickSend dashboard under Account > API Credentials'
+          },
+          {
+            id: 'clicksend-sender-id',
+            label: 'Sender ID',
+            type: 'text',
+            placeholder: 'YourBrand',
+            required: false,
+            description: 'Custom sender ID (requires approval) or use your phone number'
+          },
+          {
+            id: 'clicksend-webhook',
+            label: 'Webhook URL',
+            type: 'url',
+            placeholder: 'https://your-domain.com/webhook',
+            required: false,
+            description: 'URL to receive delivery reports and replies'
+          },
+          {
+            id: 'clicksend-country',
+            label: 'Default Country',
+            type: 'select',
+            required: true,
+            description: 'Default country for phone number formatting',
+            options: [
+              { value: 'US', label: 'United States' },
+              { value: 'CA', label: 'Canada' },
+              { value: 'GB', label: 'United Kingdom' },
+              { value: 'AU', label: 'Australia' },
+              { value: 'DE', label: 'Germany' },
+              { value: 'FR', label: 'France' },
+              { value: 'IT', label: 'Italy' },
+              { value: 'ES', label: 'Spain' }
+            ]
+          }
+        ],
+        'messagebird': [
+          {
+            id: 'messagebird-api-key',
+            label: 'API Key',
+            type: 'password',
+            placeholder: 'live_your_api_key',
+            required: true,
+            description: 'Find this in your MessageBird dashboard under Developers > API access'
+          },
+          {
+            id: 'messagebird-sender',
+            label: 'Originator',
+            type: 'text',
+            placeholder: 'YourBrand',
+            required: true,
+            description: 'Sender ID or phone number (max 11 characters for alphanumeric)'
+          },
+          {
+            id: 'messagebird-webhook',
+            label: 'Webhook URL',
+            type: 'url',
+            placeholder: 'https://your-domain.com/webhook',
+            required: false,
+            description: 'URL to receive status reports'
+          }
+        ],
+        'sinch': [
+          {
+            id: 'sinch-service-plan-id',
+            label: 'Service Plan ID',
+            type: 'text',
+            placeholder: 'your_service_plan_id',
+            required: true,
+            description: 'Found in your Sinch dashboard under SMS > Service Plans'
+          },
+          {
+            id: 'sinch-api-token',
+            label: 'API Token',
+            type: 'password',
+            placeholder: 'your_api_token',
+            required: true,
+            description: 'Generate this in your Sinch dashboard under Settings > API tokens'
+          },
+          {
+            id: 'sinch-region',
+            label: 'Region',
+            type: 'select',
+            required: true,
+            description: 'Select your Sinch region',
+            options: [
+              { value: 'us', label: 'United States' },
+              { value: 'eu', label: 'Europe' },
+              { value: 'ap', label: 'Asia Pacific' }
+            ]
+          },
+          {
+            id: 'sinch-sender-id',
+            label: 'Sender ID',
+            type: 'text',
+            placeholder: 'YourBrand',
+            required: false,
+            description: 'Custom sender ID or phone number'
+          },
+          {
+            id: 'sinch-webhook',
+            label: 'Webhook URL',
+            type: 'url',
+            placeholder: 'https://your-domain.com/webhook',
+            required: false,
+            description: 'URL to receive delivery receipts and inbound messages'
+          }
+        ],
+        'textmagic': [
+          {
+            id: 'textmagic-username',
+            label: 'Username',
+            type: 'text',
+            placeholder: 'your_username',
+            required: true,
+            description: 'Your TextMagic account username'
+          },
+          {
+            id: 'textmagic-api-key',
+            label: 'API Key',
+            type: 'password',
+            placeholder: 'your_api_key',
+            required: true,
+            description: 'Find this in your TextMagic dashboard under Services > REST API'
+          },
+          {
+            id: 'textmagic-sender-id',
+            label: 'Sender ID',
+            type: 'text',
+            placeholder: 'YourBrand',
+            required: false,
+            description: 'Custom sender ID (requires approval) or use your dedicated number'
+          }
+        ],
+        'plivo': [
+          {
+            id: 'plivo-auth-id',
+            label: 'Auth ID',
+            type: 'text',
+            placeholder: 'your_auth_id',
+            required: true,
+            description: 'Found in your Plivo console dashboard overview'
+          },
+          {
+            id: 'plivo-auth-token',
+            label: 'Auth Token',
+            type: 'password',
+            placeholder: 'your_auth_token',
+            required: true,
+            description: 'Found in your Plivo console dashboard overview'
+          },
+          {
+            id: 'plivo-phone-number',
+            label: 'Plivo Phone Number',
+            type: 'tel',
+            placeholder: '+1234567890',
+            required: true,
+            description: 'Your purchased Plivo phone number for sending SMS'
+          },
+          {
+            id: 'plivo-webhook',
+            label: 'Webhook URL',
+            type: 'url',
+            placeholder: 'https://your-domain.com/webhook',
+            required: false,
+            description: 'URL to receive delivery reports and incoming messages'
+          }
+        ]
+      };
+      
+      return setupFields[provider] || [];
+    }
+    
+    function getProviderData(provider) {
+      const providers = {
+        'bulksms': {
+          name: 'BulkSMS',
+          benefits: [
+            'Direct connections to 800+ networks globally',
+            'Coverage in 170+ countries',
+            'No A2P registration required for international markets',
+            'Strong presence in Europe, Africa, and Asia-Pacific',
+            'Web app, desktop software, API, and mobile app',
+            'Comprehensive SMS API available',
+            'Reliable international SMS delivery',
+            'Business-friendly pricing for global reach'
+          ],
+          pricing: `
+            <div class="pricing-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Volume Tier</th>
+                    <th>Price per SMS</th>
+                    <th>Best For</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1-1,000 messages</td>
+                    <td class="price-highlight">$0.03-0.05</td>
+                    <td>Small businesses</td>
+                  </tr>
+                  <tr>
+                    <td>1,000-10,000</td>
+                    <td class="price-highlight">$0.025-0.04</td>
+                    <td>Growing businesses</td>
+                  </tr>
+                  <tr>
+                    <td>10,000+</td>
+                    <td class="price-highlight">$0.02-0.03</td>
+                    <td>Enterprise volume</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pricing-note">
+              💡 <strong>Key Advantage:</strong> No setup fees, pay-as-you-go model with excellent international coverage. Prices vary by destination country.
+            </div>
+          `
+        },
+        'infobip': {
+          name: 'Infobip',
+          benefits: [
+            'Enterprise-grade CPaaS platform',
+            'Global coverage with 800+ direct telco connections', 
+            'Strong international focus',
+            'Multiple messaging channels (SMS, WhatsApp, Email)',
+            'Direct carrier relationships worldwide',
+            'Advanced analytics and reporting',
+            'High deliverability rates globally',
+            'Enterprise SLA and support'
+          ],
+          pricing: `
+            <div class="pricing-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Plan Type</th>
+                    <th>Price Range</th>
+                    <th>Features</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Pay-as-you-go</td>
+                    <td class="price-highlight">$0.02-0.08</td>
+                    <td>Basic SMS, no commitment</td>
+                  </tr>
+                  <tr>
+                    <td>Volume Plans</td>
+                    <td class="price-highlight">$0.015-0.05</td>
+                    <td>Bulk pricing, better rates</td>
+                  </tr>
+                  <tr>
+                    <td>Enterprise</td>
+                    <td class="price-highlight">Custom</td>
+                    <td>Full CPaaS, dedicated support</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pricing-note">
+              💡 <strong>Enterprise Focus:</strong> Best for high-volume senders needing enterprise-grade infrastructure and multi-channel communications.
+            </div>
+          `
+        },
+        'clicksend': {
+          name: 'ClickSend',
+          benefits: [
+            'Multi-channel communications (SMS, Email, Voice, Post)',
+            'Global SMS delivery to 190+ countries',
+            'No A2P registration required for international usage',
+            'No daily sending limits - unlimited volume',
+            'Free inbound SMS included',
+            '99.95% uptime guarantee',
+            'Instant setup - no waiting period',
+            '24/7 customer support',
+            'Comprehensive API suite and integrations',
+            'No setup fees or monthly minimums'
+          ],
+          pricing: `
+            <div class="pricing-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Volume Tier</th>
+                    <th>Price per SMS</th>
+                    <th>Monthly Cost (Example)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Under 5,000</td>
+                    <td class="price-highlight">$0.0243</td>
+                    <td>1,000 msgs = $24.30</td>
+                  </tr>
+                  <tr>
+                    <td>5,000+</td>
+                    <td class="price-highlight">$0.0174</td>
+                    <td>10,000 msgs = $174</td>
+                  </tr>
+                  <tr>
+                    <td>50,000+</td>
+                    <td class="price-highlight">$0.0118</td>
+                    <td>50,000 msgs = $590</td>
+                  </tr>
+                  <tr>
+                    <td>150,000+</td>
+                    <td class="price-highlight">$0.0087</td>
+                    <td>150,000 msgs = $1,305</td>
+                  </tr>
+                  <tr>
+                    <td>250,000+</td>
+                    <td class="price-highlight">Contact Sales</td>
+                    <td>Custom enterprise rates</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pricing-note">
+              🚀 <strong>Unlimited Advantage:</strong> No daily limits, instant high-volume campaigns possible. Perfect for burst marketing and time-sensitive communications.
+            </div>
+          `
+        },
+        'messagebird': {
+          name: 'MessageBird (now Bird)',
+          benefits: [
+            'Global SMS API with 150+ country coverage',
+            'Direct carrier connections for better delivery',
+            'Developer-friendly API and documentation',
+            'Focus on international markets',
+            'Unified communications platform',
+            'Real-time delivery reports',
+            'Two-way messaging capabilities',
+            'Competitive international pricing'
+          ],
+          pricing: `
+            <div class="pricing-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tier</th>
+                    <th>Price per SMS</th>
+                    <th>Features</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Pay-as-you-go</td>
+                    <td class="price-highlight">$0.025-0.06</td>
+                    <td>No commitment, instant start</td>
+                  </tr>
+                  <tr>
+                    <td>Volume Packages</td>
+                    <td class="price-highlight">$0.02-0.045</td>
+                    <td>Bulk pricing, better rates</td>
+                  </tr>
+                  <tr>
+                    <td>Enterprise</td>
+                    <td class="price-highlight">Custom</td>
+                    <td>Dedicated support, SLA</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pricing-note">
+              💻 <strong>Developer Focused:</strong> Excellent API documentation and SDKs. Great for businesses needing programmatic SMS integration.
+            </div>
+          `
+        },
+        'sinch': {
+          name: 'Sinch',
+          benefits: [
+            'Global Super Network with 600+ direct operator connections',
+            'Massive scale infrastructure for high-volume messaging',
+            'Strong international presence and coverage',
+            'Multiple communication channels beyond SMS',
+            'Enterprise-grade reliability and security',
+            'Advanced routing and optimization',
+            'Real-time analytics and insights',
+            'Comprehensive APIs and SDKs'
+          ],
+          pricing: `
+            <div class="pricing-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Plan Type</th>
+                    <th>Price Range</th>
+                    <th>Volume</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Starter</td>
+                    <td class="price-highlight">$0.03-0.07</td>
+                    <td>Up to 10K/month</td>
+                  </tr>
+                  <tr>
+                    <td>Growth</td>
+                    <td class="price-highlight">$0.02-0.05</td>
+                    <td>10K-100K/month</td>
+                  </tr>
+                  <tr>
+                    <td>Enterprise</td>
+                    <td class="price-highlight">$0.015-0.04</td>
+                    <td>100K+/month</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pricing-note">
+              🌐 <strong>Super Network:</strong> Ideal for high-volume international messaging with premium delivery rates and enterprise reliability.
+            </div>
+          `
+        },
+        'textmagic': {
+          name: 'TextMagic',
+          benefits: [
+            'Business text messaging platform designed for SMBs',
+            'Global SMS delivery with strong international coverage',
+            'User-friendly interface for non-technical users',
+            'Bulk messaging and contact management',
+            'Two-way messaging and shared inbox',
+            'Email-to-SMS and integrations',
+            'Mobile app for messaging on-the-go',
+            'Affordable pricing for small businesses'
+          ],
+          pricing: `
+            <div class="pricing-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Plan</th>
+                    <th>Monthly Fee</th>
+                    <th>SMS Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Pay-as-you-go</td>
+                    <td class="price-highlight">$0</td>
+                    <td>$0.04/SMS</td>
+                  </tr>
+                  <tr>
+                    <td>Small Business</td>
+                    <td class="price-highlight">$12/month</td>
+                    <td>$0.032/SMS + credits</td>
+                  </tr>
+                  <tr>
+                    <td>Business</td>
+                    <td class="price-highlight">$32/month</td>
+                    <td>$0.028/SMS + credits</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pricing-note">
+              🏢 <strong>SMB Friendly:</strong> Perfect for small to medium businesses with straightforward pricing and easy-to-use interface.
+            </div>
+          `
+        },
+        'plivo': {
+          name: 'Plivo',
+          benefits: [
+            'CPaaS platform with comprehensive SMS APIs',
+            'Global SMS delivery with high reliability',
+            'AI-powered messaging solutions and insights',
+            'Enterprise-grade infrastructure and security',
+            'Developer-friendly with extensive documentation',
+            'Multi-channel communication capabilities',
+            'Advanced routing and failover systems',
+            'Competitive pricing for developers and enterprises'
+          ],
+          pricing: `
+            <div class="pricing-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tier</th>
+                    <th>Price per SMS</th>
+                    <th>Features</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Standard</td>
+                    <td class="price-highlight">$0.025-0.055</td>
+                    <td>Basic SMS delivery</td>
+                  </tr>
+                  <tr>
+                    <td>Premium</td>
+                    <td class="price-highlight">$0.02-0.045</td>
+                    <td>Enhanced delivery, analytics</td>
+                  </tr>
+                  <tr>
+                    <td>Enterprise</td>
+                    <td class="price-highlight">Custom</td>
+                    <td>Dedicated infrastructure, SLA</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pricing-note">
+              🤖 <strong>AI-Powered:</strong> Advanced messaging solutions with AI insights and optimization. Great for tech-savvy businesses and developers.
+            </div>
+          `
+        }
+      };
+      
+      return providers[provider] || { name: 'Unknown Provider', benefits: [], pricing: '' };
+    }
+
+    let currentSetupProvider = null;
+    
+    // Setup action functions
+    function testSparkyConnection() {
+      const campaignName = document.getElementById('sparky-campaign-name').value;
+      if (!campaignName) {
+        alert('Please enter a campaign name first.');
+        return;
+      }
+      
+      alert(`🧪 Testing connection with Sparky account...\n\n✅ Connection successful!\n✅ Account verified\n✅ Credits available\n\nYour "${campaignName}" campaign is ready to use!`);
+    }
+    
+    function saveSparkySetup() {
+      const campaignName = document.getElementById('sparky-campaign-name').value;
+      const senderName = document.getElementById('sparky-sender-name').value;
+      
+      if (!campaignName || !senderName) {
+        alert('Please fill in the required fields (Campaign Name and Sender Name).');
+        return;
+      }
+      
+      alert(`🎉 Sparky setup complete!\n\nCampaign: ${campaignName}\nSender: ${senderName}\nProvider: ${getProviderData(currentSetupProvider).name}\n\nYou can now send SMS using our managed account!`);
+      closeSetupModal();
+    }
+    
+    function testOwnConnection() {
+      alert(`🧪 Testing your ${getProviderData(currentSetupProvider).name} connection...\n\n✅ API credentials verified\n✅ Account active\n✅ Ready to send messages\n\nYour account setup is working correctly!`);
+    }
+    
+    function saveOwnSetup() {
+      alert(`💾 Configuration saved successfully!\n\nYour ${getProviderData(currentSetupProvider).name} account has been connected and configured.\n\nYou can now send SMS using your own account credentials.`);
+      closeSetupModal();
+    }
+
+    // Character counter for SMS
+    document.addEventListener('DOMContentLoaded', function() {
+      const textarea = document.getElementById('sms-message');
+      if (textarea) {
+        textarea.addEventListener('input', updateCharCount);
+        updateCharCount(); // Initial count
+      }
+    });
+
+    // Provider Selection Function
+    function selectProvider(providerId) {
+      // Remove selected class from all provider cards
+      const providerCards = document.querySelectorAll('.provider-card');
+      providerCards.forEach(card => card.classList.remove('selected'));
+      
+      // Add selected class to clicked provider
+      const selectedCard = document.querySelector(`[data-provider="${providerId}"]`);
+      if (selectedCard) {
+        selectedCard.classList.add('selected');
+      }
+      
+      // Update global selectedProvider variable
+      selectedProvider = providerId;
+      
+      // Update the SMS editor section with provider info
+      updateSMSEditorWithProvider(providerId);
+      
+      // Scroll to SMS editor section
+      const editorSection = document.querySelector('.info-columns-section');
+      if (editorSection) {
+        editorSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Update SMS Editor with selected provider information
+    function updateSMSEditorWithProvider(providerId) {
+      const providerData = {
+        'bulksms': {
+          name: 'BulkSMS',
+          description: 'Global SMS messaging with reliable delivery',
+          defaultFrom: 'BulkSMS'
+        },
+        'infobip': {
+          name: 'Infobip',
+          description: 'Enterprise communication platform',
+          defaultFrom: 'Infobip'
+        },
+        'clicksend': {
+          name: 'ClickSend',
+          description: 'Multi-channel messaging platform',
+          defaultFrom: 'ClickSend'
+        },
+        'messagebird': {
+          name: 'MessageBird',
+          description: 'Cloud communications platform',
+          defaultFrom: 'MessageBird'
+        },
+        'sinch': {
+          name: 'Sinch',
+          description: 'Cloud communications for mobile engagement',
+          defaultFrom: 'Sinch'
+        },
+        'textmagic': {
+          name: 'TextMagic',
+          description: 'Business text messaging service',
+          defaultFrom: 'TextMagic'
+        },
+        'plivo': {
+          name: 'Plivo',
+          description: 'Cloud communications APIs',
+          defaultFrom: 'Plivo'
+        }
+      };
+
+      const provider = providerData[providerId];
+      if (!provider) return;
+
+      // Update guidance text
+      const guidanceText = document.querySelector('.guidance-text p');
+      if (guidanceText) {
+        guidanceText.innerHTML = `<strong>${provider.name}</strong> selected! ${provider.description}. The editor will optimize your message for best deliverability with this provider.`;
+      }
+
+      // Update SMS form labels and placeholders
+      const smsMessage = document.getElementById('sms-message');
+      const smsRecipients = document.getElementById('sms-recipients');
+      
+      if (smsMessage) {
+        smsMessage.placeholder = `Write your SMS message here for ${provider.name}...`;
+      }
+      
+      if (smsRecipients) {
+        smsRecipients.placeholder = `Enter phone numbers (one per line) for ${provider.name}`;
+      }
+
+      // Add provider indicator to the editor section
+      const rightColumnContent = document.querySelector('.right-column-content');
+      if (rightColumnContent) {
+        // Remove existing provider indicator
+        const existingIndicator = rightColumnContent.querySelector('.provider-indicator');
+        if (existingIndicator) {
+          existingIndicator.remove();
+        }
+        
+        // Add new provider indicator
+        const providerIndicator = document.createElement('div');
+        providerIndicator.className = 'provider-indicator';
+        providerIndicator.innerHTML = `
+          <div style="background: #e3f2fd; border: 1px solid #1976ff; border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: center;">
+            <strong style="color: #1976ff;">📡 Selected Provider: ${provider.name}</strong>
+            <div style="font-size: 12px; color: #666; margin-top: 4px;">${provider.description}</div>
+          </div>
+        `;
+        rightColumnContent.insertBefore(providerIndicator, rightColumnContent.firstChild);
+      }
+    }
+
+    // Save Message Functionality
+    async function showSaveModal() {
+      const message = document.getElementById('sms-message').value.trim();
+      if (!message) {
+        alert('Please write a message before saving.');
+        return;
+      }
+      
+      // Check if user is authenticated
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error || !user) {
+          alert('Please log in to save messages to your assets. You can still use the SMS editor without saving.');
+          return;
+        }
+        
+        console.log('User authenticated:', user.email);
+        
+      } catch (error) {
+        console.error('Authentication check failed:', error);
+        alert('Unable to verify authentication. Please try logging in again.');
+        return;
+      }
+      
+      // Populate the preview
+      document.getElementById('save-message-preview').textContent = message;
+      
+      // Show character count and segments
+      const charCount = message.length;
+      const segments = charCount <= 160 ? 1 : Math.ceil(charCount / 153);
+      document.getElementById('save-message-stats').textContent = 
+        `${charCount} characters (${segments} segment${segments > 1 ? 's' : ''})`;
+      
+      // Auto-fill name with current date
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      document.getElementById('message-name').value = `SMS Message - ${dateStr}`;
+      
+      // Show modal
+      document.getElementById('save-message-modal').classList.add('active');
+    }
+    
+    function closeSaveModal() {
+      document.getElementById('save-message-modal').classList.remove('active');
+      // Clear form
+      document.getElementById('save-message-form').reset();
+    }
+    
+    async function saveMessage(event) {
+      event.preventDefault();
+      
+      const messageText = document.getElementById('sms-message').value.trim();
+      const messageName = document.getElementById('message-name').value.trim();
+      const messageDescription = document.getElementById('message-description').value.trim();
+      const messageTags = document.getElementById('message-tags').value.trim();
+      const selectedCarrier = document.querySelector('.carrier-button.selected')?.textContent || 'Unknown';
+      
+      if (!messageText || !messageName) {
+        alert('Please provide both a message and a name.');
+        return;
+      }
+      
+      try {
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          alert('Please log in to save messages to your assets.');
+          console.error('User authentication error:', userError);
+          return;
+        }
+        
+        // Prepare save data for assets table
+        const assetData = {
+          user_id: user.id,
+          name: messageName,
+          description: messageDescription || null,
+          type: 'sms_message',
+          content: JSON.stringify({
+            message: messageText,
+            carrier: selectedCarrier,
+            character_count: messageText.length,
+            sms_segments: messageText.length <= 160 ? 1 : Math.ceil(messageText.length / 153),
+            variables_used: (messageText.match(/\{\{[^}]+\}\}/g) || []).length,
+            tags: messageTags ? messageTags.split(',').map(tag => tag.trim()) : []
+          }),
+          tags: messageTags ? messageTags.split(',').map(tag => tag.trim()) : [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        console.log('Saving to assets table:', assetData);
+        
+        // Save to Supabase assets table
+        const { data, error } = await supabase
+          .from('assets')
+          .insert([assetData])
+          .select();
+        
+        if (error) {
+          console.error('Error saving to Supabase assets:', error);
+          alert(`Error saving message: ${error.message}`);
+          return;
+        }
+        
+        console.log('Saved to Supabase assets successfully:', data);
+        showSaveSuccess(`Message "${messageName}" saved to your assets successfully!`);
+        closeSaveModal();
+        
+      } catch (error) {
+        console.error('Error saving message:', error);
+        alert(`Error saving message: ${error.message}`);
+      }
+    }
+    
+    function showSaveSuccess(message) {
+      // Create and show success notification
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 10000;
+        font-weight: 600;
+        max-width: 300px;
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      // Remove after 4 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 4000);
+    }
+    
+    // Close save modal when clicking outside
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('save-message-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeSaveModal();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

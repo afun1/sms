@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database User Debug</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #f8f9fa; font-weight: bold; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .null-value { color: #999; font-style: italic; }
+        .role-admin { background: #d4edda; color: #155724; padding: 2px 6px; border-radius: 4px; }
+        .role-user { background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; }
+        .role-null { background: #f8d7da; color: #721c24; padding: 2px 6px; border-radius: 4px; }
+        button { background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 10px 5px 0 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Database User Debug</h1>
+        <p>This shows all users in your Supabase profiles table.</p>
+        
+        <button onclick="loadAllUsers()">🔄 Load All Users</button>
+        <button onclick="loadAuthUsers()">👥 Load Auth Users</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        function formatValue(value) {
+            if (value === null || value === undefined) {
+                return '<span class="null-value">null</span>';
+            }
+            return value.toString();
+        }
+        
+        function formatRole(role) {
+            if (!role) {
+                return '<span class="role-null">null/empty</span>';
+            }
+            if (['admin', 'super_admin'].includes(role)) {
+                return `<span class="role-admin">${role}</span>`;
+            }
+            return `<span class="role-user">${role}</span>`;
+        }
+        
+        async function loadAllUsers() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Loading profiles table...</p>';
+            
+            try {
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('created_at');
+                
+                if (error) {
+                    resultsDiv.innerHTML = `<div style="color: red;">❌ Error loading profiles: ${error.message}</div>`;
+                    return;
+                }
+                
+                if (!profiles || profiles.length === 0) {
+                    resultsDiv.innerHTML = '<div style="color: orange;">⚠️ No profiles found in database</div>';
+                    return;
+                }
+                
+                let html = `
+                    <h2>📊 Profiles Table (${profiles.length} users)</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID (first 8)</th>
+                                <th>Email</th>
+                                <th>Display Name</th>
+                                <th>Role</th>
+                                <th>Organization ID</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                profiles.forEach(profile => {
+                    html += `
+                        <tr>
+                            <td>${profile.id ? profile.id.substring(0, 8) + '...' : 'null'}</td>
+                            <td>${formatValue(profile.email)}</td>
+                            <td>${formatValue(profile.display_name)}</td>
+                            <td>${formatRole(profile.role)}</td>
+                            <td>${formatValue(profile.organization_id)}</td>
+                            <td>${formatValue(profile.created_at ? new Date(profile.created_at).toLocaleDateString() : null)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div style="color: red;">❌ Exception: ${error.message}</div>`;
+            }
+        }
+        
+        async function loadAuthUsers() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Loading auth users...</p>';
+            
+            try {
+                // Note: This requires service role key to access auth.users
+                resultsDiv.innerHTML = `
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px;">
+                        <h3>ℹ️ Auth Users</h3>
+                        <p>Auth users can only be accessed with service role key (not available in browser).</p>
+                        <p>The profiles table should contain the same users if properly synced.</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div style="color: red;">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Auto-load on page load
+        window.addEventListener('load', loadAllUsers);
+    </script>
+</body>
+</html>

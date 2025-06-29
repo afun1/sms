@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Impersonation Login</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .login-container { max-width: 500px; margin: 50px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin: 20px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #007cba; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+        button:hover { background: #005a8b; }
+        .impersonation-section { background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .user-list { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; }
+        .user-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .user-item:hover { background: #f8f9fa; }
+        .user-item.selected { background: #e3f2fd; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>🔐 Advanced Login System</h1>
+        
+        <!-- Regular Login -->
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="Enter your email">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+        
+        <button onclick="login()">Login</button>
+        
+        <!-- Impersonation Section (shown after admin login) -->
+        <div id="impersonation-section" class="impersonation-section" style="display: none;">
+            <h3>🎭 Impersonate User</h3>
+            <p>As an admin, you can impersonate any user in the system:</p>
+            
+            <div class="form-group">
+                <label for="user-search">Search Users:</label>
+                <input type="text" id="user-search" placeholder="Search by name or email" oninput="searchUsers()">
+            </div>
+            
+            <div id="user-list" class="user-list"></div>
+            
+            <button onclick="startImpersonation()" id="impersonate-btn" disabled>
+                🎭 Start Impersonation
+            </button>
+        </div>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentUser = null;
+        let allUsers = [];
+        let selectedUserId = null;
+        
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showStatus('Please enter both email and password', 'error');
+                return;
+            }
+            
+            try {
+                showStatus('Logging in...', 'warning');
+                
+                // Sign in user
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (authError) {
+                    showStatus(`Login failed: ${authError.message}`, 'error');
+                    return;
+                }
+                
+                // Get user profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', authData.user.id)
+                    .single();
+                
+                if (profileError) {
+                    showStatus(`Profile fetch failed: ${profileError.message}`, 'error');
+                    return;
+                }
+                
+                currentUser = { ...authData.user, ...profile };
+                
+                // Store user session
+                localStorage.setItem('userId', currentUser.id);
+                localStorage.setItem('userEmail', currentUser.email);
+                localStorage.setItem('userRole', currentUser.role || 'user');
+                localStorage.setItem('displayName', currentUser.display_name || currentUser.email);
+                
+                showStatus(`✅ Logged in as ${currentUser.display_name || currentUser.email}`, 'success');
+                
+                // Show impersonation options for admins
+                if (['admin', 'super_admin', 'manager'].includes(currentUser.role)) {
+                    await showImpersonationOptions();
+                } else {
+                    // Regular user - redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1500);
+                }
+                
+            } catch (error) {
+                showStatus(`Login error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function showImpersonationOptions() {
+            document.getElementById('impersonation-section').style.display = 'block';
+            await loadUsers();
+        }
+        
+        async function loadUsers() {
+            try {
+                let query = supabase.from('profiles').select('*');
+                
+                // Filter based on user role
+                if (currentUser.role === 'manager') {
+                    // Managers can only see users in their organization
+                    query = query.eq('organization_id', currentUser.organization_id);
+                }
+                // Admins and super_admins can see all users
+                
+                const { data: users, error } = await query.order('display_name');
+                
+                if (error) {
+                    showStatus(`Failed to load users: ${error.message}`, 'error');
+                    return;
+                }
+                
+                allUsers = users.filter(user => user.id !== currentUser.id); // Don't show self
+                displayUsers(allUsers);
+                
+            } catch (error) {
+                showStatus(`Error loading users: ${error.message}`, 'error');
+            }
+        }
+        
+        function displayUsers(users) {
+            const userList = document.getElementById('user-list');
+            
+            if (users.length === 0) {
+                userList.innerHTML = '<div class="user-item">No users found</div>';
+                return;
+            }
+            
+            userList.innerHTML = users.map(user => `
+                <div class="user-item" onclick="selectUser('${user.id}')" data-user-id="${user.id}">
+                    <strong>${user.display_name || user.email}</strong><br>
+                    <small>${user.email} • ${user.role || 'user'}</small>
+                </div>
+            `).join('');
+        }
+        
+        function selectUser(userId) {
+            // Remove previous selection
+            document.querySelectorAll('.user-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // Add selection to clicked item
+            document.querySelector(`[data-user-id="${userId}"]`).classList.add('selected');
+            
+            selectedUserId = userId;
+            document.getElementById('impersonate-btn').disabled = false;
+        }
+        
+        function searchUsers() {
+            const searchTerm = document.getElementById('user-search').value.toLowerCase();
+            
+            if (!searchTerm) {
+                displayUsers(allUsers);
+                return;
+            }
+            
+            const filteredUsers = allUsers.filter(user => 
+                (user.display_name || user.email).toLowerCase().includes(searchTerm) ||
+                user.email.toLowerCase().includes(searchTerm) ||
+                (user.role || '').toLowerCase().includes(searchTerm)
+            );
+            
+            displayUsers(filteredUsers);
+        }
+        
+        async function startImpersonation() {
+            if (!selectedUserId) {
+                showStatus('Please select a user to impersonate', 'error');
+                return;
+            }
+            
+            try {
+                showStatus('Starting impersonation...', 'warning');
+                
+                // Get target user data
+                const { data: targetUser, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', selectedUserId)
+                    .single();
+                
+                if (error) {
+                    showStatus(`Failed to get user data: ${error.message}`, 'error');
+                    return;
+                }
+                
+                // Set up impersonation data
+                const impersonationData = {
+                    isImpersonating: true,
+                    originalUser: {
+                        id: currentUser.id,
+                        email: currentUser.email,
+                        role: currentUser.role,
+                        display_name: currentUser.display_name
+                    },
+                    impersonatedUser: targetUser,
+                    startTime: new Date().toISOString()
+                };
+                
+                // Store impersonation state
+                localStorage.setItem('impersonationData', JSON.stringify(impersonationData));
+                
+                // Switch session to impersonated user
+                localStorage.setItem('userId', targetUser.id);
+                localStorage.setItem('userEmail', targetUser.email);
+                localStorage.setItem('userRole', targetUser.role || 'user');
+                localStorage.setItem('displayName', targetUser.display_name || targetUser.email);
+                
+                showStatus(`✅ Now impersonating ${targetUser.display_name || targetUser.email}`, 'success');
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+                
+            } catch (error) {
+                showStatus(`Impersonation failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Check if already logged in
+        window.addEventListener('load', async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                showStatus('Already logged in. Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>

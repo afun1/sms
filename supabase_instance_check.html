@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Instance Check</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .instance { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .correct { background: #d4edda; border-color: #c3e6cb; }
+        .incorrect { background: #f8d7da; border-color: #f5c6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Supabase Instance Check</h1>
+    <p>This page checks which Supabase instances are being used across your application.</p>
+    
+    <div id="results"></div>
+    
+    <script>
+        // Main instance used by most files
+        const MAIN_INSTANCE = {
+            url: 'https://yggfiuqxfxsoyesqgpyt.supabase.co',
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q'
+        };
+        
+        // Alternative instance found in loginsb.html
+        const ALT_INSTANCE = {
+            url: 'https://bapvkcqoywysuosuodrb.supabase.co',
+            key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhcHZrY3FveXd5c3Vvc3VvZHJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNjMxNTMsImV4cCI6MjA2NTkzOTE1M30.XOIX4QvMl86i_sO3Q5IGMwAJp9UK86Q-ajeILsbvt_E'
+        };
+        
+        const resultsDiv = document.getElementById('results');
+        
+        async function testInstance(name, instance, isMain = false) {
+            const div = document.createElement('div');
+            div.className = 'instance';
+            div.innerHTML = `<h3>${name}</h3><p>Testing connection to ${instance.url}...</p>`;
+            resultsDiv.appendChild(div);
+            
+            try {
+                const supabase = window.supabase.createClient(instance.url, instance.key);
+                
+                // Test basic connection
+                const { data: authData, error: authError } = await supabase.auth.getSession();
+                const { data: userData, error: userError } = await supabase.from('profiles').select('count').limit(1);
+                
+                let status = 'Unknown';
+                let details = [];
+                
+                if (authError) {
+                    details.push(`❌ Auth Error: ${authError.message}`);
+                } else {
+                    details.push(`✅ Auth connection successful`);
+                    if (authData.session) {
+                        details.push(`✅ User is logged in: ${authData.session.user.email}`);
+                    } else {
+                        details.push(`⚠️ No active session`);
+                    }
+                }
+                
+                if (userError) {
+                    details.push(`❌ Data Error: ${userError.message}`);
+                } else {
+                    details.push(`✅ Database connection successful`);
+                }
+                
+                div.className = 'instance ' + (isMain ? 'correct' : 'warning');
+                div.innerHTML = `
+                    <h3>${name}</h3>
+                    <p><strong>URL:</strong> ${instance.url}</p>
+                    <p><strong>Status:</strong> ${details.join('<br>')}</p>
+                `;
+                
+            } catch (error) {
+                div.className = 'instance incorrect';
+                div.innerHTML = `
+                    <h3>${name}</h3>
+                    <p><strong>URL:</strong> ${instance.url}</p>
+                    <p><strong>Error:</strong> ❌ ${error.message}</p>
+                `;
+            }
+        }
+        
+        async function checkCurrentSession() {
+            const div = document.createElement('div');
+            div.className = 'instance';
+            div.innerHTML = `<h3>Current Session Info</h3><p>Checking localStorage and session data...</p>`;
+            resultsDiv.appendChild(div);
+            
+            const userId = localStorage.getItem('userId');
+            const userEmail = localStorage.getItem('userEmail');
+            const userRole = localStorage.getItem('userRole');
+            const impersonationData = localStorage.getItem('impersonationData');
+            
+            let sessionInfo = [];
+            sessionInfo.push(`<strong>User ID:</strong> ${userId || 'Not set'}`);
+            sessionInfo.push(`<strong>Email:</strong> ${userEmail || 'Not set'}`);
+            sessionInfo.push(`<strong>Role:</strong> ${userRole || 'Not set'}`);
+            
+            if (impersonationData) {
+                try {
+                    const data = JSON.parse(impersonationData);
+                    sessionInfo.push(`<strong>🎭 Impersonating:</strong> ${data.impersonatedUser?.email || 'Unknown'}`);
+                    sessionInfo.push(`<strong>Original Admin:</strong> ${data.originalUser?.email || 'Unknown'}`);
+                } catch (e) {
+                    sessionInfo.push(`<strong>Impersonation Data:</strong> ❌ Invalid JSON`);
+                }
+            }
+            
+            div.className = 'instance correct';
+            div.innerHTML = `
+                <h3>Current Session Info</h3>
+                ${sessionInfo.join('<br>')}
+            `;
+        }
+        
+        // Run tests
+        async function runTests() {
+            await checkCurrentSession();
+            await testInstance('Main Instance (Used by most files)', MAIN_INSTANCE, true);
+            await testInstance('Alternative Instance (Used by loginsb.html)', ALT_INSTANCE, false);
+            
+            // Add recommendation
+            const recommendDiv = document.createElement('div');
+            recommendDiv.className = 'instance warning';
+            recommendDiv.innerHTML = `
+                <h3>🚨 Issue Detected</h3>
+                <p><strong>Problem:</strong> Your application is using multiple Supabase instances, which can cause authentication and data inconsistencies.</p>
+                <p><strong>Solution:</strong> All pages should use the same Supabase instance. Update loginsb.html to use the main instance.</p>
+                <p><strong>Impact:</strong> Users logged in via loginsb.html may not have access to data in the main instance, causing impersonation and navigation issues.</p>
+            `;
+            resultsDiv.appendChild(recommendDiv);
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check User Role</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin: 20px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { background: #007cba; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 8px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .user-info { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .fix-btn { background: #28a745; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Check User Role & Fix</h1>
+        <p>This tool checks your user's role in the database and can fix it if needed.</p>
+        
+        <div class="form-group">
+            <label for="email">Your Email:</label>
+            <input type="email" id="email" placeholder="Enter your email">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Your Password:</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+        
+        <button onclick="checkUserRole()">Check My Role</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentUser = null;
+        
+        function showResult(html, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `<div class="result ${type}">${html}</div>`;
+        }
+        
+        async function checkUserRole() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showResult('Please enter both email and password', 'error');
+                return;
+            }
+            
+            try {
+                // Sign in user
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (authError) {
+                    showResult(`❌ Login failed: ${authError.message}`, 'error');
+                    return;
+                }
+                
+                // Get user profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', authData.user.id)
+                    .single();
+                
+                if (profileError) {
+                    showResult(`❌ Profile fetch failed: ${profileError.message}`, 'error');
+                    return;
+                }
+                
+                currentUser = { ...authData.user, ...profile };
+                
+                // Display user info
+                const currentRole = currentUser.role || 'null/undefined';
+                const canSwitch = ['admin', 'super_admin', 'manager'].includes(currentRole);
+                
+                let resultHtml = `
+                    <div class="user-info">
+                        <h3>👤 Your User Information</h3>
+                        <strong>User ID:</strong> ${currentUser.id}<br>
+                        <strong>Email:</strong> ${currentUser.email}<br>
+                        <strong>Current Role:</strong> <code>${currentRole}</code><br>
+                        <strong>Display Name:</strong> ${currentUser.display_name || 'Not set'}<br>
+                        <strong>Can Switch Accounts:</strong> ${canSwitch ? '✅ YES' : '❌ NO'}
+                    </div>
+                `;
+                
+                if (!canSwitch) {
+                    resultHtml += `
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <h4>🚨 Issue Found</h4>
+                            <p>Your role is currently <code>${currentRole}</code>, but you need one of these roles to switch accounts:</p>
+                            <ul>
+                                <li><code>admin</code> - Can switch to any user</li>
+                                <li><code>super_admin</code> - Can switch to any user</li>
+                                <li><code>manager</code> - Can switch to users in same organization</li>
+                            </ul>
+                            <button class="fix-btn" onclick="fixUserRole('admin')">🔧 Set My Role to 'admin'</button>
+                            <button class="fix-btn" onclick="fixUserRole('super_admin')">🔧 Set My Role to 'super_admin'</button>
+                        </div>
+                    `;
+                    showResult(resultHtml, 'warning');
+                } else {
+                    resultHtml += `
+                        <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                            <h4>✅ All Good!</h4>
+                            <p>Your role allows account switching. You should be able to use the Account Switcher now.</p>
+                            <button onclick="window.location.href='simple_account_switcher.html'" style="background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                                🔄 Go to Account Switcher
+                            </button>
+                        </div>
+                    `;
+                    showResult(resultHtml, 'success');
+                }
+                
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function fixUserRole(newRole) {
+            if (!currentUser) {
+                showResult('❌ Please check your role first', 'error');
+                return;
+            }
+            
+            try {
+                showResult('🔧 Updating your role...', 'warning');
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .update({ role: newRole })
+                    .eq('id', currentUser.id)
+                    .select();
+                
+                if (error) {
+                    showResult(`❌ Failed to update role: ${error.message}`, 'error');
+                    return;
+                }
+                
+                showResult(`
+                    <div class="user-info">
+                        <h3>✅ Role Updated Successfully!</h3>
+                        <p>Your role has been changed from <code>${currentUser.role || 'null'}</code> to <code>${newRole}</code></p>
+                        <p>You can now use the Account Switcher!</p>
+                        <button onclick="window.location.href='simple_account_switcher.html'" style="background: #007cba; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                            🔄 Go to Account Switcher
+                        </button>
+                    </div>
+                `, 'success');
+                
+                // Update current user object
+                currentUser.role = newRole;
+                
+            } catch (error) {
+                showResult(`❌ Error updating role: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

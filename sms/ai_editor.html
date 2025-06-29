@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sparky AI Editor</title>
+  <link rel="icon" type="image/png" href="static/supersparky.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="static/global-nav-v2.js"></script>
+  <link rel="stylesheet" href="static/ai_editor.css">
+</head>
+<body>
+  <main style="max-width:900px;margin:40px auto 0 auto;padding:24px;">
+    <section>
+      <p>
+        Welcome to the Sparky AI Editor! Use this tool to create, edit, and test your AI prompts and automations.
+      </p>
+    </section>
+
+    <section style="margin-top:32px;">
+      <form id="ai-form">
+        <label for="prompt" style="font-weight:600;">Prompt:</label><br>
+        <textarea id="prompt" name="prompt" rows="6" style="width:100%;font-size:1.1em;padding:10px;border-radius:6px;border:1px solid #ccc;margin-bottom:16px;"></textarea>
+        <br>
+        <button type="submit" style="background:#1976ff;color:#fff;padding:10px 28px;border:none;border-radius:4px;font-size:1.1em;cursor:pointer;">Run AI</button>
+      </form>
+      <div id="ai-result" style="margin-top:24px;padding:18px 14px;background:#f3f8ff;border-radius:8px;min-height:40px;display:none;"></div>
+    </section>
+  </main>
+  <script>
+    // Example AI form handler (replace with your actual AI logic)
+    document.getElementById('ai-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const prompt = document.getElementById('prompt').value.trim();
+      const resultDiv = document.getElementById('ai-result');
+      if (!prompt) {
+        resultDiv.style.display = 'block';
+        resultDiv.textContent = 'Please enter a prompt.';
+        return;
+      }
+      resultDiv.style.display = 'block';
+      resultDiv.textContent = 'Thinking...';
+      // Simulate AI response
+      setTimeout(() => {
+        resultDiv.textContent = 'AI Response: ' + prompt.split('').reverse().join('');
+      }, 1200);
+    });
+    
+    // Initialize Supabase client (same as index.html)
+    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[DEBUG] Supabase client initialized in ai_editor.html');
+  </script>
+</body>
+</html>

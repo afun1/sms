@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exit Impersonation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .impersonation-info { background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 15px 0; }
+        button { background: #007cba; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .exit-btn { background: #dc3545; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚪 Exit Impersonation</h1>
+        
+        <div id="current-status"></div>
+        
+        <div class="impersonation-info">
+            <h3>Current Situation</h3>
+            <p>You are currently impersonating a user, which is why the account switcher only shows limited accounts. Regular users cannot switch to other accounts.</p>
+            <p><strong>Solution:</strong> Exit impersonation to return to your admin account.</p>
+        </div>
+        
+        <button class="exit-btn" onclick="exitImpersonation()">🚪 Exit Impersonation</button>
+        <button onclick="clearAllData()">🧹 Clear All Session Data</button>
+        <button onclick="checkStatus()">🔍 Check Current Status</button>
+        
+        <div style="margin-top: 20px;">
+            <button onclick="goToAccountSwitcher()">🔄 Go to Account Switcher</button>
+            <button onclick="goToAdmin()">👑 Go to Admin Panel</button>
+        </div>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function checkStatus() {
+            const userId = localStorage.getItem('userId');
+            const userEmail = localStorage.getItem('userEmail');
+            const userRole = localStorage.getItem('userRole');
+            const impersonationData = localStorage.getItem('impersonationData');
+            const accountSwitchData = localStorage.getItem('accountSwitchData');
+            
+            let statusHtml = `
+                <h3>📊 Current Session Status</h3>
+                <strong>User ID:</strong> ${userId || 'Not set'}<br>
+                <strong>Email:</strong> ${userEmail || 'Not set'}<br>
+                <strong>Role:</strong> ${userRole || 'Not set'}<br>
+            `;
+            
+            if (impersonationData) {
+                try {
+                    const data = JSON.parse(impersonationData);
+                    statusHtml += `<br><strong>🎭 IMPERSONATING:</strong><br>`;
+                    statusHtml += `• Impersonated User: ${data.impersonatedUser?.email || 'Unknown'}<br>`;
+                    statusHtml += `• Original Admin: ${data.originalUser?.email || 'Unknown'}<br>`;
+                } catch (e) {
+                    statusHtml += `<br><strong>Impersonation Data:</strong> Invalid JSON<br>`;
+                }
+            }
+            
+            if (accountSwitchData) {
+                try {
+                    const data = JSON.parse(accountSwitchData);
+                    statusHtml += `<br><strong>🔄 ACCOUNT SWITCHED:</strong><br>`;
+                    statusHtml += `• Switched User: ${data.switchedUser?.email || 'Unknown'}<br>`;
+                    statusHtml += `• Original Admin: ${data.adminUser?.email || 'Unknown'}<br>`;
+                } catch (e) {
+                    statusHtml += `<br><strong>Account Switch Data:</strong> Invalid JSON<br>`;
+                }
+            }
+            
+            if (!impersonationData && !accountSwitchData) {
+                statusHtml += `<br><strong>Status:</strong> ✅ Normal session (no impersonation)<br>`;
+            }
+            
+            document.getElementById('current-status').innerHTML = `<div class="impersonation-info">${statusHtml}</div>`;
+        }
+        
+        function exitImpersonation() {
+            try {
+                showStatus('Exiting impersonation...', 'info');
+                
+                // Check for impersonation data
+                const impersonationData = localStorage.getItem('impersonationData');
+                const accountSwitchData = localStorage.getItem('accountSwitchData');
+                
+                if (impersonationData) {
+                    const data = JSON.parse(impersonationData);
+                    const originalUser = data.originalUser;
+                    
+                    if (originalUser) {
+                        // Restore original admin session
+                        localStorage.setItem('userId', originalUser.id);
+                        localStorage.setItem('userEmail', originalUser.email);
+                        localStorage.setItem('userRole', originalUser.role);
+                        localStorage.setItem('displayName', originalUser.display_name || originalUser.email);
+                        
+                        // Remove impersonation data
+                        localStorage.removeItem('impersonationData');
+                        
+                        showStatus(`✅ Returned to admin account: ${originalUser.email}`, 'success');
+                    }
+                } else if (accountSwitchData) {
+                    const data = JSON.parse(accountSwitchData);
+                    const adminUser = data.adminUser;
+                    
+                    if (adminUser) {
+                        // Restore original admin session
+                        localStorage.setItem('userId', adminUser.id);
+                        localStorage.setItem('userEmail', adminUser.email);
+                        localStorage.setItem('userRole', adminUser.role);
+                        localStorage.setItem('displayName', adminUser.display_name || adminUser.email);
+                        
+                        // Remove account switch data
+                        localStorage.removeItem('accountSwitchData');
+                        
+                        showStatus(`✅ Returned to admin account: ${adminUser.email}`, 'success');
+                    }
+                } else {
+                    showStatus('⚠️ No impersonation data found. You may already be in your admin account.', 'error');
+                }
+                
+                // Update status display
+                setTimeout(checkStatus, 500);
+                
+            } catch (error) {
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearAllData() {
+            if (confirm('This will clear ALL session data. Are you sure?')) {
+                localStorage.clear();
+                showStatus('✅ All session data cleared. You will need to log in again.', 'success');
+                setTimeout(checkStatus, 500);
+            }
+        }
+        
+        function goToAccountSwitcher() {
+            window.location.href = 'simple_account_switcher.html';
+        }
+        
+        function goToAdmin() {
+            window.location.href = 'admin.html';
+        }
+        
+        // Check status on load
+        window.addEventListener('load', checkStatus);
+    </script>
+</body>
+</html>

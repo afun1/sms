@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Debug - Table Population Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Admin Debug Test</h1>
+    <div id="status">Loading...</div>
+    
+    <h2>Admin Table</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="admin-table-body">
+        </tbody>
+    </table>
+
+    <h2>User Table</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="user-table-body">
+        </tbody>
+    </table>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let supabase = null;
+
+        async function initializeAndTest() {
+            const status = document.getElementById('status');
+            
+            try {
+                // Initialize Supabase
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabase initialized:', supabase);
+                status.innerHTML = 'Supabase initialized. Testing connection...';
+
+                // Test connection
+                const { data: testData, error: testError } = await supabase
+                    .from('profiles')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (testError) {
+                    console.error('❌ Connection test failed:', testError);
+                    status.innerHTML = `❌ Connection failed: ${testError.message}`;
+                    return;
+                }
+                
+                console.log('✅ Connection test passed, count:', testData);
+                status.innerHTML = 'Connection OK. Fetching users...';
+
+                // Fetch users with simple query
+                const { data: users, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('role', { ascending: true });
+
+                if (error) {
+                    console.error('❌ Error fetching users:', error);
+                    status.innerHTML = `❌ Error fetching users: ${error.message}`;
+                    return;
+                }
+
+                console.log('✅ Users fetched:', users);
+                status.innerHTML = `✅ Loaded ${users ? users.length : 0} users`;
+
+                if (!users || users.length === 0) {
+                    status.innerHTML += ' - No users found in database';
+                    return;
+                }
+
+                // Populate tables
+                populateTable('admin-table-body', users.filter(u => u.role === 'admin'));
+                populateTable('user-table-body', users.filter(u => u.role === 'user'));
+
+            } catch (error) {
+                console.error('💥 Unexpected error:', error);
+                status.innerHTML = `💥 Unexpected error: ${error.message}`;
+            }
+        }
+
+        function populateTable(tableId, users) {
+            const tbody = document.getElementById(tableId);
+            if (!tbody) {
+                console.error(`Table body not found: ${tableId}`);
+                return;
+            }
+
+            tbody.innerHTML = '';
+
+            if (!users || users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4">No users found</td></tr>';
+                return;
+            }
+
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.first_name || ''} ${user.last_name || ''}</td>
+                    <td>${user.email || ''}</td>
+                    <td>${user.role || ''}</td>
+                    <td>
+                        <button onclick="alert('Would impersonate: ${user.email}')">🎭</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            console.log(`✅ Populated ${tableId} with ${users.length} users`);
+        }
+
+        // Wait for DOM and Supabase library to load
+        document.addEventListener('DOMContentLoaded', () => {
+            let attempts = 0;
+            const maxAttempts = 50;
+            
+            const waitForSupabase = setInterval(() => {
+                attempts++;
+                if (typeof window.supabase !== 'undefined') {
+                    clearInterval(waitForSupabase);
+                    initializeAndTest();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(waitForSupabase);
+                    document.getElementById('status').innerHTML = '❌ Failed to load Supabase library';
+                }
+            }, 100);
+        });
+    </script>
+</body>
+</html>

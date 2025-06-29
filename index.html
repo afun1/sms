@@ -221,12 +221,19 @@
   </main>
   
   <script>
-    // Initialize Supabase client (same as assets.html)
+    // Initialize Supabase client (use global client if available)
     const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
     
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('[DEBUG] Supabase client initialized in index.html');
+    // Use global Supabase client if available, otherwise create one
+    let supabase;
+    try {
+        supabase = window.globalSupabase || (window.supabase && window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
+        console.log('[DEBUG] Supabase client initialized in index.html');
+    } catch (error) {
+        console.error('[ERROR] Failed to initialize Supabase client:', error);
+        supabase = null;
+    }
     
     // Animate statistics numbers on page load
     function animateNumber(element, target, duration = 2000) {

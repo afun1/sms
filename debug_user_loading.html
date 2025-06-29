@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug User Loading Issue</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .error { background: #ffebee; border-color: #f44336; }
+        .success { background: #e8f5e8; border-color: #4caf50; }
+        .warning { background: #fff3cd; border-color: #ffc107; }
+        .info { background: #e3f2fd; border-color: #2196f3; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+        button { background: #2196f3; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #1976d2; }
+        .role-badge { padding: 2px 8px; border-radius: 12px; color: white; font-size: 0.8em; }
+        .role-admin { background: #e74c3c; }
+        .role-supervisor { background: #f7b731; }
+        .role-manager { background: #36b37e; }
+        .role-user { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug User Loading Issue</h1>
+    <p>This page will help identify why only 3 out of 5 users are showing in the admin panel.</p>
+    
+    <button onclick="runFullDiagnostic()">🔬 Run Full Diagnostic</button>
+    <button onclick="clearResults()">🗑️ Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        let supabase;
+        
+        function addResult(title, content, type = 'info') {
+            const results = document.getElementById('results');
+            const section = document.createElement('div');
+            section.className = `section ${type}`;
+            section.innerHTML = `
+                <h3>${title}</h3>
+                ${content}
+            `;
+            results.appendChild(section);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        function initializeSupabase() {
+            try {
+                supabase = window.supabase.createClient(
+                    'https://kdrjpgmzjufgdjxyzhnz.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkcmpwZ216anVmZ2RqeHl6aG56Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUwNTQzMDgsImV4cCI6MjA1MDYzMDMwOH0.V4lO6m4b7k6KXsrVbR9YJB5f1n3KMBsPDFaEKYnX7Y0'
+                );
+                return true;
+            } catch (error) {
+                addResult('❌ Supabase Initialization Failed', `<pre>${error.message}</pre>`, 'error');
+                return false;
+            }
+        }
+        
+        async function runFullDiagnostic() {
+            clearResults();
+            
+            addResult('🚀 Starting Diagnostic', 'Running comprehensive analysis of user loading issue...', 'info');
+            
+            if (!initializeSupabase()) {
+                return;
+            }
+            
+            try {
+                // Step 1: Get raw count
+                addResult('📊 Step 1: Database Connection Test', 'Testing connection and getting total count...', 'info');
+                
+                const { data: countData, error: countError } = await supabase
+                    .from('profiles')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (countError) {
+                    addResult('❌ Count Query Failed', `<pre>${JSON.stringify(countError, null, 2)}</pre>`, 'error');
+                    return;
+                }
+                
+                addResult('✅ Database Connected', `Total records in profiles table: <strong>${countData}</strong>`, 'success');
+                
+                // Step 2: Load all profiles with full details
+                addResult('📋 Step 2: Loading All Profiles', 'Fetching all user profiles with complete data...', 'info');
+                
+                const { data: allProfiles, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (profilesError) {
+                    addResult('❌ Profiles Query Failed', `<pre>${JSON.stringify(profilesError, null, 2)}</pre>`, 'error');
+                    return;
+                }
+                
+                addResult('✅ Profiles Loaded', `Successfully loaded <strong>${allProfiles.length}</strong> profiles from database`, 'success');
+                
+                // Step 3: Show raw data
+                if (allProfiles && allProfiles.length > 0) {
+                    let tableHtml = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID (Short)</th>
+                                    <th>Email</th>
+                                    <th>First Name</th>
+                                    <th>Last Name</th>
+                                    <th>Role</th>
+                                    <th>Secondary Role</th>
+                                    <th>Created</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    allProfiles.forEach((profile, index) => {
+                        const shortId = profile.id ? profile.id.substring(0, 8) + '...' : 'N/A';
+                        const role = profile.role || 'None';
+                        const secondaryRole = profile.secondary_role || 'None';
+                        const created = profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A';
+                        
+                        // Check for potential issues
+                        let status = '✅ OK';
+                        let statusClass = '';
+                        
+                        if (!profile.email) {
+                            status = '❌ No Email';
+                            statusClass = 'style="background: #ffebee;"';
+                        } else if (!profile.first_name && !profile.last_name) {
+                            status = '⚠️ No Name';
+                            statusClass = 'style="background: #fff3cd;"';
+                        }
+                        
+                        tableHtml += `
+                            <tr ${statusClass}>
+                                <td>${shortId}</td>
+                                <td>${profile.email || 'N/A'}</td>
+                                <td>${profile.first_name || 'N/A'}</td>
+                                <td>${profile.last_name || 'N/A'}</td>
+                                <td><span class="role-badge role-${role.toLowerCase()}">${role}</span></td>
+                                <td><span class="role-badge role-${secondaryRole.toLowerCase()}">${secondaryRole}</span></td>
+                                <td>${created}</td>
+                                <td>${status}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    tableHtml += '</tbody></table>';
+                    
+                    addResult('📋 Raw Database Data', `All ${allProfiles.length} profiles from database:<br><br>${tableHtml}`, 'info');
+                }
+                
+                // Step 4: Simulate admin panel filtering
+                addResult('🔄 Step 4: Simulating Admin Panel Logic', 'Running the same filtering logic as the admin panel...', 'info');
+                
+                const validProfiles = allProfiles.filter(profile => {
+                    // Check if profile has required fields
+                    if (!profile.id || !profile.email) {
+                        console.log('❌ Filtered out profile missing ID or email:', profile);
+                        return false;
+                    }
+                    return true;
+                });
+                
+                addResult('🔍 Valid Profiles After Basic Filtering', `${validProfiles.length} profiles passed basic validation (have ID and email)`, validProfiles.length === allProfiles.length ? 'success' : 'warning');
+                
+                // Step 5: Group by role like admin panel does
+                const adminUsers = validProfiles.filter(u => 
+                    (u.role && u.role.toLowerCase() === 'admin') || 
+                    (u.secondary_role && u.secondary_role.toLowerCase() === 'admin')
+                );
+                const supervisorUsers = validProfiles.filter(u => u.role && u.role.toLowerCase() === 'supervisor');
+                const managerUsers = validProfiles.filter(u => u.role && u.role.toLowerCase() === 'manager');
+                const regularUsers = validProfiles.filter(u => !u.role || u.role.toLowerCase() === 'user');
+                
+                const totalDisplayed = adminUsers.length + supervisorUsers.length + managerUsers.length + regularUsers.length;
+                
+                let groupingHtml = `
+                    <ul>
+                        <li><strong>Admin Users:</strong> ${adminUsers.length}</li>
+                        <li><strong>Supervisor Users:</strong> ${supervisorUsers.length}</li>
+                        <li><strong>Manager Users:</strong> ${managerUsers.length}</li>
+                        <li><strong>Regular Users:</strong> ${regularUsers.length}</li>
+                        <li><strong>Total to Display:</strong> ${totalDisplayed}</li>
+                    </ul>
+                `;
+                
+                if (totalDisplayed !== validProfiles.length) {
+                    groupingHtml += `<p style="color: #f44336;"><strong>⚠️ ISSUE FOUND:</strong> Role grouping is missing ${validProfiles.length - totalDisplayed} users!</p>`;
+                    
+                    // Find the missing users
+                    const displayedUserIds = [...adminUsers, ...supervisorUsers, ...managerUsers, ...regularUsers].map(u => u.id);
+                    const missingUsers = validProfiles.filter(u => !displayedUserIds.includes(u.id));
+                    
+                    if (missingUsers.length > 0) {
+                        let missingHtml = '<h4>Missing Users:</h4><ul>';
+                        missingUsers.forEach(user => {
+                            missingHtml += `<li>${user.email} - Role: "${user.role || 'null'}", Secondary: "${user.secondary_role || 'null'}"</li>`;
+                        });
+                        missingHtml += '</ul>';
+                        groupingHtml += missingHtml;
+                    }
+                }
+                
+                addResult('👥 Role-Based Grouping Results', groupingHtml, totalDisplayed === validProfiles.length ? 'success' : 'error');
+                
+                // Step 6: Check for specific issues
+                addResult('🔍 Step 6: Checking for Common Issues', 'Looking for potential data problems...', 'info');
+                
+                let issuesFound = [];
+                
+                // Check for null/undefined roles
+                const nullRoleUsers = allProfiles.filter(u => u.role === null || u.role === undefined || u.role === '');
+                if (nullRoleUsers.length > 0) {
+                    issuesFound.push(`${nullRoleUsers.length} users have null/empty primary role`);
+                }
+                
+                // Check for unusual role values
+                const allRoles = [...new Set(allProfiles.map(u => u.role).filter(r => r))];
+                const expectedRoles = ['admin', 'supervisor', 'manager', 'user'];
+                const unexpectedRoles = allRoles.filter(role => !expectedRoles.includes(role.toLowerCase()));
+                if (unexpectedRoles.length > 0) {
+                    issuesFound.push(`Unexpected role values found: ${unexpectedRoles.join(', ')}`);
+                }
+                
+                // Check for duplicate emails
+                const emails = allProfiles.map(u => u.email).filter(e => e);
+                const duplicateEmails = emails.filter((email, index) => emails.indexOf(email) !== index);
+                if (duplicateEmails.length > 0) {
+                    issuesFound.push(`Duplicate emails found: ${[...new Set(duplicateEmails)].join(', ')}`);
+                }
+                
+                if (issuesFound.length === 0) {
+                    addResult('✅ No Data Issues Found', 'All user data appears to be valid', 'success');
+                } else {
+                    addResult('⚠️ Data Issues Found', `<ul><li>${issuesFound.join('</li><li>')}</li></ul>`, 'warning');
+                }
+                
+                // Step 7: Final diagnosis
+                if (allProfiles.length === 5 && totalDisplayed === 3) {
+                    addResult('🎯 DIAGNOSIS', `
+                        <p><strong>Issue Confirmed:</strong> Database has ${allProfiles.length} users, but admin panel shows only ${totalDisplayed}.</p>
+                        <p><strong>Most Likely Cause:</strong> ${validProfiles.length - totalDisplayed} users are being filtered out during role grouping.</p>
+                        <p><strong>Next Steps:</strong></p>
+                        <ul>
+                            <li>Check the role values of the missing users above</li>
+                            <li>Verify the role grouping logic in the admin panel</li>
+                            <li>Consider if users with null roles should be shown in a default category</li>
+                        </ul>
+                    `, 'error');
+                } else {
+                    addResult('✅ DIAGNOSIS', 'User count matches expectations. The issue may be elsewhere.', 'success');
+                }
+                
+            } catch (error) {
+                addResult('💥 Diagnostic Failed', `<pre>${error.message}\n\n${error.stack}</pre>`, 'error');
+            }
+        }
+        
+        // Auto-run diagnostic on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            addResult('🔧 Debug Tool Ready', 'Click "Run Full Diagnostic" to analyze the user loading issue.', 'info');
+        });
+    </script>
+</body>
+</html>

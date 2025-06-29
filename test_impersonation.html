@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Impersonation System</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <script src="static/user_impersonation.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding-top: 80px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-user {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+            background: #fafafa;
+        }
+        
+        .user-info {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .user-email {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .user-role {
+            color: #888;
+            font-size: 12px;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        
+        .impersonate-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        
+        .impersonate-btn:hover {
+            background: #c0392b;
+        }
+        
+        .current-user-info {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .current-user-info h3 {
+            margin: 0 0 10px 0;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Impersonation System Test</h1>
+        
+        <div class="current-user-info">
+            <h3>Current Session Info</h3>
+            <div id="current-user-display">Loading...</div>
+        </div>
+        
+        <h2>Test Users</h2>
+        <p>Click the impersonate button to test the direct impersonation system (no modal):</p>
+        
+        <!-- Test Users -->
+        <div class="test-user">
+            <div class="user-info">
+                <div class="user-name">John Smith</div>
+                <div class="user-email">john.smith@example.com</div>
+                <div class="user-role">user</div>
+            </div>
+            <button class="impersonate-btn" onclick="testImpersonation({
+                id: 'user-001',
+                email: 'john.smith@example.com',
+                first_name: 'John',
+                last_name: 'Smith',
+                display_name: 'John Smith',
+                role: 'user'
+            })">🎭 Impersonate</button>
+        </div>
+        
+        <div class="test-user">
+            <div class="user-info">
+                <div class="user-name">Sarah Johnson</div>
+                <div class="user-email">sarah.johnson@example.com</div>
+                <div class="user-role">supervisor</div>
+            </div>
+            <button class="impersonate-btn" onclick="testImpersonation({
+                id: 'user-002',
+                email: 'sarah.johnson@example.com',
+                first_name: 'Sarah',
+                last_name: 'Johnson',
+                display_name: 'Sarah Johnson',
+                role: 'supervisor'
+            })">🎭 Impersonate</button>
+        </div>
+        
+        <div class="test-user">
+            <div class="user-info">
+                <div class="user-name">Mike Wilson</div>
+                <div class="user-email">mike.wilson@example.com</div>
+                <div class="user-role">manager</div>
+            </div>
+            <button class="impersonate-btn" onclick="testImpersonation({
+                id: 'user-003',
+                email: 'mike.wilson@example.com',
+                first_name: 'Mike',
+                last_name: 'Wilson',
+                display_name: 'Mike Wilson',
+                role: 'manager'
+            })">🎭 Impersonate</button>
+        </div>
+        
+        <h2>Navigation Test Links</h2>
+        <p>Use these links to test navigation persistence during impersonation:</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0;">
+            <a href="dashboard.html" style="color: #007cba; text-decoration: none; padding: 8px 16px; background: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">📊 Dashboard</a>
+            <a href="sms_editor.html" style="color: #007cba; text-decoration: none; padding: 8px 16px; background: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">💬 SMS Editor</a>
+            <a href="email_editor.html" style="color: #007cba; text-decoration: none; padding: 8px 16px; background: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">📧 Email Editor</a>
+            <a href="admin.html" style="color: #007cba; text-decoration: none; padding: 8px 16px; background: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">⚙️ Admin Panel</a>
+        </div>
+    </div>
+
+    <script>
+        // Initialize with admin user for testing
+        localStorage.setItem('userId', 'admin-001');
+        localStorage.setItem('userEmail', 'admin@example.com');
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('username', 'Admin User');
+        localStorage.setItem('displayName', 'Admin User');
+        
+        function testImpersonation(user) {
+            console.log('🧪 Testing impersonation for:', user);
+            
+            if (!window.userImpersonation) {
+                alert('Impersonation system not loaded!');
+                return;
+            }
+            
+            // Use the direct impersonation method (no modal)
+            window.userImpersonation.showImpersonationModal(user);
+        }
+        
+        function updateCurrentUserDisplay() {
+            const currentUserDiv = document.getElementById('current-user-display');
+            
+            const userId = localStorage.getItem('userId') || 'Not set';
+            const userEmail = localStorage.getItem('userEmail') || 'Not set';
+            const userRole = localStorage.getItem('userRole') || 'Not set';
+            const displayName = localStorage.getItem('displayName') || 'Not set';
+            
+            // Check if impersonating
+            const impersonationData = localStorage.getItem('impersonationData');
+            let impersonationInfo = '';
+            
+            if (impersonationData) {
+                try {
+                    const data = JSON.parse(impersonationData);
+                    impersonationInfo = `<br><strong style="color: #e74c3c;">🎭 IMPERSONATING:</strong> ${data.impersonatedUser?.email || 'Unknown'}`;
+                } catch (e) {
+                    console.error('Error parsing impersonation data:', e);
+                }
+            }
+            
+            currentUserDiv.innerHTML = `
+                <strong>User ID:</strong> ${userId}<br>
+                <strong>Email:</strong> ${userEmail}<br>
+                <strong>Role:</strong> ${userRole}<br>
+                <strong>Display Name:</strong> ${displayName}
+                ${impersonationInfo}
+            `;
+        }
+        
+        // Update display on load and periodically
+        document.addEventListener('DOMContentLoaded', updateCurrentUserDisplay);
+        setInterval(updateCurrentUserDisplay, 2000);
+        
+        // Listen for impersonation events
+        document.addEventListener('impersonationExited', updateCurrentUserDisplay);
+    </script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sparky Messaging Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="static/supersparky.png">
+  <link rel="stylesheet" href="static/index.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="static/global-nav-v2.js"></script>
+</head>
+<body>
+  <main style="max-width:1300px;margin:100px auto 40px auto;padding:24px;">
+    <!-- Statistics Cards -->
+    <section style="margin-top:32px;">
+      <h2 style="color:#1976ff;margin-bottom:24px;">Dashboard Overview</h2>
+      <div class="stats-container">
+        <div class="stat-card" onclick="togglePanel('sms-panel')">
+          <div class="stat-icon">📱</div>
+          <div class="stat-content">
+            <h3>SMS Messages</h3>
+            <div class="stat-number" id="sms-count">1,247</div>
+            <div class="stat-label">Sent this month</div>
+          </div>
+          <div class="expand-indicator">▼</div>
+        </div>
+        
+        <div class="stat-card" onclick="togglePanel('rvm-panel')">
+          <div class="stat-icon">🎙️</div>
+          <div class="stat-content">
+            <h3>RVM Campaigns</h3>
+            <div class="stat-number" id="rvm-count">89</div>
+            <div class="stat-label">Active campaigns</div>
+          </div>
+          <div class="expand-indicator">▼</div>
+        </div>
+        
+        <div class="stat-card" onclick="togglePanel('email-panel')">
+          <div class="stat-icon">📧</div>
+          <div class="stat-content">
+            <h3>Email Campaigns</h3>
+            <div class="stat-number" id="email-count">456</div>
+            <div class="stat-label">Delivered today</div>
+          </div>
+          <div class="expand-indicator">▼</div>
+        </div>
+        
+        <div class="stat-card" onclick="togglePanel('contacts-panel')">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <h3>Total Contacts</h3>
+            <div class="stat-number" id="contacts-count">12,384</div>
+            <div class="stat-label">In your lists</div>
+          </div>
+          <div class="expand-indicator">▼</div>
+        </div>
+      </div>
+      
+      <!-- Detailed Statistics Panels -->
+      <div class="stats-panels">
+        <!-- SMS Panel -->
+        <div id="sms-panel" class="detail-panel">
+          <div class="panel-header">
+            <h3>📱 SMS Message Details</h3>
+            <button class="close-panel" onclick="togglePanel('sms-panel')">✕</button>
+          </div>
+          <div class="panel-content">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Total Sent</span>
+                <span class="detail-value" id="sms-sent">1,247</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Total Delivered</span>
+                <span class="detail-value" id="sms-delivered">1,198</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Total Opened</span>
+                <span class="detail-value" id="sms-opened">892</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Click Through</span>
+                <span class="detail-value" id="sms-clicks">134</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Total Opted Out</span>
+                <span class="detail-value" id="sms-optout">67</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Total Failed</span>
+                <span class="detail-value" id="sms-failed">49</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Success Rate</span>
+                <span class="detail-value">96.1%</span>
+              </div>
+            </div>
+            <div class="failure-codes">
+              <h4>Failure Breakdown</h4>
+              <div class="failure-item">• Invalid Number: 23 (46.9%)</div>
+              <div class="failure-item">• Network Error: 15 (30.6%)</div>
+              <div class="failure-item">• Carrier Block: 8 (16.3%)</div>
+              <div class="failure-item">• Other: 3 (6.1%)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RVM Panel -->
+        <div id="rvm-panel" class="detail-panel">
+          <div class="panel-header">
+            <h3>🎙️ RVM Campaign Details</h3>
+            <button class="close-panel" onclick="togglePanel('rvm-panel')">✕</button>
+          </div>
+          <div class="panel-content">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Active Campaigns</span>
+                <span class="detail-value">89</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Total Sent</span>
+                <span class="detail-value">2,456</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Total Delivered</span>
+                <span class="detail-value">2,287</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Listen Rate</span>
+                <span class="detail-value">78.4%</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Callback Rate</span>
+                <span class="detail-value">12.3%</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Avg Duration</span>
+                <span class="detail-value">45s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Email Panel -->
+        <div id="email-panel" class="detail-panel">
+          <div class="panel-header">
+            <h3>📧 Email Campaign Details</h3>
+            <button class="close-panel" onclick="togglePanel('email-panel')">✕</button>
+          </div>
+          <div class="panel-content">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Total Sent</span>
+                <span class="detail-value">456</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Total Delivered</span>
+                <span class="detail-value">434</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Total Opened</span>
+                <span class="detail-value">267</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Click Through</span>
+                <span class="detail-value">89</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Total Opted Out</span>
+                <span class="detail-value">18</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Bounce Rate</span>
+                <span class="detail-value">4.8%</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Open Rate</span>
+                <span class="detail-value">61.5%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contacts Panel -->
+        <div id="contacts-panel" class="detail-panel">
+          <div class="panel-header">
+            <h3>👥 Contact Details</h3>
+            <button class="close-panel" onclick="togglePanel('contacts-panel')">✕</button>
+          </div>
+          <div class="panel-content">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Total Contacts</span>
+                <span class="detail-value">12,384</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Active Contacts</span>
+                <span class="detail-value">11,829</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">New This Month</span>
+                <span class="detail-value">892</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Unsubscribed</span>
+                <span class="detail-value">342</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Bounced</span>
+                <span class="detail-value">213</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Engagement Rate</span>
+                <span class="detail-value">87.2%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <script>
+    // Initialize Supabase client (same as assets.html)
+    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[DEBUG] Supabase client initialized in index.html');
+    
+    // Animate statistics numbers on page load
+    function animateNumber(element, target, duration = 2000) {
+      const start = 0;
+      const increment = target / (duration / 16);
+      let current = start;
+      
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        element.textContent = Math.floor(current).toLocaleString();
+      }, 16);
+    }
+    
+    // Initialize stats animation when page loads
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        animateNumber(document.getElementById('sms-count'), 1247, 1500);
+        animateNumber(document.getElementById('rvm-count'), 89, 1200);
+        animateNumber(document.getElementById('email-count'), 456, 1300);
+        animateNumber(document.getElementById('contacts-count'), 12384, 2000);
+      }, 500);
+    });
+    
+    // Panel toggle functionality
+    function togglePanel(panelId) {
+      const panel = document.getElementById(panelId);
+      const allPanels = document.querySelectorAll('.detail-panel');
+      
+      // Close all other panels first
+      allPanels.forEach(p => {
+        if (p.id !== panelId && p.classList.contains('active')) {
+          p.classList.remove('active');
+        }
+      });
+      
+      // Toggle the clicked panel
+      panel.classList.toggle('active');
+      
+      // Update expand indicators
+      updateExpandIndicators();
+    }
+    
+    function updateExpandIndicators() {
+      const panels = ['sms-panel', 'rvm-panel', 'email-panel', 'contacts-panel'];
+      const cards = document.querySelectorAll('.stat-card');
+      
+      cards.forEach((card, index) => {
+        const indicator = card.querySelector('.expand-indicator');
+        const panel = document.getElementById(panels[index]);
+        
+        if (panel && panel.classList.contains('active')) {
+          indicator.textContent = '▲';
+          card.classList.add('expanded');
+        } else {
+          indicator.textContent = '▼';
+          card.classList.remove('expanded');
+        }
+      });
+    }
+    
+    // TODO: Replace with real data from Supabase
+    // async function loadRealStats() {
+    //   try {
+    //     // Example: Fetch SMS count from a campaigns table
+    //     // const { data: smsData } = await supabase
+    //     //   .from('sms_campaigns')
+    //     //   .select('*', { count: 'exact' });
+    //     
+    //     // Update the numbers with real data
+    //     // document.getElementById('sms-count').textContent = smsData.length;
+    //   } catch (error) {
+    //     console.error('Error loading stats:', error);
+    //   }
+    // }
+  </script>
+</body>
+</html>

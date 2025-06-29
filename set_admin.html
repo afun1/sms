@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Admin Role</title>
+</head>
+<body>
+    <h1>Set Admin Role for Testing</h1>
+    <button onclick="setAdminRole()">Set Admin Role and Reload</button>
+    
+    <script>
+        function setAdminRole() {
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('username', 'AdminUser');
+            localStorage.setItem('userEmail', 'admin@test.com');
+            localStorage.setItem('displayName', 'Admin User');
+            localStorage.setItem('authToken', 'admin-token-123');
+            
+            alert('✅ Admin role set! Redirecting to admin panel...');
+            window.location.href = 'admin.html';
+        }
+        
+        // Auto-set admin role on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setAdminRole();
+        });
+    </script>
+</body>
+</html>
