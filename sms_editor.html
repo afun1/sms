@@ -164,15 +164,10 @@
       color: #333;
     }
     
-    .selected-provider {
-      padding: 12px;
-      background: #f5f5f5;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-    }
-    
     .provider-display {
-      color: #666;
+      color: #333;
+      font-weight: 600;
+      margin-left: 8px;
     }
     
     .provider-display.selected {
@@ -213,24 +208,32 @@
     }
     
     .variables-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 8px;
+      justify-content: center;
+      align-items: center;
     }
     
     .variable-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 10px 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      text-align: center;
-      font-family: 'Courier New', monospace;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      border: 2px solid red !important;
+      padding: 8px 4px !important;
+      border-radius: 8px !important;
+      font-size: 13px !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+      text-align: center !important;
+      font-family: 'Courier New', monospace !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+      width: 185px !important;
+      min-height: 50px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
     
     .variable-btn:hover {
@@ -764,31 +767,34 @@
       width: 100%;
       height: 100%;
       background: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
+      z-index: 9999;
       animation: fadeIn 0.3s ease;
     }
     
     .modal-overlay.active {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex !important;
+      align-items: flex-start !important;
+      justify-content: flex-start !important;
+      padding-top: 120px !important;
     }
     
     .modal-container {
-      background: white;
-      border-radius: 16px;
-      width: 90%;
-      max-width: 900px;
-      max-height: 80vh;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      background: white !important;
+      border-radius: 16px !important;
+      width: 400px !important;
+      max-width: 400px !important;
+      height: auto !important;
+      max-height: calc(100vh - 140px) !important;
+      overflow-y: auto !important;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
       animation: modalSlideIn 0.3s ease;
+      margin-left: calc(50% - 400px) !important;
     }
     
     .modal-header {
       background: linear-gradient(135deg, #1976ff 0%, #1565c0 100%);
       color: white;
-      padding: 20px 24px;
+      padding: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -816,21 +822,22 @@
     }
     
     .modal-content {
-      display: flex;
-      max-height: calc(80vh - 80px);
-      overflow: hidden;
+      display: flex !important;
+      flex-direction: column !important;
+      height: auto !important;
+      overflow: visible !important;
+      padding-bottom: 10px !important;
     }
     
     .modal-left {
-      flex: 1;
-      padding: 24px;
-      border-right: 1px solid #e0e0e0;
-      overflow-y: auto;
+      flex: 1 !important;
+      padding: 10px 10px 0 10px !important;
+      overflow-y: visible !important;
     }
     
     .modal-right {
       flex: 1;
-      padding: 24px;
+      padding: 10px;
       background: #f8f9fa;
       overflow-y: auto;
     }
@@ -2071,16 +2078,16 @@
         <div class="info-column">
           <h2 style="color:#333;margin:0 0 24px 0;">📝 SMS Message Editor</h2>
           <form id="sms-form">
-            <div class="form-group">
-              <label for="selected-provider">Selected Provider:</label>
-              <div class="selected-provider" id="selected-provider">
-                <span class="provider-display">Click a provider above to select</span>
+            <div class="form-group" style="display: flex; align-items: center; gap: 24px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="selected-provider" style="margin: 0;">Selected Provider:</label>
+                <span class="provider-display" id="selected-provider">Click a provider above to select</span>
               </div>
-            </div>
-            
-            <div class="form-group">
-              <label for="phone-number">Phone Number:</label>
-              <input type="tel" id="phone-number" placeholder="+1234567890" required>
+              
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="phone-number" style="margin: 0;">Phone Number:</label>
+                <input type="tel" id="phone-number" placeholder="1234567890123456" maxlength="16" style="width: 200px;" required>
+              </div>
             </div>
             
             <div class="form-group">
@@ -2372,7 +2379,7 @@
 
     <!-- Variables Modal -->
     <div id="variables-modal" class="modal-overlay">
-      <div class="modal-container" style="max-width: 800px;">
+      <div class="modal-container">
         <div class="modal-header">
           <h2 class="modal-title" id="variables-modal-title">Template Variables</h2>
           <button class="modal-close" onclick="closeVariablesModal()">&times;</button>
@@ -2423,9 +2430,13 @@
     console.log('[DEBUG] Supabase client initialized in sms_editor.html');
 
     let selectedProvider = null;
+    let focusedElementBeforeModal = null;
 
     // Variables Modal Functions
     function showVariablesModal(category) {
+      // Store the currently focused element before opening modal
+      focusedElementBeforeModal = document.activeElement;
+      
       const modal = document.getElementById('variables-modal');
       const modalTitle = document.getElementById('variables-modal-title');
       const modalContent = document.getElementById('variables-modal-content');
@@ -2572,6 +2583,11 @@
     }
 
     function insertVariableAndClose(variable) {
+      // Debug: Log what element was focused before modal
+      console.log('focusedElementBeforeModal:', focusedElementBeforeModal);
+      console.log('focusedElementBeforeModal id:', focusedElementBeforeModal?.id);
+      console.log('focusedElementBeforeModal tagName:', focusedElementBeforeModal?.tagName);
+      
       insertVariable(variable);
       closeVariablesModal();
     }
@@ -2934,11 +2950,8 @@
           // Update the selected provider display
           const providerName = this.querySelector('h3').textContent;
           const providerDisplay = document.getElementById('selected-provider');
-          providerDisplay.innerHTML = `
-            <span class="provider-display selected">
-              <strong>${providerName}</strong> - Ready to send SMS
-            </span>
-          `;
+          providerDisplay.textContent = providerName;
+          providerDisplay.className = 'provider-display selected';
         });
       });
 
@@ -3018,22 +3031,60 @@
 
     // Insert variable at cursor position
     function insertVariable(variable) {
-      const textarea = document.getElementById('sms-message');
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = textarea.value;
+      // Debug logging
+      console.log('insertVariable called with:', variable);
+      console.log('focusedElementBeforeModal:', focusedElementBeforeModal);
+      console.log('document.activeElement:', document.activeElement);
+      
+      // Use the element that was focused before the modal opened, or fall back to current active element
+      let targetElement = focusedElementBeforeModal || document.activeElement;
+      
+      console.log('Initial targetElement:', targetElement);
+      console.log('targetElement id:', targetElement?.id);
+      console.log('targetElement tagName:', targetElement?.tagName);
+      
+      // If the stored element is not an input/textarea, determine smart default
+      if (!targetElement || (targetElement.tagName !== 'INPUT' && targetElement.tagName !== 'TEXTAREA')) {
+        console.log('No valid target element, determining smart default');
+        
+        // Smart default: use phone field if empty, otherwise use message field
+        const phoneField = document.getElementById('phone-number');
+        const messageField = document.getElementById('sms-message');
+        
+        if (phoneField && !phoneField.value.trim()) {
+          console.log('Using phone field as default (empty)');
+          targetElement = phoneField;
+        } else {
+          console.log('Using message field as default');
+          targetElement = messageField;
+        }
+      }
+      
+      console.log('Final targetElement:', targetElement);
+      console.log('Final targetElement id:', targetElement?.id);
+      
+      // Restore focus to the target element first
+      targetElement.focus();
+      
+      const start = targetElement.selectionStart || 0;
+      const end = targetElement.selectionEnd || 0;
+      const text = targetElement.value || '';
       
       // Insert the variable at the cursor position
       const newText = text.substring(0, start) + variable + text.substring(end);
-      textarea.value = newText;
+      targetElement.value = newText;
       
       // Position cursor exactly after the variable
       const newCursorPos = start + variable.length;
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-      textarea.focus();
+      targetElement.setSelectionRange(newCursorPos, newCursorPos);
       
-      // Update count only - no highlighting to avoid cursor issues
-      updateCharCount();
+      // Update character count only if it's the message textarea
+      if (targetElement.id === 'sms-message') {
+        updateCharCount();
+      }
+      
+      // Clear the stored focused element
+      focusedElementBeforeModal = null;
     }
 
     // Word highlighting function with variant detection
@@ -4722,25 +4773,11 @@
         smsRecipients.placeholder = `Enter phone numbers (one per line) for ${provider.name}`;
       }
 
-      // Add provider indicator to the editor section
-      const rightColumnContent = document.querySelector('.right-column-content');
-      if (rightColumnContent) {
-        // Remove existing provider indicator
-        const existingIndicator = rightColumnContent.querySelector('.provider-indicator');
-        if (existingIndicator) {
-          existingIndicator.remove();
-        }
-        
-        // Add new provider indicator
-        const providerIndicator = document.createElement('div');
-        providerIndicator.className = 'provider-indicator';
-        providerIndicator.innerHTML = `
-          <div style="background: #e3f2fd; border: 1px solid #1976ff; border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: center;">
-            <strong style="color: #1976ff;">📡 Selected Provider: ${provider.name}</strong>
-            <div style="font-size: 12px; color: #666; margin-top: 4px;">${provider.description}</div>
-          </div>
-        `;
-        rightColumnContent.insertBefore(providerIndicator, rightColumnContent.firstChild);
+      // Update the main provider display instead of adding a separate indicator
+      const providerDisplay = document.getElementById('selected-provider');
+      if (providerDisplay) {
+        providerDisplay.textContent = provider.name;
+        providerDisplay.className = 'provider-display selected';
       }
     }
 
@@ -4893,3 +4930,15 @@
   </script>
 </body>
 </html>
+
+      border-bottom: none;
+    }
+    
+    .benefit-icon {
+      color: #4caf50;
+      font-weight: bold;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    /* Right Column - Pricing */
