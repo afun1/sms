@@ -212,13 +212,15 @@
       flex-wrap: wrap;
       gap: 8px;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start;
+      height: fit-content !important;
+      min-height: auto !important;
     }
     
     .variable-btn {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
       color: white !important;
-      border: 2px solid red !important;
+      border: none !important;
       padding: 8px 4px !important;
       border-radius: 8px !important;
       font-size: 13px !important;
@@ -758,7 +760,7 @@
       text-decoration: underline;
     }
     
-    /* Modal Styles */
+    /* Modal Styles - Updated 20250629-v3 */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -766,16 +768,13 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
+      background: transparent;
       z-index: 9999;
       animation: fadeIn 0.3s ease;
     }
     
     .modal-overlay.active {
-      display: flex !important;
-      align-items: flex-start !important;
-      justify-content: flex-start !important;
-      padding-top: 120px !important;
+      display: block !important;
     }
     
     .modal-container {
@@ -783,12 +782,15 @@
       border-radius: 16px !important;
       width: 400px !important;
       max-width: 400px !important;
-      height: auto !important;
-      max-height: calc(100vh - 140px) !important;
-      overflow-y: auto !important;
+      height: fit-content !important;
+      min-height: auto !important;
+      max-height: calc(100vh - 40px) !important;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
       animation: modalSlideIn 0.3s ease;
-      margin-left: calc(50% - 400px) !important;
+      position: absolute !important;
+      top: 50% !important;
+      right: 50% !important;
+      transform: translateY(-50%) !important;
     }
     
     .modal-header {
@@ -824,7 +826,8 @@
     .modal-content {
       display: flex !important;
       flex-direction: column !important;
-      height: auto !important;
+      height: fit-content !important;
+      min-height: auto !important;
       overflow: visible !important;
       padding-bottom: 10px !important;
     }
@@ -833,6 +836,13 @@
       flex: 1 !important;
       padding: 10px 10px 0 10px !important;
       overflow-y: visible !important;
+      height: fit-content !important;
+      min-height: auto !important;
+    }
+    
+    #variables-modal-content {
+      height: fit-content !important;
+      min-height: auto !important;
     }
     
     .modal-right {
@@ -2078,15 +2088,19 @@
         <div class="info-column">
           <h2 style="color:#333;margin:0 0 24px 0;">📝 SMS Message Editor</h2>
           <form id="sms-form">
-            <div class="form-group" style="display: flex; align-items: center; gap: 24px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <label for="selected-provider" style="margin: 0;">Selected Provider:</label>
-                <span class="provider-display" id="selected-provider">Click a provider above to select</span>
-              </div>
-              
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <label for="phone-number" style="margin: 0;">Phone Number:</label>
-                <input type="tel" id="phone-number" placeholder="1234567890123456" maxlength="16" style="width: 200px;" required>
+            <div class="form-group">
+              <div style="display: flex; gap: 20px;">
+                <!-- Left Column - 60% - Provider Section -->
+                <div style="flex: 0 0 60%;">
+                  <label for="selected-provider" style="margin: 0; margin-bottom: 8px; display: block;">Selected Provider:</label>
+                  <span class="provider-display" id="selected-provider">Click a provider above to select</span>
+                </div>
+                
+                <!-- Right Column - 40% - Phone Section -->
+                <div style="flex: 0 0 40%;">
+                  <label for="phone-number" style="margin: 0; margin-bottom: 8px; display: block;">Phone Number:</label>
+                  <input type="tel" id="phone-number" placeholder="1234567890123456" maxlength="16" style="width: 100%;" required>
+                </div>
               </div>
             </div>
             
@@ -2583,11 +2597,6 @@
     }
 
     function insertVariableAndClose(variable) {
-      // Debug: Log what element was focused before modal
-      console.log('focusedElementBeforeModal:', focusedElementBeforeModal);
-      console.log('focusedElementBeforeModal id:', focusedElementBeforeModal?.id);
-      console.log('focusedElementBeforeModal tagName:', focusedElementBeforeModal?.tagName);
-      
       insertVariable(variable);
       closeVariablesModal();
     }
@@ -3031,37 +3040,21 @@
 
     // Insert variable at cursor position
     function insertVariable(variable) {
-      // Debug logging
-      console.log('insertVariable called with:', variable);
-      console.log('focusedElementBeforeModal:', focusedElementBeforeModal);
-      console.log('document.activeElement:', document.activeElement);
-      
       // Use the element that was focused before the modal opened, or fall back to current active element
       let targetElement = focusedElementBeforeModal || document.activeElement;
       
-      console.log('Initial targetElement:', targetElement);
-      console.log('targetElement id:', targetElement?.id);
-      console.log('targetElement tagName:', targetElement?.tagName);
-      
       // If the stored element is not an input/textarea, determine smart default
       if (!targetElement || (targetElement.tagName !== 'INPUT' && targetElement.tagName !== 'TEXTAREA')) {
-        console.log('No valid target element, determining smart default');
-        
         // Smart default: use phone field if empty, otherwise use message field
         const phoneField = document.getElementById('phone-number');
         const messageField = document.getElementById('sms-message');
         
         if (phoneField && !phoneField.value.trim()) {
-          console.log('Using phone field as default (empty)');
           targetElement = phoneField;
         } else {
-          console.log('Using message field as default');
           targetElement = messageField;
         }
       }
-      
-      console.log('Final targetElement:', targetElement);
-      console.log('Final targetElement id:', targetElement?.id);
       
       // Restore focus to the target element first
       targetElement.focus();

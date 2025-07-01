@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Contacts - New Version</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="static/supersparky.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="static/global-nav-v2.js"></script>
+  <style>
+    body { 
+      margin: 0; 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .controls {
+      background: white;
+      padding: 20px;
+      margin: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .search-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex: 1;
+      min-width: 300px;
+    }
+    
+    .search-input {
+      flex: 1;
+      padding: 10px 15px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .search-input:focus {
+      border-color: #667eea;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-success {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .btn-warning {
+      background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+      color: #212529;
+    }
+    
+    .btn-info {
+      background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+      color: white;
+    }
+    
+    .version-badge {
+      background: #28a745;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .table-container {
+      background: white;
+      margin: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      overflow: hidden;
+      overflow-x: auto; /* Enable horizontal scrolling */
+      max-width: calc(100vw - 40px);
+      max-height: calc(100vh - 200px); /* Set max height to enable vertical scrolling */
+      overflow-y: auto; /* Enable vertical scrolling */
+      position: relative;
+    }
+    
+    /* Black underlay - behind columns 1-4, only covers actual table - FIXED POSITION */
+    .table-container::before {
+      content: '';
+      position: absolute; /* Absolute position relative to table-container */
+      top: 0; /* Will be overridden by JavaScript */
+      left: 0; /* Will be overridden by JavaScript */
+      width: 100%; /* Will be overridden by JavaScript */
+      height: 100px; /* Small default height, will be overridden by JavaScript */
+      background: #000;
+      z-index: 1; /* Behind everything - lowest layer */
+      pointer-events: none;
+      transform: translateZ(0); /* Force hardware acceleration */
+    }
+    
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      table-layout: auto;
+      min-width: fit-content;
+      position: relative;
+      z-index: 2; /* Above underlay but below sticky columns */
+    }
+    
+    .table th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 0 10px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+      position: sticky;
+      top: 0;
+      z-index: 5; /* Part of the scrolling table layer */
+      white-space: nowrap;
+      position: relative;
+      user-select: none;
+      /* Ensure header stays on top during scroll */
+      position: sticky;
+      top: 0;
+    }
+    
+    /* Column resize handle */
+    .table th .resize-handle {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      cursor: col-resize;
+      background: transparent;
+      z-index: 11;
+    }
+    
+    .table th .resize-handle:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .table th.resizing {
+      user-select: none;
+    }
+    
+    /* Red headers for SMS, Call, Email */
+    .table th.red-header {
+      background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+    }
+    
+    /* Sticky columns - First layer: TOP LAYER */
+    .table th:nth-child(1),
+    .table td:nth-child(1) {
+      position: sticky;
+      left: 0;
+      z-index: 100; /* First layer - top layer sticky columns */
+      background: inherit;
+      padding: 0;
+    }
+    
+    .table th:nth-child(2),
+    .table td:nth-child(2) {
+      position: sticky;
+      z-index: 99; /* First layer - top layer sticky columns */
+      background: inherit;
+      padding: 0 0 0 2px;
+      border-left: 2px solid #333;
+      border-right: 2px solid #333;
+    }
+    
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+      position: sticky;
+      z-index: 98; /* First layer - top layer sticky columns */
+      background: inherit;
+      padding: 0 0 0 2px;
+      border-right: 2px solid #333;
+    }
+    
+    .table th:nth-child(4),
+    .table td:nth-child(4) {
+      position: sticky;
+      z-index: 97; /* First layer - top layer sticky columns */
+      background: inherit;
+      padding: 0 2px 0 2px;
+      border-right: 2px solid #333;
+    }
+    
+    /* Sticky column headers have highest z-index - ALWAYS ON TOP */
+    .table th:nth-child(1) { z-index: 200; } /* Highest - always on top */
+    .table th:nth-child(2) { z-index: 199; } /* Highest - always on top */
+    .table th:nth-child(3) { z-index: 198; } /* Highest - always on top */
+    .table th:nth-child(4) { z-index: 197; } /* Highest - always on top */
+    
+    /* Ensure proper background for sticky cells */
+    .table td:nth-child(1),
+    .table td:nth-child(2),
+    .table td:nth-child(3),
+    .table td:nth-child(4) {
+      background: rgba(255, 255, 255, 0.9); /* Semi-transparent white to show black underlay */
+    }
+    
+    .table tbody tr:hover td:nth-child(1),
+    .table tbody tr:hover td:nth-child(2),
+    .table tbody tr:hover td:nth-child(3),
+    .table tbody tr:hover td:nth-child(4) {
+      background: rgba(248, 249, 250, 0.9); /* Semi-transparent hover color */
+    }
+    
+    .table tbody tr.selected td:nth-child(1),
+    .table tbody tr.selected td:nth-child(2),
+    .table tbody tr.selected td:nth-child(3),
+    .table tbody tr.selected td:nth-child(4) {
+      background: rgba(227, 242, 253, 0.9); /* Semi-transparent selected color */
+    }
+    
+    /* Ensure borders stay with sticky columns */
+    
+    .table th.red-header {
+      background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+    }
+    
+    .table th.sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 20;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .table th.sticky-col.red-header {
+      background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
+    }
+    
+    .table td.sticky-col {
+      position: sticky;
+      left: 0;
+      z-index: 15;
+      background: white;
+    }
+    
+    .table tbody tr:hover td.sticky-col {
+      background: #f8f9fa;
+    }
+    
+    .table tbody tr.selected td.sticky-col {
+      background: #e3f2fd;
+    }
+    
+    .table td {
+      padding: 0 10px;
+      border-bottom: 1px solid #e9ecef;
+      vertical-align: middle;
+      word-wrap: break-word;
+      /* Removed max-width constraint to allow better auto-fitting */
+    }
+    
+    .table tbody tr:hover {
+      background: #f8f9fa;
+    }
+    
+    .table tbody tr.selected {
+      background: #e3f2fd;
+    }
+    
+    .checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    
+    .stats {
+      background: white;
+      margin: 20px;
+      padding: 15px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      min-width: 500px;
+      max-width: 90vw;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    .modal h3 {
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .form-control:focus {
+      border-color: #667eea;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: flex-end;
+      margin-top: 30px;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 40px;
+      color: #6c757d;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .alert {
+      padding: 15px 20px;
+      margin: 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    .alert-success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    
+    .alert-danger {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    
+    .alert-info {
+      background: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+    }
+    
+    /* Pagination Styles */
+    .pagination-container {
+      background: white;
+      margin: 20px;
+      padding: 0 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      gap: 2px;
+    }
+    
+    .pagination-info {
+      color: #6c757d;
+      font-size: 13px;
+    }
+    
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    
+    .pagination-links {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    
+    .scroll-controls {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    
+    .scroll-arrow {
+      width: 20px;
+      height: 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      transition: background 0.2s;
+      user-select: none;
+    }
+    
+    .scroll-arrow:hover {
+      background: #0056b3;
+    }
+    
+    .scroll-arrow:active {
+      background: #004085;
+    }
+    
+    .pagination-link {
+      color: #007bff;
+      text-decoration: none;
+      padding: 4px 8px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.2s;
+    }
+    
+    .pagination-link:hover {
+      background: #f8f9fa;
+      text-decoration: underline;
+    }
+    
+    .pagination-link.active {
+      color: white;
+      font-weight: bold;
+      background: #007bff;
+      border-radius: 4px;
+      padding: 4px 8px;
+    }
+    
+    .pagination-link.active:hover {
+      background: #0056b3;
+      text-decoration: none;
+    }
+    
+    /* Support for button-based pagination (legacy) */
+    .pagination-btn {
+      padding: 4px 8px;
+      border: none;
+      background: transparent;
+      color: #007bff;
+      text-decoration: none;
+      border-radius: 3px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .pagination-btn:hover {
+      background: #f8f9fa;
+    }
+    
+    .pagination-btn.active {
+      color: white;
+      font-weight: bold;
+      background: #007bff;
+      border-radius: 4px;
+    }
+    
+    .pagination-btn.active:hover {
+      background: #0056b3;
+    }
+    
+    /* Special styling for top cell of column 1 */
+    .table th:first-child {
+      background: #007bff !important;
+      color: white;
+    }
+    
+    .pagination-link.disabled {
+      color: #6c757d;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    .pagination-link.disabled:hover {
+      background: none;
+      text-decoration: none;
+    }
+    
+    .page-size-selector {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 13px;
+      color: #6c757d;
+    }
+    
+    .page-size-select {
+      padding: 4px 8px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <h1>📋 Contacts Management</h1>
+    <p style="margin: 5px 0 0 0; opacity: 0.9;">Manage your contacts with full functionality</p>
+  </div>
+
+  <!-- Alerts -->
+  <div id="alert-success" class="alert alert-success"></div>
+  <div id="alert-error" class="alert alert-danger"></div>
+  <div id="alert-info" class="alert alert-info"></div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="search-group">
+      <input id="search-input" type="text" class="search-input" placeholder="Search contacts..." />
+      <button id="search-btn" class="btn btn-primary">🔍 Search</button>
+      <button id="reset-btn" class="btn btn-secondary">↻ Reset</button>
+    </div>
+    
+    <div class="version-badge">V4.2 PAGINATED</div>
+    
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button id="delete-btn" class="btn btn-danger">🗑️ Delete</button>
+      <button id="assign-btn" class="btn btn-success">👤 Assign</button>
+      <button id="sms-btn" class="btn btn-success">📱 SMS</button>
+      <button id="email-btn" class="btn btn-info">✉️ Email</button>
+      <button id="rvm-btn" class="btn btn-warning">🎤 RVM</button>
+      <button id="campaign-btn" class="btn btn-primary">🚀 Campaign</button>
+      <button id="add-btn" class="btn btn-success">➕ Add</button>
+      <button id="import-btn" class="btn btn-info">📥 Import</button>
+      <button id="export-btn" class="btn btn-warning">📤 Export</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading contacts...</p>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container">
+    <div class="page-size-selector">
+      <label>Show:</label>
+      <select id="page-size-select" class="page-size-select">
+        <option value="10">10</option>
+        <option value="25" selected>25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="250">250</option>
+        <option value="all">📋 Show All Contacts</option>
+      </select>
+      <span>per page</span>
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 2px;">
+      <div class="pagination-info">
+        Showing <span id="showing-start">0</span> to <span id="showing-end">0</span> of <span id="showing-total">0</span> contacts
+      </div>
+      
+      <div class="pagination-controls">
+        <div id="pagination-links" style="display:flex;align-items:center;gap:2px;">
+          <span style="font-size:13px;margin-right:2px;color:#6c757d;">Pages:</span>
+          <!-- Dynamic pagination links will be generated here -->
+        </div>
+      </div>
+    </div>
+    
+    <div class="scroll-controls">
+      <button id="scroll-left" class="scroll-arrow" title="Scroll table left">‹</button>
+      <button id="scroll-right" class="scroll-arrow" title="Scroll table right">›</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>
+            <input type="checkbox" id="header-checkbox" class="checkbox">
+            <div class="resize-handle"></div>
+          </th>
+          <th class="red-header">SMS<div class="resize-handle"></div></th>
+          <th class="red-header">Call<div class="resize-handle"></div></th>
+          <th class="red-header">Email<div class="resize-handle"></div></th>
+          <th>Sponsor<div class="resize-handle"></div></th>
+          <th>Sponsor First<div class="resize-handle"></div></th>
+          <th>Sponsor Last<div class="resize-handle"></div></th>
+          <th>User ID<div class="resize-handle"></div></th>
+          <th>First Name<div class="resize-handle"></div></th>
+          <th>Last Name<div class="resize-handle"></div></th>
+          <th>E-mail<div class="resize-handle"></div></th>
+          <th>Valid<div class="resize-handle"></div></th>
+          <th>Phone<div class="resize-handle"></div></th>
+          <th>Address<div class="resize-handle"></div></th>
+          <th>City<div class="resize-handle"></div></th>
+          <th>State<div class="resize-handle"></div></th>
+          <th>Zip<div class="resize-handle"></div></th>
+          <th>IP<div class="resize-handle"></div></th>
+          <th>Date<div class="resize-handle"></div></th>
+          <th>Timezone<div class="resize-handle"></div></th>
+          <th>Cell<div class="resize-handle"></div></th>
+          <th>Carrier<div class="resize-handle"></div></th>
+          <th>Landline<div class="resize-handle"></div></th>
+          <th>Voip<div class="resize-handle"></div></th>
+          <th>Other<div class="resize-handle"></div></th>
+          <th>Foreign<div class="resize-handle"></div></th>
+          <th>Country<div class="resize-handle"></div></th>
+        </tr>
+      </thead>
+      <tbody id="contacts-tbody">
+        <!-- Contacts will be loaded here -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Assignment Modal -->
+  <div id="assign-modal" class="modal">
+    <div class="modal-content">
+      <h3>👤 Assign Contacts to User</h3>
+      
+      <div class="form-group">
+        <strong id="assign-selected-count">0 contacts selected</strong>
+      </div>
+      
+      <div class="form-group">
+        <label>Search Users:</label>
+        <input id="user-search" type="text" class="form-control" placeholder="Type to search users...">
+      </div>
+      
+      <div class="form-group">
+        <label>Select User:</label>
+        <select id="user-select" class="form-control">
+          <option value="">Select a user...</option>
+        </select>
+      </div>
+      
+      <div class="modal-actions">
+        <button id="assign-cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button id="assign-confirm-btn" class="btn btn-success">Assign Contacts</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let allContacts = [];
+    let filteredContacts = [];
+    let selectedContactIds = new Set();
+    
+    // Pagination variables
+    let currentPage = 1;
+    let pageSize = 25;
+    let paginatedContacts = [];
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 Contacts app starting...');
+      initializeApp();
+    });
+
+    async function initializeApp() {
+      try {
+        showLoading(true);
+        await loadContacts();
+        setupEventListeners();
+        updateStats();
+        showAlert('success', 'Contacts loaded successfully!');
+      } catch (error) {
+        console.error('Error initializing app:', error);
+        showAlert('error', 'Failed to load contacts. Please refresh the page.');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Load contacts from API
+    async function loadContacts() {
+      try {
+        const response = await fetch('/api/contacts');
+        const data = await response.json();
+        
+        // Handle different response formats
+        if (Array.isArray(data)) {
+          allContacts = data;
+        } else if (data.contacts && Array.isArray(data.contacts)) {
+          allContacts = data.contacts;
+        } else if (data.data && Array.isArray(data.data)) {
+          allContacts = data.data;
+        } else {
+          throw new Error('Invalid API response format');
+        }
+        
+        filteredContacts = [...allContacts];
+        renderContacts();
+        console.log(`✅ Loaded ${allContacts.length} contacts`);
+        
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+        
+        // Use sample data for testing when API is not available
+        allContacts = [
+          {
+            id: 1, sms: '✓', call: '✓', email_flag: '✓', sponsor: 'John', sponsor_first: 'John', sponsor_last: 'Doe',
+            user_id: '001', first_name: 'Alice', last_name: 'Smith', email: 'alice@example.com', valid: 'Yes',
+            phone: '555-0101', address: '123 Main St', city: 'New York', state: 'NY', zip: '10001',
+            ip: '192.168.1.1', date: '2024-01-15', timezone: 'EST', cell: 'Yes', carrier: 'Verizon',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA'
+          },
+          {
+            id: 2, sms: '✓', call: '', email_flag: '✓', sponsor: 'Jane', sponsor_first: 'Jane', sponsor_last: 'Wilson',
+            user_id: '002', first_name: 'Bob', last_name: 'Johnson', email: 'bob@example.com', valid: 'Yes',
+            phone: '555-0102', address: '456 Oak Ave', city: 'Los Angeles', state: 'CA', zip: '90210',
+            ip: '192.168.1.2', date: '2024-01-16', timezone: 'PST', cell: 'Yes', carrier: 'AT&T',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA'
+          },
+          {
+            id: 3, sms: '', call: '✓', email_flag: '✓', sponsor: 'Mike', sponsor_first: 'Mike', sponsor_last: 'Brown',
+            user_id: '003', first_name: 'Carol', last_name: 'Davis', email: 'carol@example.com', valid: 'Yes',
+            phone: '555-0103', address: '789 Pine Rd', city: 'Chicago', state: 'IL', zip: '60601',
+            ip: '192.168.1.3', date: '2024-01-17', timezone: 'CST', cell: 'Yes', carrier: 'T-Mobile',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA'
+          },
+          {
+            id: 4, sms: '✓', call: '✓', email_flag: '', sponsor: 'Sarah', sponsor_first: 'Sarah', sponsor_last: 'Miller',
+            user_id: '004', first_name: 'David', last_name: 'Wilson', email: 'david@example.com', valid: 'Yes',
+            phone: '555-0104', address: '321 Elm St', city: 'Houston', state: 'TX', zip: '77001',
+            ip: '192.168.1.4', date: '2024-01-18', timezone: 'CST', cell: 'Yes', carrier: 'Sprint',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA'
+          },
+          {
+            id: 5, sms: '✓', call: '✓', email_flag: '✓', sponsor: 'Tom', sponsor_first: 'Tom', sponsor_last: 'Garcia',
+            user_id: '005', first_name: 'Emma', last_name: 'Taylor', email: 'emma@example.com', valid: 'Yes',
+            phone: '555-0105', address: '654 Maple Dr', city: 'Phoenix', state: 'AZ', zip: '85001',
+            ip: '192.168.1.5', date: '2024-01-19', timezone: 'MST', cell: 'Yes', carrier: 'Verizon',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA'
+          },
+          {
+            id: 6, sms: '', call: '✓', email_flag: '✓', sponsor: 'Lisa', sponsor_first: 'Lisa', sponsor_last: 'Anderson',
+            user_id: '006', first_name: 'Frank', last_name: 'Martinez', email: 'frank@example.com', valid: 'Yes',
+            phone: '555-0106', address: '987 Cedar Ln', city: 'Philadelphia', state: 'PA', zip: '19101',
+            ip: '192.168.1.6', date: '2024-01-20', timezone: 'EST', cell: 'Yes', carrier: 'AT&T',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA'
+          },
+          {
+            id: 7, sms: '✓', call: '', email_flag: '✓', sponsor: 'Chris', sponsor_first: 'Chris', sponsor_last: 'Thomas',
+            user_id: '007', first_name: 'Grace', last_name: 'Hernandez', email: 'grace@example.com', valid: 'Yes',
+            phone: '555-0107', address: '147 Birch St', city: 'San Antonio', state: 'TX', zip: '78201',
+            ip: '192.168.1.7', date: '2024-01-21', timezone: 'CST', cell: 'Yes', carrier: 'T-Mobile',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA'
+          },
+          {
+            id: 8, sms: '✓', call: '✓', email_flag: '', sponsor: 'Amy', sponsor_first: 'Amy', sponsor_last: 'Jackson',
+            user_id: '008', first_name: 'Henry', last_name: 'White', email: 'henry@example.com', valid: 'Yes',
+            phone: '555-0108', address: '258 Spruce Ave', city: 'San Diego', state: 'CA', zip: '92101',
+            ip: '192.168.1.8', date: '2024-01-22', timezone: 'PST', cell: 'Yes', carrier: 'Sprint',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA'
+          },
+          {
+            id: 9, sms: '', call: '✓', email_flag: '✓', sponsor: 'Paul', sponsor_first: 'Paul', sponsor_last: 'Lewis',
+            user_id: '009', first_name: 'Ivy', last_name: 'Clark', email: 'ivy@example.com', valid: 'Yes',
+            phone: '555-0109', address: '369 Walnut Rd', city: 'Dallas', state: 'TX', zip: '75201',
+            ip: '192.168.1.9', date: '2024-01-23', timezone: 'CST', cell: 'Yes', carrier: 'Verizon',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA'
+          },
+          {
+            id: 10, sms: '✓', call: '✓', email_flag: '✓', sponsor: 'Kate', sponsor_first: 'Kate', sponsor_last: 'Walker',
+            user_id: '010', first_name: 'Jack', last_name: 'Hall', email: 'jack@example.com', valid: 'Yes',
+            phone: '555-0110', address: '741 Ash Blvd', city: 'San Jose', state: 'CA', zip: '95101',
+            ip: '192.168.1.10', date: '2024-01-24', timezone: 'PST', cell: 'Yes', carrier: 'AT&T',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA'
+          }
+        ];
+        
+        filteredContacts = [...allContacts];
+        renderContacts();
+        console.log(`✅ Loaded ${allContacts.length} sample contacts for testing`);
+      }
+    }
+
+    // Update sticky column positions based on actual column widths
+    function updateStickyColumnPositions() {
+      // Wait for the next frame to ensure the table has been rendered and measured
+      requestAnimationFrame(() => {
+        const table = document.querySelector('.table');
+        if (!table) return;
+        
+        const headerCells = table.querySelectorAll('thead th');
+        if (headerCells.length === 0) return;
+        
+        let cumulativeWidth = 0;
+        let cssRules = '';
+        
+        // Update positions for the first 4 columns (sticky columns)
+        for (let i = 0; i < Math.min(4, headerCells.length); i++) {
+          const headerCell = headerCells[i];
+          const columnWidth = headerCell.offsetWidth;
+          
+          if (i > 0) {
+            // Set the left position for columns 2, 3, and 4
+            const leftPosition = cumulativeWidth + 'px';
+            
+            // Add CSS rule for this column's left position
+            cssRules += `
+              .table th:nth-child(${i + 1}),
+              .table td:nth-child(${i + 1}) {
+                left: ${leftPosition} !important;
+              }
+            `;
+          }
+          
+          cumulativeWidth += columnWidth;
+        }
+        
+        // Create or update the dynamic stylesheet
+        let styleSheet = document.getElementById('dynamic-sticky-styles');
+        if (!styleSheet) {
+          styleSheet = document.createElement('style');
+          styleSheet.id = 'dynamic-sticky-styles';
+          document.head.appendChild(styleSheet);
+        }
+        
+        // Replace all rules with the new ones
+        styleSheet.textContent = cssRules;
+        
+        // Update black underlay width
+        updateBlackUnderlay();
+      });
+    }
+    
+    // Update the black underlay width and height to cover columns 1-4
+    function updateBlackUnderlay() {
+      const tableContainer = document.querySelector('.table-container');
+      const table = document.querySelector('.table');
+      if (!tableContainer || !table) return;
+      
+      const headerCells = table.querySelectorAll('thead th');
+      if (headerCells.length < 4) return;
+      
+      // Calculate total width of first 4 columns
+      let totalWidth = 0;
+      for (let i = 0; i < 4; i++) {
+        totalWidth += headerCells[i].offsetWidth;
+      }
+      
+      // Calculate height based on current page display - PRECISE calculation
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
+      const theadHeight = thead ? thead.offsetHeight : 0;
+      
+      // Calculate height based on actual displayed rows only
+      let tbodyHeight = 0;
+      if (tbody) {
+        const visibleRows = tbody.querySelectorAll('tr');
+        if (visibleRows.length > 0) {
+          // Calculate height precisely from visible rows only
+          let totalRowsHeight = 0;
+          visibleRows.forEach(row => {
+            totalRowsHeight += row.offsetHeight;
+          });
+          tbodyHeight = totalRowsHeight;
+        }
+      }
+      
+      // Final height - header + visible rows only
+      const actualTableHeight = theadHeight + tbodyHeight;
+      
+      // Apply the width and height using CSS with absolute positioning relative to table-container
+      const underlayStyle = document.getElementById('underlay-styles') || document.createElement('style');
+      if (!underlayStyle.id) {
+        underlayStyle.id = 'underlay-styles';
+        document.head.appendChild(underlayStyle);
+      }
+      
+      underlayStyle.textContent = `
+        .table-container::before {
+          width: ${totalWidth}px !important;
+          height: ${actualTableHeight}px !important;
+          top: 0 !important;
+          left: 0 !important;
+        }
+      `;
+    }
+
+    // Render contacts table
+    function renderContacts() {
+      const tbody = document.getElementById('contacts-tbody');
+      tbody.innerHTML = '';
+      
+      if (filteredContacts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="31" style="text-align: center; padding: 40px; color: #6c757d;">No contacts found</td></tr>';
+        return;
+      }
+      
+      // Handle "Show All" option
+      let contactsToShow;
+      if (pageSize === 'all') {
+        contactsToShow = filteredContacts;
+        console.log('Show All selected - displaying all', filteredContacts.length, 'contacts');
+      } else {
+        // Paginate contacts
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, filteredContacts.length);
+        contactsToShow = filteredContacts.slice(startIndex, endIndex);
+        console.log('Paginated view - showing', contactsToShow.length, 'contacts from', startIndex, 'to', endIndex);
+      }
+      
+      contactsToShow.forEach((contact, index) => {
+        const row = document.createElement('tr');
+        const contactId = contact.id || contact.contact_id || index;
+        
+        row.innerHTML = `
+          <td>
+            <input type="checkbox" class="checkbox contact-checkbox" data-id="${contactId}">
+          </td>
+          <td>${contact.sms || ''}</td>
+          <td>${contact.call || ''}</td>
+          <td>${contact.email_flag || ''}</td>
+          <td>${contact.sponsor || ''}</td>
+          <td>${contact.sponsor_first || ''}</td>
+          <td>${contact.sponsor_last || ''}</td>
+          <td>${contact.user_id || ''}</td>
+          <td>${contact.first_name || ''}</td>
+          <td>${contact.last_name || ''}</td>
+          <td>${contact.email || ''}</td>
+          <td>${contact.valid || ''}</td>
+          <td>${contact.phone || ''}</td>
+          <td>${contact.address || ''}</td>
+          <td>${contact.city || ''}</td>
+          <td>${contact.state || ''}</td>
+          <td>${contact.zip || ''}</td>
+          <td>${contact.ip || ''}</td>
+          <td>${formatDate(contact.date || contact.created_at)}</td>
+          <td>${contact.timezone || ''}</td>
+          <td>${contact.cell || ''}</td>
+          <td>${contact.carrier || ''}</td>
+          <td>${contact.landline || ''}</td>
+          <td>${contact.voip || ''}</td>
+          <td>${contact.other || ''}</td>
+          <td>${contact.foreign || ''}</td>
+          <td>${contact.country || ''}</td>
+        `;
+        
+        tbody.appendChild(row);
+      });
+      
+      // Update pagination
+      updatePagination();
+      
+      // Update sticky column positions based on actual column widths
+      updateStickyColumnPositions();
+      
+      // Auto-fit all columns from 5 onwards
+      autoFitAllColumns();
+      
+      // Update black underlay width and height
+      updateBlackUnderlay();
+      
+      // Add event listeners to checkboxes
+      document.querySelectorAll('.contact-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', handleContactSelection);
+      });
+    }
+
+    // Pagination functions
+    function updatePagination() {
+      updatePaginationInfo();
+      updatePaginationLinks();
+    }
+    
+    function updatePaginationInfo() {
+      const totalContacts = filteredContacts.length;
+      
+      if (pageSize === 'all') {
+        document.getElementById('showing-start').textContent = totalContacts === 0 ? 0 : 1;
+        document.getElementById('showing-end').textContent = totalContacts;
+        document.getElementById('showing-total').textContent = totalContacts;
+      } else {
+        const startIndex = totalContacts === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+        const endIndex = Math.min(currentPage * pageSize, totalContacts);
+        
+        document.getElementById('showing-start').textContent = startIndex;
+        document.getElementById('showing-end').textContent = endIndex;
+        document.getElementById('showing-total').textContent = totalContacts;
+      }
+    }
+    
+    function updatePaginationLinks() {
+      const totalContacts = filteredContacts.length;
+      
+      // Skip pagination for "Show All"
+      if (pageSize === 'all') {
+        const paginationContainer = document.getElementById('pagination-links');
+        paginationContainer.innerHTML = '<span style="font-size:12px;margin-right:8px;">Pages:</span><span style="font-size:12px;color:#6c757d;">Showing All</span>';
+        return;
+      }
+      
+      const totalPages = Math.ceil(totalContacts / pageSize);
+      const paginationContainer = document.getElementById('pagination-links');
+      
+      // Clear existing pagination links (keep the "Pages:" label)
+      paginationContainer.innerHTML = '<span style="font-size:12px;margin-right:8px;">Pages:</span>';
+      
+      if (totalPages <= 1) {
+        return; // No pagination needed
+      }
+      
+      // Previous button
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'pagination-btn';
+      prevBtn.textContent = '‹ Prev';
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => goToPage(currentPage - 1);
+      paginationContainer.appendChild(prevBtn);
+      
+      // Page number buttons
+      const maxVisiblePages = 5;
+      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+      
+      // Adjust start page if we're near the end
+      if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+      
+      // First page and ellipsis
+      if (startPage > 1) {
+        const firstBtn = document.createElement('button');
+        firstBtn.className = 'pagination-btn';
+        firstBtn.textContent = '1';
+        firstBtn.onclick = () => goToPage(1);
+        paginationContainer.appendChild(firstBtn);
+        
+        if (startPage > 2) {
+          const ellipsis = document.createElement('span');
+          ellipsis.textContent = '...';
+          ellipsis.style.padding = '6px 4px';
+          ellipsis.style.color = '#6c757d';
+          ellipsis.style.fontSize = '12px';
+          paginationContainer.appendChild(ellipsis);
+        }
+      }
+      
+      // Page number buttons
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => goToPage(i);
+        paginationContainer.appendChild(pageBtn);
+      }
+      
+      // Last page and ellipsis
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          const ellipsis = document.createElement('span');
+          ellipsis.textContent = '...';
+          ellipsis.style.padding = '6px 4px';
+          ellipsis.style.color = '#6c757d';
+          ellipsis.style.fontSize = '12px';
+          paginationContainer.appendChild(ellipsis);
+        }
+        
+        const lastBtn = document.createElement('button');
+        lastBtn.className = 'pagination-btn';
+        lastBtn.textContent = totalPages;
+        lastBtn.onclick = () => goToPage(totalPages);
+        paginationContainer.appendChild(lastBtn);
+      }
+      
+      // Next button
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'pagination-btn';
+      nextBtn.textContent = 'Next ›';
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => goToPage(currentPage + 1);
+      paginationContainer.appendChild(nextBtn);
+    }
+    
+    function goToPage(page) {
+      const totalPages = Math.ceil(filteredContacts.length / pageSize);
+      if (page < 1 || page > totalPages) return;
+      
+      currentPage = page;
+      renderContacts();
+      updateStats();
+    }
+    
+    function changePageSize(newPageSize) {
+      if (newPageSize === 'all') {
+        pageSize = 'all';
+      } else {
+        pageSize = parseInt(newPageSize);
+      }
+      currentPage = 1; // Reset to first page
+      renderContacts();
+      updateStats();
+    }
+
+    // Helper functions
+    function formatName(contact) {
+      const first = contact.first_name || contact.firstName || '';
+      const last = contact.last_name || contact.lastName || '';
+      return (first + ' ' + last).trim() || 'Unknown';
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      try {
+        return new Date(dateStr).toLocaleDateString();
+      } catch {
+        return dateStr;
+      }
+    }
+
+    // Event listeners
+    function setupEventListeners() {
+      // Search functionality
+      document.getElementById('search-btn').addEventListener('click', performSearch);
+      document.getElementById('reset-btn').addEventListener('click', resetSearch);
+      document.getElementById('search-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') performSearch();
+      });
+
+      // Header checkbox (select all)
+      document.getElementById('header-checkbox').addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.querySelectorAll('.contact-checkbox').forEach(cb => {
+          cb.checked = isChecked;
+          const contactId = cb.dataset.id;
+          if (isChecked) {
+            selectedContactIds.add(contactId);
+          } else {
+            selectedContactIds.delete(contactId);
+          }
+        });
+        updateStats();
+      });
+
+      // Action buttons
+      document.getElementById('delete-btn').addEventListener('click', handleDelete);
+      document.getElementById('assign-btn').addEventListener('click', handleAssign);
+      document.getElementById('sms-btn').addEventListener('click', handleSMS);
+      document.getElementById('email-btn').addEventListener('click', handleEmail);
+      document.getElementById('rvm-btn').addEventListener('click', handleRVM);
+      document.getElementById('campaign-btn').addEventListener('click', handleCampaign);
+      document.getElementById('add-btn').addEventListener('click', handleAdd);
+      document.getElementById('import-btn').addEventListener('click', handleImport);
+      document.getElementById('export-btn').addEventListener('click', handleExport);
+
+      // Modal events
+      document.getElementById('assign-cancel-btn').addEventListener('click', closeAssignModal);
+      document.getElementById('assign-confirm-btn').addEventListener('click', confirmAssignment);
+      
+      // Pagination events
+      document.getElementById('page-size-select').addEventListener('change', function() {
+        changePageSize(this.value);
+      });
+      
+      // Table scroll events
+      setupTableScrollControls();
+    }
+    
+    // Table scroll functionality
+    function setupTableScrollControls() {
+      const tableContainer = document.querySelector('.table-container');
+      const scrollLeftBtn = document.getElementById('scroll-left');
+      const scrollRightBtn = document.getElementById('scroll-right');
+      
+      let scrollInterval;
+      const scrollSpeed = 10; // pixels per scroll
+      const scrollDelay = 50; // milliseconds between scrolls
+      
+      // Scroll left functionality
+      function startScrollLeft() {
+        scrollInterval = setInterval(() => {
+          tableContainer.scrollLeft -= scrollSpeed;
+        }, scrollDelay);
+      }
+      
+      function startScrollRight() {
+        scrollInterval = setInterval(() => {
+          tableContainer.scrollLeft += scrollSpeed;
+        }, scrollDelay);
+      }
+      
+      function stopScroll() {
+        clearInterval(scrollInterval);
+      }
+      
+      // Mouse events for left arrow
+      scrollLeftBtn.addEventListener('mousedown', startScrollLeft);
+      scrollLeftBtn.addEventListener('mouseup', stopScroll);
+      scrollLeftBtn.addEventListener('mouseleave', stopScroll);
+      
+      // Mouse events for right arrow
+      scrollRightBtn.addEventListener('mousedown', startScrollRight);
+      scrollRightBtn.addEventListener('mouseup', stopScroll);
+      scrollRightBtn.addEventListener('mouseleave', stopScroll);
+      
+      // Touch events for mobile
+      scrollLeftBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startScrollLeft();
+      });
+      scrollLeftBtn.addEventListener('touchend', stopScroll);
+      
+      scrollRightBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startScrollRight();
+      });
+      scrollRightBtn.addEventListener('touchend', stopScroll);
+      
+      // Window resize event to update sticky column positions
+      window.addEventListener('resize', () => {
+        // Debounce the resize event
+        clearTimeout(window.resizeTimeout);
+        window.resizeTimeout = setTimeout(() => {
+          updateStickyColumnPositions();
+          updateBlackUnderlay();
+        }, 250);
+      });
+      
+      // Window scroll event to update underlay position
+      window.addEventListener('scroll', () => {
+        clearTimeout(window.scrollTimeout);
+        window.scrollTimeout = setTimeout(() => {
+          updateBlackUnderlay();
+        }, 16); // ~60fps
+      });
+      
+      // Table container scroll event to update underlay position
+      tableContainer.addEventListener('scroll', () => {
+        clearTimeout(window.tableScrollTimeout);
+        window.tableScrollTimeout = setTimeout(() => {
+          updateBlackUnderlay();
+        }, 16); // ~60fps
+      });
+      
+      // Column resizing functionality
+      setupColumnResizing();
+    }
+    
+    // Setup column resizing functionality
+    function setupColumnResizing() {
+      let isResizing = false;
+      let currentColumn = null;
+      let startX = 0;
+      let startWidth = 0;
+      
+      // Add event listeners to all resize handles
+      document.querySelectorAll('.resize-handle').forEach((handle, index) => {
+        const th = handle.parentElement;
+        
+        // Double-click to auto-fit column
+        handle.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          autoFitColumn(th, index);
+        });
+        
+        // Mouse down to start resizing
+        handle.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          isResizing = true;
+          currentColumn = th;
+          startX = e.clientX;
+          startWidth = th.offsetWidth;
+          
+          th.classList.add('resizing');
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+        });
+      });
+      
+      // Global mouse move and up events
+      document.addEventListener('mousemove', (e) => {
+        if (!isResizing || !currentColumn) return;
+        
+        const diff = e.clientX - startX;
+        const newWidth = Math.max(50, startWidth + diff); // Minimum width of 50px
+        
+        currentColumn.style.width = newWidth + 'px';
+        currentColumn.style.minWidth = newWidth + 'px';
+        
+        // Update sticky column positions if this affects sticky columns
+        const columnIndex = Array.from(currentColumn.parentElement.children).indexOf(currentColumn);
+        if (columnIndex < 4) {
+          updateStickyColumnPositions();
+          updateBlackUnderlay();
+        }
+      });
+      
+      document.addEventListener('mouseup', () => {
+        if (isResizing) {
+          isResizing = false;
+          currentColumn.classList.remove('resizing');
+          currentColumn = null;
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+        }
+      });
+    }
+    
+    // Auto-fit column to content
+    function autoFitColumn(th, columnIndex) {
+      // Create a temporary element to measure text width
+      const table = th.closest('table');
+      const rows = table.querySelectorAll('tbody tr');
+      let maxWidth = th.scrollWidth;
+      
+      // Check content width in all visible rows
+      rows.forEach(row => {
+        const cell = row.children[columnIndex];
+        if (cell) {
+          const tempSpan = document.createElement('span');
+          tempSpan.style.visibility = 'hidden';
+          tempSpan.style.position = 'absolute';
+          tempSpan.style.whiteSpace = 'nowrap';
+          tempSpan.style.font = window.getComputedStyle(cell).font;
+          tempSpan.textContent = cell.textContent;
+          document.body.appendChild(tempSpan);
+          maxWidth = Math.max(maxWidth, tempSpan.offsetWidth + 20); // Add 20px padding
+          document.body.removeChild(tempSpan);
+        }
+      });
+      
+      // Apply the calculated width
+      const newWidth = Math.min(maxWidth, 300); // Max width of 300px
+      th.style.width = newWidth + 'px';
+      th.style.minWidth = newWidth + 'px';
+      
+      // Update sticky column positions if this affects sticky columns
+      if (columnIndex < 4) {
+        updateStickyColumnPositions();
+        updateBlackUnderlay();
+      }
+    }
+    
+    // Auto-fit all columns from column 5 onwards
+    function autoFitAllColumns() {
+      requestAnimationFrame(() => {
+        const table = document.querySelector('.table');
+        if (!table) return;
+        
+        const headerCells = table.querySelectorAll('thead th');
+        if (headerCells.length <= 4) return;
+        
+        // Auto-fit columns 5 and onwards
+        for (let i = 4; i < headerCells.length; i++) {
+          const th = headerCells[i];
+          const rows = table.querySelectorAll('tbody tr');
+          let maxWidth = th.scrollWidth;
+          
+          // Check content width in all visible rows for this column
+          rows.forEach(row => {
+            const cell = row.children[i];
+            if (cell) {
+              const tempSpan = document.createElement('span');
+              tempSpan.style.visibility = 'hidden';
+              tempSpan.style.position = 'absolute';
+              tempSpan.style.whiteSpace = 'nowrap';
+              tempSpan.style.font = window.getComputedStyle(cell).font;
+              tempSpan.textContent = cell.textContent;
+              document.body.appendChild(tempSpan);
+              maxWidth = Math.max(maxWidth, tempSpan.offsetWidth + 20); // Add 20px padding
+              document.body.removeChild(tempSpan);
+            }
+          });
+          
+          // Apply the calculated width with reasonable constraints
+          const newWidth = Math.max(60, Math.min(maxWidth, 250)); // Min 60px, Max 250px
+          th.style.width = newWidth + 'px';
+          th.style.minWidth = newWidth + 'px';
+        }
+        
+        // Update sticky column positions after auto-fitting
+        updateStickyColumnPositions();
+      });
+    }
+
+    // Search functions
+    function performSearch() {
+      const term = document.getElementById('search-input').value.toLowerCase().trim();
+      
+      if (!term) {
+        filteredContacts = [...allContacts];
+      } else {
+        filteredContacts = allContacts.filter(contact => {
+          const searchText = [
+            contact.first_name, contact.last_name, contact.email, contact.phone, 
+            contact.city, contact.state, contact.status, contact.sponsor,
+            contact.sponsor_first, contact.sponsor_last, contact.user_id,
+            contact.address, contact.zip, contact.rating, contact.timezone,
+            contact.cell, contact.carrier, contact.landline, contact.voip,
+            contact.other, contact.foreign, contact.country
+          ].join(' ').toLowerCase();
+          return searchText.includes(term);
+        });
+      }
+      
+      currentPage = 1; // Reset to first page when searching
+      renderContacts();
+      updateStats();
+      
+      if (term) {
+        showAlert('info', `Found ${filteredContacts.length} contacts matching "${term}"`);
+      }
+    }
+
+    function resetSearch() {
+      document.getElementById('search-input').value = '';
+      filteredContacts = [...allContacts];
+      currentPage = 1; // Reset to first page when resetting
+      renderContacts();
+      updateStats();
+      showAlert('info', `Showing all ${allContacts.length} contacts`);
+      currentPage = 1; // Reset to first page when resetting
+      renderContacts();
+      updateStats();
+      showAlert('info', `Showing all ${allContacts.length} contacts`);
+    }
+
+    // Selection functions
+    function handleContactSelection() {
+      const contactId = this.dataset.id;
+      const row = this.closest('tr');
+      
+      if (this.checked) {
+        selectedContactIds.add(contactId);
+        row.classList.add('selected');
+      } else {
+        selectedContactIds.delete(contactId);
+        row.classList.remove('selected');
+      }
+      
+      updateStats();
+    }
+
+    function selectAllVisible() {
+      document.querySelectorAll('.contact-checkbox').forEach(cb => {
+        cb.checked = true;
+        selectedContactIds.add(cb.dataset.id);
+        cb.closest('tr').classList.add('selected');
+      });
+      updateStats();
+    }
+
+    function deselectAll() {
+      document.querySelectorAll('.contact-checkbox').forEach(cb => {
+        cb.checked = false;
+        selectedContactIds.delete(cb.dataset.id);
+        cb.closest('tr').classList.remove('selected');
+      });
+      document.getElementById('header-checkbox').checked = false;
+      updateStats();
+    }
+
+    // Action handlers (these will be properly implemented)
+    async function handleDelete() {
+      if (selectedContactIds.size === 0) {
+        showAlert('error', 'Please select contacts to delete.');
+        return;
+      }
+      
+      if (!confirm(`Are you sure you want to delete ${selectedContactIds.size} selected contacts? This cannot be undone.`)) {
+        return;
+      }
+      
+      try {
+        // Remove contacts from local array and re-render
+        allContacts = allContacts.filter(contact => {
+          const contactId = String(contact.id || contact.contact_id || allContacts.indexOf(contact));
+          return !selectedContactIds.has(contactId);
+        });
+        
+        filteredContacts = filteredContacts.filter(contact => {
+          const contactId = String(contact.id || contact.contact_id || allContacts.indexOf(contact));
+          return !selectedContactIds.has(contactId);
+        });
+        
+        selectedContactIds.clear();
+        renderContacts();
+        updateStats();
+        
+        showAlert('success', 'Selected contacts deleted successfully!');
+        
+        // TODO: Add actual API call to delete from database
+        console.log('🗑️ Contacts deleted locally. Add API call for permanent deletion.');
+        
+      } catch (error) {
+        console.error('Delete error:', error);
+        showAlert('error', 'Failed to delete contacts. Please try again.');
+      }
+    }
+
+    function handleAssign() {
+      if (selectedContactIds.size === 0) {
+        showAlert('error', 'Please select contacts to assign.');
+        return;
+      }
+      
+      document.getElementById('assign-selected-count').textContent = `${selectedContactIds.size} contacts selected`;
+      document.getElementById('assign-modal').style.display = 'block';
+      loadUsersForAssignment();
+    }
+
+    function handleSMS() {
+      if (selectedContactIds.size === 0) {
+        showAlert('error', 'Please select contacts to send SMS.');
+        return;
+      }
+      showAlert('info', `SMS feature: Would send SMS to ${selectedContactIds.size} contacts`);
+      // TODO: Implement SMS functionality
+    }
+
+    function handleEmail() {
+      if (selectedContactIds.size === 0) {
+        showAlert('error', 'Please select contacts to send email.');
+        return;
+      }
+      showAlert('info', `Email feature: Would send email to ${selectedContactIds.size} contacts`);
+      // TODO: Implement email functionality
+    }
+
+    function handleRVM() {
+      if (selectedContactIds.size === 0) {
+        showAlert('error', 'Please select contacts to send RVM.');
+        return;
+      }
+      showAlert('info', `RVM feature: Would send RVM to ${selectedContactIds.size} contacts`);
+      // TODO: Implement RVM functionality
+    }
+
+    function handleCampaign() {
+      if (selectedContactIds.size === 0) {
+        showAlert('error', 'Please select contacts for campaign.');
+        return;
+      }
+      showAlert('info', `Campaign feature: Would create campaign for ${selectedContactIds.size} contacts`);
+      // TODO: Implement campaign functionality
+    }
+
+    function handleAdd() {
+      showAlert('info', 'Add contact feature: Would open add contact form');
+      // TODO: Implement add contact functionality
+    }
+
+    function handleImport() {
+      showAlert('info', 'Import feature: Would open import dialog');
+      // TODO: Implement import functionality
+    }
+
+    function handleExport() {
+      if (filteredContacts.length === 0) {
+        showAlert('error', 'No contacts to export.');
+        return;
+      }
+      
+      // Simple CSV export
+      const csv = generateCSV(filteredContacts);
+      downloadFile(csv, 'contacts.csv', 'text/csv');
+      showAlert('success', `Exported ${filteredContacts.length} contacts to CSV`);
+    }
+
+    // Assignment modal functions
+    async function loadUsersForAssignment() {
+      try {
+        const response = await fetch('/api/users');
+        const data = await response.json();
+        
+        let users = [];
+        if (Array.isArray(data)) {
+          users = data;
+        } else if (data.users && Array.isArray(data.users)) {
+          users = data.users;
+        } else if (data.data && Array.isArray(data.data)) {
+          users = data.data;
+        }
+        
+        const userSelect = document.getElementById('user-select');
+        userSelect.innerHTML = '<option value="">Select a user...</option>';
+        
+        users.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.id || user.user_id;
+          option.textContent = `${user.first_name || ''} ${user.last_name || ''} (${user.email || user.username || user.id})`.trim();
+          userSelect.appendChild(option);
+        });
+        
+        // Setup user search
+        const searchInput = document.getElementById('user-search');
+        searchInput.oninput = function() {
+          const term = this.value.toLowerCase();
+          Array.from(userSelect.options).forEach(option => {
+            if (option.value === '') return;
+            option.style.display = option.textContent.toLowerCase().includes(term) ? '' : 'none';
+          });
+        };
+        
+      } catch (error) {
+        console.error('Error loading users:', error);
+        showAlert('error', 'Failed to load users for assignment');
+      }
+    }
+
+    function closeAssignModal() {
+      document.getElementById('assign-modal').style.display = 'none';
+      document.getElementById('user-search').value = '';
+      document.getElementById('user-select').value = '';
+    }
+
+    async function confirmAssignment() {
+      const selectedUser = document.getElementById('user-select').value;
+      if (!selectedUser) {
+        showAlert('error', 'Please select a user to assign contacts to.');
+        return;
+      }
+      
+      try {
+        // TODO: Implement actual assignment API call
+        console.log('👤 Assigning contacts:', Array.from(selectedContactIds), 'to user:', selectedUser);
+        
+        closeAssignModal();
+        deselectAll();
+        showAlert('success', `Successfully assigned ${selectedContactIds.size} contacts!`);
+        
+      } catch (error) {
+        console.error('Assignment error:', error);
+        showAlert('error', 'Failed to assign contacts. Please try again.');
+      }
+    }
+
+    // Pagination functions
+    function updatePagination() {
+      updatePaginationInfo();
+      updatePaginationLinks();
+    }
+    
+    function updatePaginationInfo() {
+      const totalContacts = filteredContacts.length;
+      
+      if (pageSize === 'all') {
+        document.getElementById('showing-start').textContent = totalContacts === 0 ? 0 : 1;
+        document.getElementById('showing-end').textContent = totalContacts;
+        document.getElementById('showing-total').textContent = totalContacts;
+      } else {
+        const startIndex = totalContacts === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+        const endIndex = Math.min(currentPage * pageSize, totalContacts);
+        
+        document.getElementById('showing-start').textContent = startIndex;
+        document.getElementById('showing-end').textContent = endIndex;
+        document.getElementById('showing-total').textContent = totalContacts;
+      }
+    }
+    
+    function updatePaginationLinks() {
+      const totalContacts = filteredContacts.length;
+      
+      // Skip pagination for "Show All"
+      if (pageSize === 'all') {
+        const paginationContainer = document.getElementById('pagination-links');
+        paginationContainer.innerHTML = '<span style="font-size:12px;margin-right:8px;">Pages:</span><span style="font-size:12px;color:#6c757d;">Showing All</span>';
+        return;
+      }
+      
+      const totalPages = Math.ceil(totalContacts / pageSize);
+      const paginationContainer = document.getElementById('pagination-links');
+      
+      // Clear existing pagination links (keep the "Pages:" label)
+      paginationContainer.innerHTML = '<span style="font-size:12px;margin-right:8px;">Pages:</span>';
+      
+      if (totalPages <= 1) {
+        return; // No pagination needed
+      }
+      
+      // Previous button
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'pagination-btn';
+      prevBtn.textContent = '‹ Prev';
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => goToPage(currentPage - 1);
+      paginationContainer.appendChild(prevBtn);
+      
+      // Page number buttons
+      const maxVisiblePages = 5;
+      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+      
+      // Adjust start page if we're near the end
+      if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+      
+      // First page and ellipsis
+      if (startPage > 1) {
+        const firstBtn = document.createElement('button');
+        firstBtn.className = 'pagination-btn';
+        firstBtn.textContent = '1';
+        firstBtn.onclick = () => goToPage(1);
+        paginationContainer.appendChild(firstBtn);
+        
+        if (startPage > 2) {
+          const ellipsis = document.createElement('span');
+          ellipsis.textContent = '...';
+          ellipsis.style.padding = '6px 4px';
+          ellipsis.style.color = '#6c757d';
+          ellipsis.style.fontSize = '12px';
+          paginationContainer.appendChild(ellipsis);
+        }
+      }
+      
+      // Page number buttons
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => goToPage(i);
+        paginationContainer.appendChild(pageBtn);
+      }
+      
+      // Last page and ellipsis
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          const ellipsis = document.createElement('span');
+          ellipsis.textContent = '...';
+          ellipsis.style.padding = '6px 4px';
+          ellipsis.style.color = '#6c757d';
+          ellipsis.style.fontSize = '12px';
+          paginationContainer.appendChild(ellipsis);
+        }
+        
+        const lastBtn = document.createElement('button');
+        lastBtn.className = 'pagination-btn';
+        lastBtn.textContent = totalPages;
+        lastBtn.onclick = () => goToPage(totalPages);
+        paginationContainer.appendChild(lastBtn);
+      }
+      
+      // Next button
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'pagination-btn';
+      nextBtn.textContent = 'Next ›';
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => goToPage(currentPage + 1);
+      paginationContainer.appendChild(nextBtn);
+    }
+    
+    function goToPage(page) {
+      const totalPages = Math.ceil(filteredContacts.length / pageSize);
+      if (page < 1 || page > totalPages) return;
+      
+      currentPage = page;
+      renderContacts();
+      updateStats();
+    }
+    
+
+
+    // Utility functions
+    function updateStats() {
+      // Stats section removed - function kept for compatibility
+    }
+
+    function showLoading(show) {
+      document.getElementById('loading').style.display = show ? 'block' : 'none';
+    }
+
+    function showAlert(type, message) {
+      const alertId = `alert-${type === 'error' ? 'error' : type === 'success' ? 'success' : 'info'}`;
+      const alertEl = document.getElementById(alertId);
+      
+      // Hide all alerts first
+      document.querySelectorAll('.alert').forEach(alert => alert.style.display = 'none');
+      
+      alertEl.textContent = message;
+      alertEl.style.display = 'block';
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        alertEl.style.display = 'none';
+      }, 5000);
+    }
+
+    function generateCSV(contacts) {
+      const headers = [
+        'SMS', 'Call', 'Email Flag', 'Sponsor', 'Sponsor First', 'Sponsor Last', 
+        'User ID', 'First Name', 'Last Name', 'Email', 'Valid', 'Phone', 
+        'Address', 'City', 'State', 'Zip', 'IP', 'Date', 
+        'Timezone', 'Cell', 'Carrier', 'Landline', 'Voip', 'Other', 'Foreign', 'Country'
+      ];
+      
+      const rows = contacts.map(contact => [
+        contact.sms || '',
+        contact.call || '',
+        contact.email_flag || '',
+        contact.sponsor || '',
+        contact.sponsor_first || '',
+        contact.sponsor_last || '',
+        contact.user_id || '',
+        contact.first_name || '',
+        contact.last_name || '',
+        contact.email || '',
+        contact.valid || '',
+        contact.phone || '',
+        contact.address || '',
+        contact.city || '',
+        contact.state || '',
+        contact.zip || '',
+        contact.ip || '',
+        formatDate(contact.date || contact.created_at),
+        contact.timezone || '',
+        contact.cell || '',
+        contact.carrier || '',
+        contact.landline || '',
+        contact.voip || '',
+        contact.other || '',
+        contact.foreign || '',
+        contact.country || ''
+      ]);
+      
+      return [headers, ...rows].map(row => 
+        row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+      ).join('\\n');
+    }
+
+    function downloadFile(content, filename, contentType) {
+      const blob = new Blob([content], { type: contentType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('assign-modal');
+      if (event.target === modal) {
+        closeAssignModal();
+      }
+    }
+  </script>
+</body>
+</html>

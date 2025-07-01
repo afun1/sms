@@ -8,6 +8,7 @@ requests==2.31.0
 werkzeug==3.0.1
 mutagen==1.47.0
 pydub==0.25.1
+supabase==2.3.4
 
 # Email provider dependencies
 sendgrid==6.11.0

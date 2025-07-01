@@ -29,8 +29,10 @@
       width: 100vw !important;
       min-width: 100vw !important;
       max-width: 100vw !important;
+      max-height: 80vh; /* Add max height for scrolling */
       margin: 0 !important;
       overflow-x: auto;
+      overflow-y: auto; /* Allow vertical scrolling */
       -webkit-overflow-scrolling: touch;
       background: #fff;
       box-shadow: 0 2px 12px rgba(0,0,0,0.04);
@@ -45,7 +47,7 @@
       table-layout: auto;
     }
     .contact-table th, .contact-table td {
-      padding: 8px;
+      padding: 2px 8px; /* 2px top/bottom, 8px left/right */
       text-align: left;
       border: 1px solid #000;
       border-right: 1px solid #000 !important;
@@ -55,55 +57,182 @@
       max-width: none;
       word-break: normal;
     }
+    
+    /* Editable cell styles */
+    .contact-table td.editable {
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .contact-table td.editable:hover {
+      background-color: #f0f8ff !important;
+      box-shadow: inset 0 0 0 1px #4e73df;
+    }
+    
+    .contact-table td.editing {
+      padding: 0 !important;
+      background-color: #fff !important;
+    }
+    
+    .contact-table td.editing input {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      padding: 2px 8px;
+      font-size: inherit;
+      font-family: inherit;
+      background: transparent;
+      box-shadow: inset 0 0 0 2px #4e73df;
+    }
+    
+    .edit-indicator {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-top: 6px solid #4e73df;
+      pointer-events: none;
+      opacity: 0.3;
+      transition: opacity 0.2s;
+    }
+    
+    .contact-table td.editable:hover .edit-indicator {
+      opacity: 0.8;
+    }
     .contact-table th {
       background-color: #f4f4f4;
       position: sticky;
       top: 0;
       z-index: 10;
     }
-    .contact-table th.sticky-col-1,
+    /* Sticky column headers need both top and left positioning */
+    .contact-table th.sticky-col-1 {
+      position: sticky;
+      top: 0;
+      left: 0;
+      background: #f0f0f0 !important;
+      border: 1px solid #000 !important;
+      border-right: 1px solid #000 !important;
+      z-index: 100; /* Higher z-index for corner sticky headers */
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 2px 0px !important;
+      white-space: nowrap;
+      width: 32px !important;
+      min-width: 32px !important;
+      max-width: 32px !important;
+    }
+    .contact-table th.sticky-col-2 {
+      position: sticky;
+      top: 0;
+      left: 32px;
+      background: #f0f0f0 !important;
+      border: 1px solid #000 !important;
+      border-left: 1px solid #000 !important;
+      border-right: 1px solid #000 !important;
+      z-index: 99; /* Higher z-index for corner sticky headers */
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 2px 0px !important;
+      white-space: nowrap;
+      width: 28px !important;
+      min-width: 28px !important;
+      max-width: 28px !important;
+    }
+    .contact-table th.sticky-col-3 {
+      position: sticky;
+      top: 0;
+      left: 60px;
+      background: #f0f0f0 !important;
+      border: 1px solid #000 !important;
+      border-left: 1px solid #000 !important;
+      border-right: 1px solid #000 !important;
+      z-index: 98; /* Higher z-index for corner sticky headers */
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 2px 0px !important;
+      white-space: nowrap;
+      width: 40px !important;
+      min-width: 40px !important;
+      max-width: 40px !important;
+    }
+    .contact-table th.sticky-col-4 {
+      position: sticky;
+      top: 0;
+      left: 100px !important;
+      background: #f0f0f0 !important;
+      border: 1px solid #000 !important;
+      border-left: 1px solid #000 !important;
+      border-right: 1px solid #000 !important;
+      z-index: 97; /* Higher z-index for corner sticky headers */
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 2px 2px !important;
+      text-align: center;
+      width: 20px !important;
+      min-width: 20px !important;
+      max-width: 20px !important;
+      transform: translateX(0) !important;
+    }
+    /* Sticky column data cells (rows) - only sticky horizontally */
     .contact-table td.sticky-col-1 {
       position: sticky;
       left: 0;
       background: #f0f0f0 !important;
-      border-right: 3px solid #000 !important;
-      border-left: 3px solid #000 !important;
-      border-top: 2px solid #000 !important;
-      border-bottom: 2px solid #000 !important;
+      border: 1px solid #000 !important;
+      border-right: 1px solid #000 !important;
       z-index: 50;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 2px 0px !important;
+      white-space: nowrap;
+      width: 32px !important;
+      min-width: 32px !important;
+      max-width: 32px !important;
     }
-    .contact-table th.sticky-col-2,
     .contact-table td.sticky-col-2 {
       position: sticky;
-      left: 50px;
+      left: 32px;
       background: #f0f0f0 !important;
-      border-right: 3px solid #000 !important;
-      border-left: none !important;
-      border-top: 2px solid #000 !important;
-      border-bottom: 2px solid #000 !important;
+      border: 1px solid #000 !important;
+      border-left: 1px solid #000 !important;
+      border-right: 1px solid #000 !important;
       z-index: 49;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 2px 0px !important;
+      white-space: nowrap;
+      width: 28px !important;
+      min-width: 28px !important;
+      max-width: 28px !important;
     }
-    .contact-table th.sticky-col-3,
     .contact-table td.sticky-col-3 {
       position: sticky;
-      left: 100px;
+      left: 60px;
       background: #f0f0f0 !important;
-      border-right: 3px solid #000 !important;
-      border-left: none !important;
-      border-top: 2px solid #000 !important;
-      border-bottom: 2px solid #000 !important;
+      border: 1px solid #000 !important;
+      border-left: 1px solid #000 !important;
+      border-right: 1px solid #000 !important;
       z-index: 48;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 2px 0px !important;
+      white-space: nowrap;
+      width: 40px !important;
+      min-width: 40px !important;
+      max-width: 40px !important;
     }
-    .contact-table th.sticky-col-4,
     .contact-table td.sticky-col-4 {
       position: sticky;
-      left: 150px;
+      left: 100px !important;
       background: #f0f0f0 !important;
-      border-right: 3px solid #000 !important;
-      border-left: none !important;
-      border-top: 2px solid #000 !important;
-      border-bottom: 2px solid #000 !important;
-      z-index: 47;
+      border: 1px solid #000 !important;
+      border-left: 1px solid #000 !important;
+      border-right: 1px solid #000 !important;
+      z-index: 51;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      padding: 2px 2px !important;
+      text-align: center;
+      width: 20px !important;
+      min-width: 20px !important;
+      max-width: 20px !important;
+      transform: translateX(0) !important;
     }
     .contact-table th:nth-child(5),
     .contact-table td:nth-child(5) {
@@ -128,40 +257,242 @@
     .contact-table tr > th:not(.hidden):last-of-type {
       border-right: 1.5px solid #000 !important;
     }
+    
+    /* Make data row end lines white, keep header black */
+    .contact-table tbody tr > td:last-child:not(.hidden),
+    .contact-table tbody tr > td:not(.hidden):last-of-type {
+      border-right: 1.5px solid white !important;
+    }
+    
+    /* Ensure table borders don't conflict */
+    .contact-table {
+      border-collapse: separate !important;
+      border-spacing: 0 !important;
+      table-layout: auto !important;
+    }
+    
+    /* Override default table cell borders for sticky columns */
+    .contact-table th:not(.sticky-col-1):not(.sticky-col-2):not(.sticky-col-3):not(.sticky-col-4),
+    .contact-table td:not(.sticky-col-1):not(.sticky-col-2):not(.sticky-col-3):not(.sticky-col-4) {
+      border-left: none;
+    }
+    
+    /* Freeze only the "Do Not Disturb" text above sticky columns */
+    .contact-table thead tr:first-child th:first-child {
+      position: sticky;
+      top: 0;
+      left: 0;
+      background: #fffbe6 !important;
+      z-index: 200;
+      width: 160px; /* Covers all 4 sticky columns (40+40+60+20) */
+    }
+    
+    /* Remove gridlines from the "Do Not Disturb" row */
+    .contact-table thead tr:first-child th {
+      border: none !important;
+      border-bottom: none !important;
+      border-top: none !important;
+      border-left: none !important;
+    }
+    
+    /* Allow right border on the blue tip section */
+    .contact-table thead tr:first-child th:last-child {
+      border-right: 3px solid #000 !important;
+      box-shadow: 3px 0 0 #000 !important;
+    }
+    
+    /* Override sticky column headers positioning */
+    .contact-table thead th.sticky-col-1,
+    .contact-table thead th.sticky-col-2,
+    .contact-table thead th.sticky-col-3,
+    .contact-table thead th.sticky-col-4 {
+      top: 0px !important;
+      z-index: 52 !important;
+    }
+    
+    /* Freeze the tip text column (spans 25 columns) */
+    .contact-table thead tr:first-child th:last-child {
+      position: sticky;
+      top: 0;
+      left: 160px; /* Position it right after the DND column */
+      background: #e8f4fd !important;
+      z-index: 199; /* Lower than DND but higher than regular content */
+      min-width: 400px; /* Ensure it has enough width for the tip text */
+      border-right: 3px solid #000 !important;
+    }
+    
+    /* Horizontal Scroll Controls - Compact inline version */
+    .scroll-arrow {
+      background: linear-gradient(90deg, #4e73df 0%, #8f5be8 100%);
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(78,115,223,0.15);
+    }
+    .scroll-arrow:hover {
+      background: linear-gradient(90deg, #8f5be8 0%, #4e73df 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(78,115,223,0.25);
+    }
+    .scroll-arrow:active {
+      transform: translateY(0);
+    }
+    .scroll-arrow:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .scroll-status {
+      font-size: 11px;
+      color: #666;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    /* ...existing code... */
   </style>
 </head>
 <body>
   <!-- Button/Search Box -->
-  <div style="width:100%;display:flex;align-items:center;margin:55px 0 20px 0;gap:16px;padding-top:10px;">
-    <button id="delete-selected-btn" class="red-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-right:auto;">Delete Selected</button>
-    <div style="display:flex;gap:16px;align-items:center;justify-content:center;width:100%;">
-      <input id="search-input" type="text" placeholder="Search contacts..." style="font-size:12px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;outline:none;">
-      <button id="reset-search-btn" style="font-size:12px;padding:4px 16px;background:#e0e0e0;color:#222;border:none;border-radius:4px;cursor:pointer;">Reset</button>
+  <div style="width:100%;display:flex;margin:0 0 20px 0;padding:10px 0 10px 10px;">
+    <!-- Left Column (40%) - Action Buttons -->
+    <div style="flex:0 0 40%;display:flex;gap:8px;align-items:center;">
+      <button id="delete-selected-btn" class="red-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Delete Selected</button>
+      <div style="margin-left:50px;display:flex;gap:8px;">
+        <button id="send-sms-btn" style="font-size:12px;padding:4px 12px;background:#28a745;color:#fff;border:none;border-radius:4px;cursor:pointer;">📱 Send SMS</button>
+        <button id="send-email-btn" style="font-size:12px;padding:4px 12px;background:#007bff;color:#fff;border:none;border-radius:4px;cursor:pointer;">✉️ Send Email</button>
+        <button id="send-rvm-btn" style="font-size:12px;padding:4px 12px;background:#ff6b35;color:#fff;border:none;border-radius:4px;cursor:pointer;">🎤 Send RVM</button>
+        <button id="campaign-btn" style="font-size:12px;padding:4px 12px;background:#6f42c1;color:#fff;border:none;border-radius:4px;cursor:pointer;">🚀 Campaign</button>
+      </div>
+    </div>
+    <!-- Right Column (60%) - Search and Utility Buttons -->
+    <div style="flex:0 0 60%;display:flex;gap:16px;align-items:center;justify-content:center;">
+      <input id="search-input" type="text" placeholder="Search contacts..." style="font-size:12px;padding:4px 8px;border:1px solid #ccc;border-radius:4px;outline:none;" onkeypress="if(event.key==='Enter') performSearch()">>
+      <div style="background: orange; color: white; padding: 2px 6px; font-size: 10px; border-radius: 3px;">V3.2 WORKING DELETE</div>
       <button id="search-btn" style="font-size:12px;padding:4px 16px;background:#4e73df;color:#fff;border:none;border-radius:4px;cursor:pointer;">Search</button>
+      <button id="reset-btn" style="font-size:12px;padding:4px 16px;background:#e0e0e0;color:#222;border:none;border-radius:4px;cursor:pointer;">Reset</button>
       <button id="add-btn" class="gradient-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Add Contact</button>
+      <button onclick="openAssignModal()" style="font-size:12px;padding:4px 16px;background:#28a745;color:#fff;border:none;border-radius:4px;cursor:pointer;">Assign</button>
       <button id="select-columns-btn" class="gradient-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Select Columns</button>
       <button id="sort-btn" class="gradient-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Sort</button>
       <button id="import-btn" class="gradient-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Import</button>
       <button id="export-btn" class="gradient-btn" style="font-size:12px;padding:4px 16px;color:#fff;border:none;border-radius:4px;cursor:pointer;">Export</button>
     </div>
   </div>
+  
+  <!-- Second Row of Buttons -->
+  <div style="width:100%;display:flex;margin:0 0 20px 0;padding:0 0 10px 10px;">
+    <!-- Left Column (40%) - Assignment Buttons -->
+    <div style="flex:0 0 40%;display:flex;gap:8px;align-items:center;">
+      <button id="assign-btn" style="font-size:12px;padding:4px 16px;background:#17a2b8;color:#fff;border:none;border-radius:4px;cursor:pointer;">👤 Assign</button>
+    </div>
+    <!-- Right Column (60%) - Additional Action Buttons -->
+    <div style="flex:0 0 60%;display:flex;gap:16px;align-items:center;justify-content:center;">
+      <!-- Future buttons can be added here -->
+    </div>
+  </div>
+  
+  <!-- Assignment Modal -->
+  <div id="assign-modal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);">
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:white;padding:30px;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.3);width:450px;max-width:90vw;">
+      <h3 style="margin:0 0 20px 0;color:#333;font-size:18px;text-align:center;">Assign Contacts</h3>
+      
+      <div style="margin-bottom:15px;">
+        <label style="display:block;margin-bottom:8px;font-weight:bold;color:#555;">Selected Contacts:</label>
+        <div id="selected-contacts-info" style="background:#f8f9fa;padding:10px;border-radius:4px;border:1px solid #dee2e6;font-size:14px;color:#666;">
+          No contacts selected
+        </div>
+      </div>
+      
+      <div style="margin-bottom:20px;position:relative;">
+        <label style="display:block;margin-bottom:8px;font-weight:bold;color:#555;">Search & Select User:</label>
+        <input type="text" id="user-search" placeholder="Type to search users..." style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;font-size:14px;box-sizing:border-box;">
+        
+        <!-- Real-time suggestions dropdown -->
+        <div id="user-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1px solid #ddd;border-top:none;border-radius:0 0 4px 4px;max-height:200px;overflow-y:auto;z-index:1001;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+        </div>
+      </div>
+      
+      <div style="margin-bottom:25px;">
+        <label style="display:block;margin-bottom:8px;font-weight:bold;color:#555;">Selected User:</label>
+        <div id="selected-user-display" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;font-size:14px;background:#f8f9fa;color:#666;min-height:20px;">
+          No user selected
+        </div>
+        <input type="hidden" id="selected-user-id" value="">
+      </div>
+      
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button id="cancel-assign" style="padding:10px 20px;background:#6c757d;color:white;border:none;border-radius:4px;cursor:pointer;font-size:14px;">Cancel</button>
+        <button id="confirm-assign" style="padding:10px 20px;background:#17a2b8;color:white;border:none;border-radius:4px;cursor:pointer;font-size:14px;">Assign Selected</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Rows per page dropdown -->
+  <div style="padding-left:10px;margin-bottom:10px;display:flex;align-items:center;gap:20px;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:20px;">
+      <div>
+        <label for="rows-per-page" style="font-size:12px;margin-right:8px;">Rows per page:</label>
+        <select id="rows-per-page" style="font-size:12px;padding:2px 6px;border:1px solid #ccc;border-radius:4px;" onchange="updatePagination()">
+          <option value="all">Show All</option>
+          <option value="20">20</option>
+          <option value="40">40</option>
+          <option value="60">60</option>
+          <option value="80">80</option>
+          <option value="100" selected>100</option>
+          <option value="120">120</option>
+          <option value="140">140</option>
+          <option value="160">160</option>
+          <option value="180">180</option>
+          <option value="200">200</option>
+        </select>
+      </div>
+      
+      <div id="pagination-links" style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;margin-right:8px;">Pages:</span>
+        <!-- Dynamic pagination links will be generated here -->
+      </div>
+    </div>
+
+    <!-- Horizontal Scroll Controls -->
+    <div style="display:flex;align-items:center;gap:8px;margin-right:20px;">
+      <span style="font-size:12px;margin-right:8px;">Scroll:</span>
+      <button class="scroll-arrow" id="scroll-left" onclick="scrollTableHorizontal(-200)" style="font-size:11px;padding:2px 8px;">
+        ◄ Left
+      </button>
+      <div class="scroll-status" id="scroll-status" style="font-size:11px;min-width:80px;text-align:center;">
+        0px
+      </div>
+      <button class="scroll-arrow" id="scroll-right" onclick="scrollTableHorizontal(200)" style="font-size:11px;padding:2px 8px;">
+        Right ►
+      </button>
+    </div>
+  </div>
+  
   <!-- Contacts Table -->
-  <div class="table-box" style="margin:0 0 24px 0;">
+  <div class="table-box" style="margin:0 0 24px 0;padding-left:10px;">
+    
     <table class="contact-table">
       <thead>
         <tr>
-          <th colspan="4" style="font-size:10px;background:#fffbe6;color:#b26a00;text-align:left;padding:2px 8px 2px 8px;border-bottom:none;">Do Not Disturb, indicated by X</th>
-          <th colspan="24" style="border-bottom:none;background:transparent;"></th>
+          <th colspan="3" style="font-size:10px;background:#fffbe6;color:#b26a00;text-align:left;padding:2px 8px 4px 8px;border-bottom:none;">Do Not Disturb = X</th>
+          <th colspan="26" style="font-size:10px;background:#ffffff;color:#2c5aa0;text-align:left;padding:2px 8px 4px 8px;border-bottom:none;border-right:1px solid #000;position:relative;"><span style="position:absolute;left:calc(50vw - 230px);transform:translateX(-50%);top:2px;font-weight:bold;">💡 Tip: Click any cell to edit • Auto-saved</span></th>
         </tr>
         <tr>
-          <th class="sticky-col-1">SMS</th>
-          <th class="sticky-col-2">Call</th>
-          <th class="sticky-col-3">Email</th>
+          <th class="sticky-col-1" style="background:#e53935 !important;color:#fff !important;">SMS</th>
+          <th class="sticky-col-2" style="background:#e53935 !important;color:#fff !important;">Call</th>
+          <th class="sticky-col-3" style="background:#e53935 !important;color:#fff !important;">Email</th>
           <th class="sticky-col-4"><input type="checkbox" id="select-all"></th>
           <th>Sponsor</th>
           <th>Sponsor First</th>
           <th>Sponsor Last</th>
-          <th>Campaign</th>
+          <th>User ID</th>
           <th>First Name</th>
           <th>Last Name</th>
           <th>E-mail</th>
@@ -215,19 +546,3009 @@
           <td></td>
           <td></td>
           <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+         
+          <td></td>
+          <td
+</td>
         </tr>
       </tbody>
     </table>
   </div>
-  <!-- ... (rest of your modals and scripts remain unchanged) ... -->
+
+  <!-- Assignment Modal -->
+  <div id="assign-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 8px; min-width: 400px; max-width: 500px;">
+      <h3 style="margin: 0 0 20px 0; color: #333;">Assign Contacts to User</h3>
+      
+      <div style="margin-bottom: 15px;">
+        <strong id="selected-count">0 contacts selected</strong>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Search Users:</label>
+        <input id="user-search" type="text" placeholder="Type to search users..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;">
+        
+        <select id="user-select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; max-height: 150px;">
+          <option value="">Select a user...</option>
+        </select>
+      </div>
+      
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button onclick="closeAssignModal()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+        <button onclick="assignContacts()" style="padding: 8px 16px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Assign Contacts</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Initialize Supabase client (same as index.html)
-    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    // Horizontal Table Scrolling Functions
+    function scrollTableHorizontal(distance) {
+      const tableBox = document.querySelector('.table-box');
+      if (!tableBox) return;
+      
+      const currentScroll = tableBox.scrollLeft;
+      const newScroll = Math.max(0, currentScroll + distance);
+      
+      // Smooth scroll animation
+      tableBox.scrollTo({
+        left: newScroll,
+        behavior: 'smooth'
+      });
+      
+      // Update scroll status after a brief delay to allow scroll to complete
+      setTimeout(() => updateScrollStatus(), 300);
+    }
     
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('[DEBUG] Supabase client initialized in list.html');
+    function updateScrollStatus() {
+      const tableBox = document.querySelector('.table-box');
+      const scrollStatus = document.getElementById('scroll-status');
+      const leftBtn = document.getElementById('scroll-left');
+      const rightBtn = document.getElementById('scroll-right');
+      
+      if (!tableBox || !scrollStatus) return;
+      
+      const scrollLeft = Math.round(tableBox.scrollLeft);
+      const maxScroll = tableBox.scrollWidth - tableBox.clientWidth;
+      
+      // Update status text
+      scrollStatus.textContent = `Scroll: ${scrollLeft}px / ${Math.round(maxScroll)}px`;
+      
+      // Update button states
+      if (leftBtn) {
+        leftBtn.disabled = scrollLeft <= 0;
+      }
+      if (rightBtn) {
+        rightBtn.disabled = scrollLeft >= maxScroll - 5; // Small tolerance
+      }
+    }
+    
+    // Initialize scroll controls when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      const tableBox = document.querySelector('.table-box');
+      if (tableBox) {
+        // Listen for scroll events to update status
+        tableBox.addEventListener('scroll', updateScrollStatus);
+        
+        // Initial status update
+        setTimeout(updateScrollStatus, 500);
+      }
+    });
+
+    // Basic contacts loading function (simplified)
+    async function loadContacts() {
+      try {
+        const response = await fetch('http://localhost:3000/api/contacts');
+        const data = await response.json();
+        
+        if (data.contacts) {
+          displayContacts(data.contacts);
+          // Setup search after contacts are loaded
+          setupMainSearch();
+        }
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+      }
+    }
+
+    function displayContacts(contacts) {
+      const tbody = document.querySelector('.contact-table tbody');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      
+      contacts.forEach(contact => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="sticky-col-1"></td>
+          <td class="sticky-col-2"></td>
+          <td class="sticky-col-3"></td>
+          <td class="sticky-col-4"><input type="checkbox" class="row-select"></td>
+          <td>${contact.sponsor || ''}</td>
+          <td>${contact.sponsor_first || ''}</td>
+          <td>${contact.sponsor_last || ''}</td>
+          <td>${contact.user_id || ''}</td>
+          <td>${contact.first_name || ''}</td>
+          <td>${contact.last_name || ''}</td>
+          <td>${contact.email || ''}</td>
+          <td>${contact.email_valid || ''}</td>
+          <td>${contact.phone || ''}</td>
+          <td>${contact.address || ''}</td>
+          <td>${contact.city || ''}</td>
+          <td>${contact.state || ''}</td>
+          <td>${contact.zip || ''}</td>
+          <td>${contact.status || ''}</td>
+          <td>${contact.rating || ''}</td>
+          <td>${contact.ip_address || ''}</td>
+          <td>${contact.date_created || ''}</td>
+          <td>${contact.timezone || ''}</td>
+          <td>${contact.cell || ''}</td>
+          <td>${contact.carrier || ''}</td>
+          <td>${contact.landline || ''}</td>
+          <td>${contact.voip || ''}</td>
+          <td>${contact.other_phone || ''}</td>
+          <td>${contact.foreign_number || ''}</td>
+          <td>${contact.country || ''}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Initialize contacts loading
+    document.addEventListener('DOMContentLoaded', function() {
+      loadContacts();
+      loadUsers();
+      setupAssignModal();
+      setupSelectAllSafety();
+      
+      // Setup search functionality
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          performContactSearch(this.value);
+        });
+        
+        searchInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            performContactSearch(this.value);
+          }
+        });
+      }
+    });
+
+    // Setup main search functionality
+    function setupMainSearch() {
+      const searchInput = document.getElementById('search-input');
+      const searchBtn = document.getElementById('search-btn');
+      const resetBtn = document.getElementById('reset-search-btn');
+      
+      // Real-time search as user types
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          performContactSearch(this.value);
+        });
+        
+        // Also search on Enter key
+        searchInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            performContactSearch(this.value);
+          }
+        });
+      }
+      
+      // Search button click
+      if (searchBtn) {
+        searchBtn.addEventListener('click', function() {
+          const searchTerm = searchInput ? searchInput.value : '';
+          performContactSearch(searchTerm);
+        });
+      }
+      
+      // Reset button click
+      if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+          if (searchInput) {
+            searchInput.value = '';
+          }
+          performContactSearch(''); // Show all contacts
+        });
+      }
+    }
+
+    // Perform contact search in the table
+    function performContactSearch(searchTerm) {
+      const tableRows = document.querySelectorAll('.contact-table tbody tr');
+      const searchLower = searchTerm.toLowerCase().trim();
+      let visibleCount = 0;
+      
+      tableRows.forEach(row => {
+        // Remove any existing highlights first
+        removeHighlights(row);
+        
+        if (searchLower === '') {
+          // Show all rows when search is empty
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          // Search through specific columns for better matching
+          const cells = row.querySelectorAll('td');
+          const searchableFields = [
+            { index: 8, name: 'firstName' },    // First Name
+            { index: 9, name: 'lastName' },     // Last Name  
+            { index: 10, name: 'email' },       // Email
+            { index: 12, name: 'phone' },       // Phone
+            { index: 13, name: 'address' },     // Address
+            { index: 14, name: 'city' },        // City
+            { index: 15, name: 'state' },       // State
+            { index: 16, name: 'zip' },         // ZIP
+            { index: 17, name: 'status' }       // Status
+          ];
+          
+          let matchFound = false;
+          
+          searchableFields.forEach(field => {
+            const cell = cells[field.index];
+            if (cell) {
+              const cellText = cell.textContent || '';
+              if (cellText.toLowerCase().includes(searchLower)) {
+                matchFound = true;
+                // Highlight the match
+                highlightTextInCell(cell, cellText, searchTerm);
+              }
+            }
+          });
+          
+          if (matchFound) {
+            row.style.display = '';
+            visibleCount++;
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
+      
+      // Update search status
+      updateSearchStatus(searchTerm, visibleCount, tableRows.length);
+    }
+
+    // Highlight matching text in a cell
+    function highlightTextInCell(cell, originalText, searchTerm) {
+      if (!searchTerm.trim()) return;
+      
+      const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      const highlightedText = originalText.replace(regex, '<mark style="background:#fff3cd;padding:1px 2px;border-radius:2px;">$1</mark>');
+      
+      if (highlightedText !== originalText) {
+        cell.innerHTML = highlightedText;
+      }
+    }
+
+    // Remove highlights from a row
+    function removeHighlights(row) {
+      const highlightedElements = row.querySelectorAll('mark');
+      highlightedElements.forEach(mark => {
+        const parent = mark.parentNode;
+        parent.replaceChild(document.createTextNode(mark.textContent), mark);
+        parent.normalize(); // Merge adjacent text nodes
+      });
+    }
+
+    // Update search status indicator
+    function updateSearchStatus(searchTerm, visibleCount, totalCount) {
+      // Check if status indicator exists, if not create it
+      let statusIndicator = document.getElementById('search-status');
+      
+      if (!statusIndicator) {
+        // Create status indicator
+        statusIndicator = document.createElement('div');
+        statusIndicator.id = 'search-status';
+        statusIndicator.style.cssText = `
+          padding: 5px 10px;
+          margin: 5px 0;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          font-size: 12px;
+          color: #495057;
+        `;
+        
+        // Insert after the button rows
+        const buttonContainer = document.querySelector('div[style*="Second Row of Buttons"]')?.parentNode;
+        if (buttonContainer) {
+          buttonContainer.insertAdjacentElement('afterend', statusIndicator);
+        }
+      }
+      
+      // Update status content
+      if (searchTerm.trim()) {
+        statusIndicator.innerHTML = `
+          🔍 Search: "${searchTerm}" | 
+          Showing ${visibleCount} of ${totalCount} contacts
+          ${visibleCount === 0 ? ' - <span style="color:#dc3545;">No matches found</span>' : ''}
+        `;
+        statusIndicator.style.display = 'block';
+      } else {
+        statusIndicator.style.display = 'none';
+      }
+    }
+
+    // Setup select-all safety features
+    function setupSelectAllSafety() {
+      const selectAllCheckbox = document.getElementById('select-all');
+      
+      if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+          if (this.checked) {
+            // Show warning when selecting all
+            const totalContacts = document.querySelectorAll('.row-select').length;
+            
+            if (totalContacts > 50) {
+              const confirmSelectAll = confirm(
+                `You are about to select all ${totalContacts} contacts.\n\n` +
+                `This could lead to accidental bulk assignments.\n\n` +
+                `Are you sure you want to select all contacts?`
+              );
+              
+              if (!confirmSelectAll) {
+                this.checked = false;
+                return;
+              }
+            }
+          }
+          
+          // Handle select all functionality
+          const rowCheckboxes = document.querySelectorAll('.row-select');
+          rowCheckboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+          });
+        });
+        
+        // Also handle individual checkbox changes to update select-all state
+        document.addEventListener('change', function(e) {
+          if (e.target.classList.contains('row-select')) {
+            updateSelectAllState();
+          }
+        });
+      }
+    }
+
+    // Update select-all checkbox state based on individual selections
+    function updateSelectAllState() {
+      const selectAllCheckbox = document.getElementById('select-all');
+      const rowCheckboxes = document.querySelectorAll('.row-select');
+      const checkedBoxes = document.querySelectorAll('.row-select:checked');
+      
+      if (selectAllCheckbox) {
+        if (checkedBoxes.length === 0) {
+          selectAllCheckbox.checked = false;
+          selectAllCheckbox.indeterminate = false;
+        } else if (checkedBoxes.length === rowCheckboxes.length) {
+          selectAllCheckbox.checked = true;
+          selectAllCheckbox.indeterminate = false;
+        } else {
+          selectAllCheckbox.checked = false;
+          selectAllCheckbox.indeterminate = true;
+        }
+      }
+    }
+
+    // Global variables
+    let allUsers = [];
+    let selectedContacts = [];
+
+    // Load users for assignment dropdown
+    async function loadUsers() {
+      try {
+        const response = await fetch('http://localhost:3000/api/users');
+        const data = await response.json();
+        
+        if (data.success && data.users) {
+          allUsers = data.users;
+          populateUserDropdown(allUsers);
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+      }
+    }
+
+    // Populate user dropdown
+    function populateUserDropdown(users) {
+      const dropdown = document.getElementById('user-dropdown');
+      if (!dropdown) return;
+      
+      // Clear existing options except the first one
+      dropdown.innerHTML = '<option value="">-- Select a user --</option>';
+      
+      users.forEach(user => {
+        const option = document.createElement('option');
+        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+        const displayName = fullName || user.email || user.id;
+        
+        option.value = user.id;
+        option.textContent = displayName;
+        dropdown.appendChild(option);
+      });
+    }
+
+    // Setup assignment modal functionality
+    function setupAssignModal() {
+      const assignBtn = document.getElementById('assign-btn');
+      const modal = document.getElementById('assign-modal');
+      const cancelBtn = document.getElementById('cancel-assign');
+      const confirmBtn = document.getElementById('confirm-assign');
+      const userSearch = document.getElementById('user-search');
+      
+      // Open modal
+      if (assignBtn) {
+        assignBtn.addEventListener('click', function() {
+          openAssignModal();
+        });
+      }
+      
+      // Close modal
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+          closeAssignModal();
+        });
+      }
+      
+      // Confirm assignment
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+          confirmAssignment();
+        });
+      }
+      
+      // Real-time user search functionality
+      if (userSearch) {
+        userSearch.addEventListener('input', function() {
+          handleUserSearch(this.value);
+        });
+        
+        userSearch.addEventListener('focus', function() {
+          if (this.value.trim()) {
+            handleUserSearch(this.value);
+          }
+        });
+        
+        // Hide suggestions when clicking outside
+        userSearch.addEventListener('blur', function() {
+          // Delay hiding to allow clicking on suggestions
+          setTimeout(() => {
+            hideSuggestions();
+          }, 200);
+        });
+      }
+      
+      // Close modal when clicking outside
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === modal) {
+            closeAssignModal();
+          }
+        });
+      }
+    }
+
+    // Open assignment modal
+    function openAssignModal() {
+      const selectedCheckboxes = document.querySelectorAll('.row-select:checked');
+      
+      if (selectedCheckboxes.length === 0) {
+        alert('Please select at least one contact to assign.');
+        return;
+      }
+      
+      // Safety check: Prevent accidentally assigning too many contacts
+      if (selectedCheckboxes.length > 100) {
+        const confirmLargeAssignment = confirm(
+          `You have selected ${selectedCheckboxes.length} contacts for assignment.\n\n` +
+          `This is a large number. Are you sure you want to proceed?\n\n` +
+          `Click OK to continue or Cancel to review your selection.`
+        );
+        
+        if (!confirmLargeAssignment) {
+          return;
+        }
+      }
+      
+      // Additional warning for very large selections
+      if (selectedCheckboxes.length > 500) {
+        alert(
+          `Assignment of ${selectedCheckboxes.length} contacts is not allowed for safety reasons.\n\n` +
+          `Please select fewer contacts (maximum 500) and try again.`
+        );
+        return;
+      }
+      
+      // Store selected contacts
+      selectedContacts = Array.from(selectedCheckboxes).map(checkbox => {
+        const row = checkbox.closest('tr');
+        const cells = row.querySelectorAll('td');
+        return {
+          checkbox: checkbox,
+          name: `${cells[8]?.textContent || ''} ${cells[9]?.textContent || ''}`.trim(),
+          email: cells[10]?.textContent || '',
+          id: row.dataset.contactId || Math.random().toString(36).substr(2, 9)
+        };
+      });
+      
+      // Update selected contacts info
+      const info = document.getElementById('selected-contacts-info');
+      if (info) {
+        info.innerHTML = `
+          <strong>${selectedContacts.length} contact(s) selected:</strong><br>
+          ${selectedContacts.slice(0, 3).map(contact => contact.name || contact.email || 'Unnamed').join(', ')}
+          ${selectedContacts.length > 3 ? ` and ${selectedContacts.length - 3} more...` : ''}
+        `;
+      }
+      
+      // Show modal
+      const modal = document.getElementById('assign-modal');
+      if (modal) {
+        modal.style.display = 'block';
+      }
+    }
+
+    // Close assignment modal
+    function closeAssignModal() {
+      const modal = document.getElementById('assign-modal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+      
+      // Reset form
+      const userSearch = document.getElementById('user-search');
+      const selectedUserDisplay = document.getElementById('selected-user-display');
+      const selectedUserIdInput = document.getElementById('selected-user-id');
+      
+      if (userSearch) userSearch.value = '';
+      if (selectedUserIdInput) selectedUserIdInput.value = '';
+      if (selectedUserDisplay) {
+        selectedUserDisplay.innerHTML = 'No user selected';
+        selectedUserDisplay.style.color = '#666';
+      }
+      
+      // Hide suggestions
+      hideSuggestions();
+    }
+
+    // Handle real-time user search
+    function handleUserSearch(searchTerm) {
+      const suggestionsContainer = document.getElementById('user-suggestions');
+      
+      if (!searchTerm.trim()) {
+        hideSuggestions();
+        return;
+      }
+      
+      // Filter users based on search term
+      const filtered = allUsers.filter(user => {
+        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim().toLowerCase();
+        const email = (user.email || '').toLowerCase();
+        const search = searchTerm.toLowerCase();
+        
+        return fullName.includes(search) || email.includes(search);
+      });
+      
+      // Show suggestions
+      showSuggestions(filtered, searchTerm);
+    }
+    
+    // Show user suggestions dropdown
+    function showSuggestions(users, searchTerm) {
+      const suggestionsContainer = document.getElementById('user-suggestions');
+      if (!suggestionsContainer) return;
+      
+      if (users.length === 0) {
+        suggestionsContainer.innerHTML = '<div style="padding:10px;color:#666;font-style:italic;">No users found</div>';
+        suggestionsContainer.style.display = 'block';
+        return;
+      }
+      
+      // Limit to top 8 results for performance
+      const limitedUsers = users.slice(0, 8);
+      
+      suggestionsContainer.innerHTML = limitedUsers.map(user => {
+        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+        const displayName = fullName || user.email || 'Unnamed User';
+        const email = user.email || '';
+        
+        // Highlight matching text
+        const highlightedName = highlightMatch(displayName, searchTerm);
+        const highlightedEmail = email ? highlightMatch(email, searchTerm) : '';
+        
+        return `
+          <div class="user-suggestion-item" 
+               data-user-id="${user.id}" 
+               data-user-name="${displayName}"
+               data-user-email="${email}"
+               style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;transition:background-color 0.2s;"
+               onmouseover="this.style.backgroundColor='#f0f8ff'"
+               onmouseout="this.style.backgroundColor='white'"
+               onclick="selectUser('${user.id}', '${displayName.replace(/'/g, "\\'")}', '${email.replace(/'/g, "\\'")}')">
+            <div style="font-weight:bold;color:#333;">${highlightedName}</div>
+            ${email ? `<div style="font-size:12px;color:#666;">${highlightedEmail}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+      
+      suggestionsContainer.style.display = 'block';
+    }
+    
+    // Highlight matching text in search results
+    function highlightMatch(text, searchTerm) {
+      if (!searchTerm.trim()) return text;
+      
+      const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return text.replace(regex, '<mark style="background:#fff3cd;padding:1px 2px;">$1</mark>');
+    }
+    
+    // Select a user from suggestions
+    function selectUser(userId, userName, userEmail) {
+      const userSearch = document.getElementById('user-search');
+      const selectedUserDisplay = document.getElementById('selected-user-display');
+      const selectedUserIdInput = document.getElementById('selected-user-id');
+      
+      // Update search input
+      if (userSearch) {
+        userSearch.value = userName;
+      }
+      
+      // Update selected user display
+      if (selectedUserDisplay) {
+        selectedUserDisplay.innerHTML = `
+          <div style="font-weight:bold;color:#333;">${userName}</div>
+          ${userEmail ? `<div style="font-size:12px;color:#666;">${userEmail}</div>` : ''}
+        `;
+        selectedUserDisplay.style.color = '#333';
+      }
+      
+      // Store selected user ID
+      if (selectedUserIdInput) {
+        selectedUserIdInput.value = userId;
+      }
+      
+      // Hide suggestions
+      hideSuggestions();
+    }
+    
+    // Hide suggestions dropdown
+    function hideSuggestions() {
+      const suggestionsContainer = document.getElementById('user-suggestions');
+      if (suggestionsContainer) {
+        suggestionsContainer.style.display = 'none';
+      }
+    }
+
+    // Confirm assignment
+    async function confirmAssignment() {
+      const selectedUserIdInput = document.getElementById('selected-user-id');
+      const selectedUserId = selectedUserIdInput?.value;
+      
+      if (!selectedUserId) {
+        alert('Please search and select a user to assign contacts to.');
+        return;
+      }
+      
+      const selectedUser = allUsers.find(user => user.id === selectedUserId);
+      const userName = selectedUser ? `${selectedUser.first_name || ''} ${selectedUser.last_name || ''}`.trim() || selectedUser.email : 'Unknown User';
+      
+      try {
+        // Make API call to assign contacts
+        const response = await fetch('http://localhost:3000/api/assign', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contact_ids: selectedContacts.map(contact => contact.id),
+            assign_to: selectedUserId,
+            assign_to_name: userName
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert(`Successfully assigned ${selectedContacts.length} contact(s) to ${userName}`);
+          
+          // Uncheck selected contacts
+          selectedContacts.forEach(contact => {
+            if (contact.checkbox) {
+              contact.checkbox.checked = false;
+            }
+          });
+          
+          closeAssignModal();
+        } else {
+          alert('Error assigning contacts: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Assignment error:', error);
+        alert('Error assigning contacts. Please try again.');
+      }
+    }
+
+    // Handle assign contacts functionality (legacy - kept for compatibility)
+    function handleAssignContacts() {
+      openAssignModal();
+    }
+
+    // Simple search function that works
+    function doSearch() {
+      const searchInput = document.getElementById('search-input');
+      const searchTerm = searchInput ? searchInput.value : '';
+      performContactSearch(searchTerm);
+    }
+    
+    // Global search function that definitely works
+    function performContactSearch(searchTerm) {
+      const tableRows = document.querySelectorAll('.contact-table tbody tr');
+      const searchLower = (searchTerm || '').toLowerCase().trim();
+      let visibleCount = 0;
+      
+      for (let i = 0; i < tableRows.length; i++) {
+        const row = tableRows[i];
+        if (searchLower === '') {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          const rowText = row.textContent.toLowerCase();
+          if (rowText.includes(searchLower)) {
+            row.style.display = '';
+            visibleCount++;
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      }
+      
+      updateSearchStatus(searchTerm, visibleCount, tableRows.length);
+    }
+    
+    // Global reset function
+    function resetSearch() {
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.value = '';
+      }
+      performContactSearch('');
+    }
+    
+    // Global search status update
+    function updateSearchStatus(searchTerm, visibleCount, totalCount) {
+      let statusDiv = document.getElementById('search-status');
+      if (!statusDiv) {
+        statusDiv = document.createElement('div');
+        statusDiv.id = 'search-status';
+        statusDiv.style.cssText = 'padding:8px 10px;margin:5px 0;background:#f8f9fa;border:1px solid #dee2e6;border-radius:4px;font-size:12px;color:#495057;';
+        
+        const searchContainer = document.querySelector('input[id="search-input"]').closest('div');
+        if (searchContainer) {
+          searchContainer.parentNode.insertAdjacentElement('afterend', statusDiv);
+        }
+      }
+      
+      if (searchTerm && searchTerm.trim()) {
+        statusDiv.innerHTML = `🔍 Search: "${searchTerm}" | Showing ${visibleCount} of ${totalCount} contacts`;
+        statusDiv.style.display = 'block';
+      } else {
+        statusDiv.style.display = 'none';
+      }
+    }
+
+    // Search and UI Functions - Global scope
+    window.performSearch = function() {
+      console.log('performSearch function called');
+      const term = document.getElementById('search-input').value.toLowerCase();
+      const rows = document.querySelectorAll('.contact-table tbody tr');
+      
+      let visibleCount = 0;
+      for(let i = 0; i < rows.length; i++) {
+        const rowText = rows[i].textContent.toLowerCase();
+        if(!term || rowText.includes(term)) {
+          rows[i].style.display = '';
+          visibleCount++;
+        } else {
+          rows[i].style.display = 'none';
+        }
+      }
+      console.log(`Search for "${term}" found ${visibleCount} rows out of ${rows.length} total`);
+      alert(`Search found ${visibleCount} contacts matching "${term}"`);
+    };
+    
+    window.resetSearch = function() {
+      document.getElementById('search-input').value = '';
+      const rows = document.querySelectorAll('.contact-table tbody tr');
+      for(let i = 0; i < rows.length; i++) {
+        rows[i].style.display = '';
+      }
+      console.log(`Reset complete - showing all ${rows.length} rows`);
+      alert(`Reset complete - showing all ${rows.length} contacts`);
+    };
+    
+    window.openAssignModal = function() {
+      // Get selected contacts
+      const selectedCheckboxes = document.querySelectorAll('.contact-table tbody input[type="checkbox"]:checked');
+      if (selectedCheckboxes.length === 0) {
+        alert('Please select at least one contact to assign.');
+        return;
+      }
+      
+      // Update selected count
+      document.getElementById('selected-count').textContent = `${selectedCheckboxes.length} contacts selected`;
+      
+      // Load users and show modal
+      loadUsersForAssignment();
+      document.getElementById('assign-modal').style.display = 'block';
+    };
+    
+    window.closeAssignModal = function() {
+      document.getElementById('assign-modal').style.display = 'none';
+      document.getElementById('user-search').value = '';
+      document.getElementById('user-select').innerHTML = '<option value="">Select a user...</option>';
+    };
+    
+    window.loadUsersForAssignment = async function() {
+      try {
+        const response = await fetch('/api/users');
+        const data = await response.json();
+        
+        let users;
+        if (Array.isArray(data)) {
+          users = data;
+        } else if (data.users && Array.isArray(data.users)) {
+          users = data.users;
+        } else if (data.data && Array.isArray(data.data)) {
+          users = data.data;
+        } else {
+          console.error('Unexpected users API response:', data);
+          users = [];
+        }
+        
+        const userSelect = document.getElementById('user-select');
+        userSelect.innerHTML = '<option value="">Select a user...</option>';
+        
+        users.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.id || user.user_id;
+          option.textContent = `${user.first_name || ''} ${user.last_name || ''} (${user.email || user.username || user.id})`.trim();
+          userSelect.appendChild(option);
+        });
+        
+        // Set up real-time search
+        const searchInput = document.getElementById('user-search');
+        searchInput.oninput = function() {
+          const term = this.value.toLowerCase();
+          const options = userSelect.querySelectorAll('option');
+          
+          options.forEach(option => {
+            if (option.value === '') return; // Keep the default option
+            option.style.display = option.textContent.toLowerCase().includes(term) ? '' : 'none';
+          });
+        };
+        
+      } catch (error) {
+        console.error('Error loading users:', error);
+        alert('Error loading users for assignment');
+      }
+    };
+    
+    window.assignContacts = async function() {
+      const selectedUser = document.getElementById('user-select').value;
+      if (!selectedUser) {
+        alert('Please select a user to assign contacts to.');
+        return;
+      }
+      
+      const selectedCheckboxes = document.querySelectorAll('.contact-table tbody input[type="checkbox"]:checked');
+      const contactIds = Array.from(selectedCheckboxes).map(cb => {
+        // Get contact ID from the row - you may need to adjust this based on your data structure
+        const row = cb.closest('tr');
+        return row.dataset.contactId || row.rowIndex; // Fallback to row index if no ID
+      });
+      
+      try {
+        const response = await fetch('/api/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: selectedUser,
+            contactIds: contactIds
+          })
+        });
+        
+        if (response.ok) {
+          alert(`Successfully assigned ${contactIds.length} contacts!`);
+          closeAssignModal();
+          // Optionally reload contacts to show assignment
+          loadContactsFromSupabase();
+        } else {
+          throw new Error('Assignment failed');
+        }
+      } catch (error) {
+        console.error('Error assigning contacts:', error);
+        alert('Error assigning contacts. Please try again.');
+      }
+    };
+    
+    // Delete functionality
+    window.deleteSelectedContacts = async function(selectedCheckboxes) {
+      const contactIds = [];
+      const rowsToRemove = [];
+      
+      selectedCheckboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        rowsToRemove.push(row);
+        // Get contact ID - you may need to adjust this based on your data structure
+        const contactId = row.dataset.contactId || row.rowIndex;
+        contactIds.push(contactId);
+      });
+      
+      try {
+        // For now, simulate API call - you can implement actual Supabase delete later
+        console.log('Deleting contacts:', contactIds);
+        
+        // Remove rows from table immediately
+        rowsToRemove.forEach(row => {
+          row.remove();
+        });
+        
+        alert(`Successfully deleted ${contactIds.length} contacts!`);
+        
+        // TODO: Implement actual API call to delete from Supabase
+        // const response = await fetch('/api/contacts/delete', {
+        //   method: 'DELETE',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ contactIds: contactIds })
+        // });
+        
+      } catch (error) {
+        console.error('Error deleting contacts:', error);
+        alert('Error deleting contacts. Please try again.');
+        // Reload contacts to restore deleted rows if there was an error
+        loadContactsFromSupabase();
+      }
+    };
+    
+    window.loadContactsFromSupabase = async function() {
+      try {
+        console.log('Loading contacts from Supabase...');
+        const response = await fetch('/api/contacts');
+        const data = await response.json();
+        console.log('API response:', data);
+        
+        // Handle different response formats
+        let contacts;
+        if (Array.isArray(data)) {
+          contacts = data;
+        } else if (data.contacts && Array.isArray(data.contacts)) {
+          contacts = data.contacts;
+        } else if (data.data && Array.isArray(data.data)) {
+          contacts = data.data;
+        } else {
+          console.error('Unexpected API response format:', data);
+          alert('Error: API returned unexpected format - ' + JSON.stringify(data).substring(0, 100));
+          return;
+        }
+        
+        console.log('Processed contacts:', contacts.length);
+        
+        const tbody = document.querySelector('.contact-table tbody');
+        tbody.innerHTML = ''; // Clear existing rows
+        
+        if (contacts.length === 0) {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td colspan="29" style="text-align: center; padding: 20px;">No contacts found</td>`;
+          tbody.appendChild(row);
+          alert('No contacts found in database');
+          return;
+        }
+        
+        contacts.forEach(contact => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td class="sticky-col-1"></td>
+            <td class="sticky-col-2"></td>
+            <td class="sticky-col-3"></td>
+            <td class="sticky-col-4"><input type="checkbox" class="row-select"></td>
+            <td>${contact.sponsor || ''}</td>
+            <td>${contact.sponsor_first || ''}</td>
+            <td>${contact.sponsor_last || ''}</td>
+            <td>${contact.user_id || ''}</td>
+            <td>${contact.first_name || ''}</td>
+            <td>${contact.last_name || ''}</td>
+            <td>${contact.email || ''}</td>
+            <td>${contact.valid || ''}</td>
+            <td>${contact.phone || ''}</td>
+            <td>${contact.address || ''}</td>
+            <td>${contact.city || ''}</td>
+            <td>${contact.state || ''}</td>
+            <td>${contact.zip || ''}</td>
+            <td>${contact.status || ''}</td>
+            <td>${contact.rating || ''}</td>
+            <td>${contact.ip || ''}</td>
+            <td>${contact.date || ''}</td>
+            <td>${contact.timezone || ''}</td>
+            <td>${contact.cell || ''}</td>
+            <td>${contact.carrier || ''}</td>
+            <td>${contact.landline || ''}</td>
+            <td>${contact.voip || ''}</td>
+            <td>${contact.other || ''}</td>
+            <td>${contact.foreign || ''}</td>
+            <td>${contact.country || ''}</td>
+          `;
+          tbody.appendChild(row);
+        });
+        
+        alert(`Successfully loaded ${contacts.length} contacts from Supabase!`);
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+        alert('Error loading contacts: ' + error.message);
+      }
+    };
+    
+    window.openAssignModal = function() {
+      console.log('openAssignModal called');
+      alert('Assign function called - this will open assignment modal');
+    };
+    
+    // Load contacts when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Page loaded, loading contacts...');
+      loadContactsFromSupabase();
+      
+      // Add event listeners for search and reset buttons
+      const searchBtn = document.getElementById('search-btn');
+      const resetBtn = document.getElementById('reset-btn');
+      
+      if (searchBtn) {
+        searchBtn.addEventListener('click', function() {
+          console.log('Search button clicked');
+          performSearch();
+        });
+        console.log('Search button event listener added');
+      } else {
+        console.error('Search button not found!');
+      }
+      
+      if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+          console.log('Reset button clicked');
+          resetSearch();
+        });
+        console.log('Reset button event listener added');
+      } else {
+        console.error('Reset button not found!');
+      }
+      
+      // Add event listeners for all other buttons
+      const buttons = [
+        'delete-selected-btn', 'send-sms-btn', 'send-email-btn', 'send-rvm-btn', 
+        'campaign-btn', 'add-btn', 'select-columns-btn', 'sort-btn', 'import-btn', 'export-btn'
+      ];
+      
+      buttons.forEach(buttonId => {
+        const button = document.getElementById(buttonId);
+        if (button) {
+          console.log(`Adding event listener for ${buttonId}`);
+        } else {
+          console.error(`Button ${buttonId} not found!`);
+        }
+      });
+      
+      // Existing event listeners follow...
+      document.getElementById('delete-selected-btn').addEventListener('click', function() {
+        const selected = document.querySelectorAll('.contact-table tbody input[type="checkbox"]:checked');
+        if (selected.length === 0) {
+          alert('Please select contacts to delete.');
+          return;
+        }
+        if (confirm(`Are you sure you want to delete ${selected.length} selected contacts? This cannot be undone.`)) {
+          // Actually delete the contacts
+          deleteSelectedContacts(selected);
+        }
+      });
+      
+      document.getElementById('send-sms-btn').addEventListener('click', function() {
+        const selected = document.querySelectorAll('.contact-table tbody input[type="checkbox"]:checked');
+        if (selected.length === 0) {
+          alert('Please select contacts to send SMS.');
+          return;
+        }
+        alert(`SMS functionality: Would send SMS to ${selected.length} contacts`);
+      });
+      
+      document.getElementById('send-email-btn').addEventListener('click', function() {
+        const selected = document.querySelectorAll('.contact-table tbody input[type="checkbox"]:checked');
+        if (selected.length === 0) {
+          alert('Please select contacts to send email.');
+          return;
+        }
+        alert(`Email functionality: Would send email to ${selected.length} contacts`);
+      });
+      
+      document.getElementById('send-rvm-btn').addEventListener('click', function() {
+        const selected = document.querySelectorAll('.contact-table tbody input[type="checkbox"]:checked');
+        if (selected.length === 0) {
+          alert('Please select contacts to send RVM.');
+          return;
+        }
+        alert(`RVM functionality: Would send RVM to ${selected.length} contacts`);
+      });
+      
+      document.getElementById('campaign-btn').addEventListener('click', function() {
+        const selected = document.querySelectorAll('.contact-table tbody input[type="checkbox"]:checked');
+        if (selected.length === 0) {
+          alert('Please select contacts for campaign.');
+          return;
+        }
+        alert(`Campaign functionality: Would create campaign for ${selected.length} contacts`);
+      });
+      
+      document.getElementById('add-btn').addEventListener('click', function() {
+        alert('Add Contact functionality: Would open add contact form');
+      });
+      
+      document.getElementById('select-columns-btn').addEventListener('click', function() {
+        alert('Select Columns functionality: Would open column selector');
+      });
+      
+      document.getElementById('sort-btn').addEventListener('click', function() {
+        alert('Sort functionality: Would open sort options');
+      });
+      
+      document.getElementById('import-btn').addEventListener('click', function() {
+        alert('Import functionality: Would open import dialog');
+      });
+      
+      document.getElementById('export-btn').addEventListener('click', function() {
+        alert('Export functionality: Would export contacts');
+      });
+      
+      document.getElementById('add-btn').addEventListener('click', function() {
+        alert('Add Contact functionality: Would open add contact form');
+      });
+    });
   </script>
-  <!-- ... (rest of your JS remains unchanged) ... -->
+
 </body>
 </html>

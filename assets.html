@@ -368,10 +368,6 @@
           <p style="color: #666; font-size: 0.9em; margin-top: -5px; margin-bottom: 20px; font-style: italic;">
             💡 For better deliverability, do not include https://
           </p>
-          
-          <div style="display: flex; align-items: center;">
-            <span id="saveStatus" style="color: #28a745; font-weight: 500; opacity: 0; transition: opacity 0.3s;"></span>
-          </div>
         </form>
       </div>
       
@@ -412,9 +408,12 @@
         
         <!-- Buttons Row -->
         <div style="display: flex; justify-content: space-between; align-items: center;">
-          <button type="submit" form="settingsForm" style="background: #1976ff; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-weight: 600;">
-            Save Settings
-          </button>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button type="submit" form="settingsForm" style="background: #1976ff; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-weight: 600;">
+              Save Settings
+            </button>
+            <span id="saveStatus" style="color: #28a745; font-weight: 500; opacity: 0; transition: opacity 0.3s;"></span>
+          </div>
           <button type="button" id="changePasswordBtn" style="background: #28a745; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-weight: 600;">
             Change Password
           </button>

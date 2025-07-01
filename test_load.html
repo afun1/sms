@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMS Editor Test</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .test { color: green; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1 class="test">✅ SMS Editor Loading Test</h1>
+  <p>If you can see this, the server is working fine.</p>
+  <p>Current time: <span id="time"></span></p>
+  
+  <script>
+    document.getElementById('time').textContent = new Date().toLocaleTimeString();
+    console.log('Test page loaded successfully');
+  </script>
+</body>
+</html>
