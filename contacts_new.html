@@ -44,7 +44,7 @@
     .controls {
       background: white;
       padding: 5px 20px;
-      margin: -10px 20px 5px 20px;
+      margin: -10px 20px 0px 20px;
       border-radius: 10px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
       display: flex;
@@ -54,7 +54,7 @@
       justify-content: space-between;
       position: sticky;
       top: 60px;
-      z-index: 2000;
+      z-index: 3000;
     }
     
     .search-group {
@@ -155,15 +155,17 @@
     }
     
     .table-container {
-      margin: 0 20px;
+      margin: 0 20px 0 20px;
       background: white;
-      border-radius: 0px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       overflow: auto;
+      height: calc(100vh - 125px);
+      border: 2px solid #e9ecef;
+      padding: 0 10px 0 10px;
       position: sticky;
-      top: 120px;
-      height: calc(100vh - 160px);
-      z-index: 1000;
+      top: 125px;
+      z-index: 2000;
     }
     
     .table {
@@ -466,6 +468,13 @@
       font-weight: bold !important;
     }
     
+    /* Make headers from column 6 onward vertically sticky */
+    .table thead th:nth-child(n+6) {
+      position: sticky;
+      top: 0;
+      z-index: 15;
+    }
+    
     /* Resizable column styles */
     .table th:nth-child(n+6) {
       position: relative;
@@ -529,12 +538,15 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0;
+      padding: 5px 20px 0 20px;
       background: white;
       margin: 0px 20px 0 20px;
       border-radius: 10px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
       font-size: 12px;
+      position: sticky;
+      top: 90px;
+      z-index: 2500;
     }
     
     .pagination {
@@ -542,31 +554,36 @@
       gap: 5px;
       align-items: center;
       font-size: 12px;
+      justify-content: flex-end;
+      flex: 1;
     }
     
     .pagination button {
       padding: 0;
-      border: 1px solid #dee2e6;
-      background: white;
+      border: none;
+      background: none;
       cursor: pointer;
-      border-radius: 4px;
-      transition: all 0.2s;
       font-size: 12px;
+      color: #007bff;
+      text-decoration: none;
+      min-width: auto;
+      height: auto;
     }
     
     .pagination button:hover:not(:disabled) {
-      background: #e9ecef;
+      color: #0056b3;
+      text-decoration: underline;
     }
     
     .pagination button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      color: #6c757d;
     }
     
     .pagination button.active {
-      background: #007bff;
-      color: white;
-      border-color: #007bff;
+      color: #800000;
+      font-weight: bold;
     }
     
     .page-size-selector {
@@ -793,10 +810,28 @@
     <div class="page-size-selector">
       <label>Show:</label>
       <select id="page-size-select">
-        <option value="25">25</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
         <option value="all">All</option>
+        <option value="20">20</option>
+        <option value="40">40</option>
+        <option value="60">60</option>
+        <option value="80">80</option>
+        <option value="100">100</option>
+        <option value="120">120</option>
+        <option value="140">140</option>
+        <option value="160">160</option>
+        <option value="180">180</option>
+        <option value="200">200</option>
+        <option value="220">220</option>
+        <option value="240">240</option>
+        <option value="260">260</option>
+        <option value="280">280</option>
+        <option value="300">300</option>
+        <option value="500">500</option>
+        <option value="1000">1000</option>
+        <option value="1500">1500</option>
+        <option value="2000">2000</option>
+        <option value="2500">2500</option>
+        <option value="3000">3000</option>
       </select>
       <span>entries</span>
     </div>
@@ -1034,7 +1069,7 @@
     let allContacts = [];
     let filteredContacts = [];
     let selectedContactIds = new Set();
-    let pageSize = 25;
+    let pageSize = 20;
     let currentPage = 1;
     let paginatedContacts = [];
     let selectedUser = null;
@@ -1662,12 +1697,6 @@
           deleteBtn.style.cursor = 'not-allowed';
         }
         
-        const pageSizeSelect = document.getElementById('page-size-select');
-        if (pageSizeSelect) {
-          pageSize = pageSizeSelect.value === 'all' ? 'all' : parseInt(pageSizeSelect.value);
-          console.log('Initial pageSize set to:', pageSize);
-        }
-        
         updateStats();
         
         if (allContacts.length === 0) {
@@ -1840,15 +1869,12 @@
           '<td><input type="checkbox" class="contact-checkbox checkbox" data-id="' + contact.id + '"></td>' +
           '<td class="editable-cell" data-field="sms" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.sms || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="call" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.call || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="email_flag" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.email_flag || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="readonly-cell">' + 
             '<span class="cell-content">' + rowNumber + '</span>' +
@@ -1858,98 +1884,75 @@
           '</td>' +
           '<td class="editable-cell" data-field="assignee" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.assignee || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="sponsor" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.sponsor || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="sponsor_first" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.sponsor_first || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="sponsor_last" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.sponsor_last || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="readonly-cell">' + 
             '<span class="cell-content">' + (contact.user_id || '') + '</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="first_name" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.first_name || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="last_name" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.last_name || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="email" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.email || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="valid" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.valid || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="phone" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.phone || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="address" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.address || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="city" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.city || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="state" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.state || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="zip" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.zip || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="ip_address" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.ip_address || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="date_created" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.date_created || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="timezone" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.timezone || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="cell" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.cell ? 'Yes' : (contact.cell === false ? 'No' : '')) + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="carrier" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.carrier || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="landline" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.landline ? 'Yes' : (contact.landline === false ? 'No' : '')) + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="voip" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.voip ? 'Yes' : (contact.voip === false ? 'No' : '')) + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="other_phone" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.other_phone ? 'Yes' : (contact.other_phone === false ? 'No' : '')) + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="foreign_number" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.foreign_number ? 'Yes' : (contact.foreign_number === false ? 'No' : '')) + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="country" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.country || '') + '</span>' +
-            '<span class="edit-indicator">✎</span>' +
           '</td>';
         
         tbody.appendChild(row);
@@ -1979,6 +1982,7 @@
       });
       
       console.log('renderContacts completed - rendered ' + contactsToShow.length + ' rows');
+      updatePagination();
     }
 
     function handleContactSelection(event) {
@@ -2063,7 +2067,6 @@
     }
 
     function updatePagination() {
-      // Simple pagination implementation
       const paginationContainer = document.getElementById('pagination');
       const contactCountDisplay = document.getElementById('contact-count-display');
       
@@ -2072,8 +2075,66 @@
       }
       
       if (paginationContainer) {
-        paginationContainer.innerHTML = '';
-        // Add basic pagination if needed
+        if (pageSize === 'all' || filteredContacts.length <= pageSize) {
+          // No pagination needed
+          paginationContainer.innerHTML = '';
+          return;
+        }
+        
+        const totalPages = Math.ceil(filteredContacts.length / pageSize);
+        
+        let paginationHTML = '';
+        
+        // Previous button
+        if (currentPage > 1) {
+          paginationHTML += `<button onclick="changePage(${currentPage - 1})">&laquo; Previous</button>`;
+        }
+        
+        // Page numbers
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        // Adjust start page if we're near the end
+        if (endPage - startPage < maxVisiblePages - 1) {
+          startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        // First page and ellipsis
+        if (startPage > 1) {
+          paginationHTML += `<button onclick="changePage(1)" ${currentPage === 1 ? 'class="active"' : ''}>1</button>`;
+          if (startPage > 2) {
+            paginationHTML += `<span style="color: #6c757d;">...</span>`;
+          }
+        }
+        
+        // Page number buttons
+        for (let i = startPage; i <= endPage; i++) {
+          paginationHTML += `<button onclick="changePage(${i})" ${currentPage === i ? 'class="active"' : ''}>${i}</button>`;
+        }
+        
+        // Last page and ellipsis
+        if (endPage < totalPages) {
+          if (endPage < totalPages - 1) {
+            paginationHTML += `<span style="color: #6c757d;">...</span>`;
+          }
+          paginationHTML += `<button onclick="changePage(${totalPages})" ${currentPage === totalPages ? 'class="active"' : ''}>${totalPages}</button>`;
+        }
+        
+        // Next button
+        if (currentPage < totalPages) {
+          paginationHTML += `<button onclick="changePage(${currentPage + 1})">Next &raquo;</button>`;
+        }
+        
+        paginationContainer.innerHTML = paginationHTML;
+      }
+    }
+    
+    function changePage(page) {
+      const totalPages = Math.ceil(filteredContacts.length / pageSize);
+      if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        renderContacts();
       }
     }
 
@@ -2270,6 +2331,21 @@
         csvFileInput.addEventListener('change', handleFileSelect);
       }
       
+      // Page size selector event listener
+      const pageSizeSelect = document.getElementById('page-size-select');
+      if (pageSizeSelect) {
+        // Set initial value to match the pageSize variable
+        pageSizeSelect.value = pageSize.toString();
+        
+        pageSizeSelect.addEventListener('change', function(e) {
+          const newPageSize = e.target.value === 'all' ? 'all' : parseInt(e.target.value);
+          pageSize = newPageSize;
+          currentPage = 1; // Reset to first page when changing page size
+          console.log('Page size changed to:', pageSize);
+          renderContacts();
+        });
+      }
+      
       console.log('Event listeners set up successfully');
     }
 
@@ -2447,6 +2523,133 @@
         row.classList.remove('selected');
       });
       updateHeaderCheckboxAndDeleteButton();
+    }
+
+    // Cell editing functionality
+    function makeEditable(cell) {
+      if (cell.classList.contains('editing')) return;
+      
+      const originalValue = cell.textContent.trim();
+      const columnIndex = cell.cellIndex;
+      const row = cell.closest('tr');
+      const contactId = row.querySelector('.contact-checkbox').dataset.id;
+      
+      // Add editing class
+      cell.classList.add('editing');
+      
+      // Create input element
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'cell-input';
+      input.value = originalValue;
+      
+      // Clear cell and add input
+      cell.innerHTML = '';
+      cell.appendChild(input);
+      
+      // Focus and select all text
+      input.focus();
+      input.select();
+      
+      // Handle saving on Enter or blur
+      function saveCell() {
+        const newValue = input.value.trim();
+        cell.classList.remove('editing');
+        
+        // Remove any edit indicators and set clean text content
+        cell.innerHTML = '';
+        cell.textContent = newValue;
+        
+        // Save to database if value changed
+        if (newValue !== originalValue) {
+          saveCellToDatabase(contactId, columnIndex, newValue);
+        }
+      }
+      
+      // Handle escape to cancel
+      function cancelEdit() {
+        cell.classList.remove('editing');
+        
+        // Remove any edit indicators and restore original text
+        cell.innerHTML = '';
+        cell.textContent = originalValue;
+      }
+      
+      // Event listeners
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveCell();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          cancelEdit();
+        }
+      });
+      
+      input.addEventListener('blur', saveCell);
+    }
+
+    async function saveCellToDatabase(contactId, columnIndex, value) {
+      // Map column indices to database field names
+      const columnMap = {
+        6: 'assignee',
+        7: 'sponsor',
+        8: 'sponsor_first',
+        9: 'sponsor_last',
+        10: 'sparky_id',
+        11: 'first_name',
+        12: 'last_name',
+        13: 'email',
+        14: 'valid',
+        15: 'phone',
+        16: 'address',
+        17: 'city',
+        18: 'state',
+        19: 'zip',
+        20: 'ip',
+        21: 'date',
+        22: 'timezone',
+        23: 'cell',
+        24: 'carrier',
+        25: 'landline',
+        26: 'voip',
+        27: 'other',
+        28: 'foreign',
+        29: 'country'
+      };
+      
+      const fieldName = columnMap[columnIndex];
+      if (!fieldName) {
+        console.warn('No field mapping for column index:', columnIndex);
+        return;
+      }
+      
+      try {
+        const { error } = await supabase
+          .from('contacts')
+          .update({ [fieldName]: value })
+          .eq('id', contactId);
+          
+        if (error) {
+          console.error('Error saving cell:', error);
+          showAlert('error', 'Failed to save changes: ' + error.message);
+        } else {
+          console.log('Cell saved successfully:', fieldName, '=', value);
+          
+          // Update local data
+          const contact = allContacts.find(c => c.id === contactId);
+          if (contact) {
+            contact[fieldName] = value;
+          }
+          const filteredContact = filteredContacts.find(c => c.id === contactId);
+          if (filteredContact) {
+            filteredContact[fieldName] = value;
+          }
+        }
+      } catch (error) {
+        console.error('Error saving cell:', error);
+        showAlert('error', 'Failed to save changes: ' + error.message);
+      }
     }
   </script>
 </body>
