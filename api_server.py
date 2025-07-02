@@ -17,7 +17,7 @@ import sqlite3
 import traceback
 
 # Configuration
-PORT = 3001
+PORT = 3000
 DB_FILE = 'contacts.db'
 
 class ContactsAPI(BaseHTTPRequestHandler):
@@ -128,12 +128,85 @@ class ContactsAPI(BaseHTTPRequestHandler):
         parsed_path = urlparse(self.path)
         path = parsed_path.path
         
-        if path == '/api/contacts':
+        # Serve static files
+        if path.startswith('/static/'):
+            self._serve_static_file(path[8:])  # Remove '/static/' prefix
+        # Serve HTML files
+        elif path == '/' or path == '/contacts':
+            self._serve_html_file('contacts_new.html')
+        elif path == '/contacts_new.html':
+            self._serve_html_file('contacts_new.html')
+        elif path == '/index.html':
+            self._serve_html_file('index.html')
+        # API endpoints
+        elif path == '/api/contacts':
             self._handle_get_contacts(parsed_path.query)
         elif path == '/api/health':
             self._handle_health_check()
         else:
             self._send_error('Endpoint not found', 404)
+    
+    def _serve_static_file(self, filename):
+        """Serve static files (CSS, JS, images)"""
+        try:
+            static_path = Path(__file__).parent / 'static' / filename
+            if static_path.exists() and static_path.is_file():
+                # Determine content type
+                content_type = 'text/plain'
+                if filename.endswith('.css'):
+                    content_type = 'text/css'
+                elif filename.endswith('.js'):
+                    content_type = 'application/javascript'
+                elif filename.endswith('.png'):
+                    content_type = 'image/png'
+                elif filename.endswith('.jpg') or filename.endswith('.jpeg'):
+                    content_type = 'image/jpeg'
+                elif filename.endswith('.gif'):
+                    content_type = 'image/gif'
+                elif filename.endswith('.svg'):
+                    content_type = 'image/svg+xml'
+                
+                # Read file
+                if content_type.startswith('image/'):
+                    with open(static_path, 'rb') as f:
+                        content = f.read()
+                    
+                    self.send_response(200)
+                    self.send_header('Content-Type', content_type)
+                    self._send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(content)
+                else:
+                    with open(static_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    
+                    self.send_response(200)
+                    self.send_header('Content-Type', content_type)
+                    self._send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(content.encode('utf-8'))
+            else:
+                self._send_error(f'Static file not found: {filename}', 404)
+        except Exception as e:
+            self._send_error(f'Error serving static file: {str(e)}', 500)
+    
+    def _serve_html_file(self, filename):
+        """Serve HTML files"""
+        try:
+            file_path = Path(__file__).parent / filename
+            if file_path.exists():
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.write(content.encode('utf-8'))
+            else:
+                self._send_error(f'File not found: {filename}', 404)
+        except Exception as e:
+            self._send_error(f'Error serving file: {str(e)}', 500)
     
     def do_PUT(self):
         """Handle PUT requests"""

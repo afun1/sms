@@ -2475,7 +2475,7 @@
     // Basic contacts loading function (simplified)
     async function loadContacts() {
       try {
-        const response = await fetch('http://localhost:3000/api/contacts');
+        const response = await fetch('http://localhost:8080/api/contacts');
         const data = await response.json();
         
         if (data.contacts) {
@@ -2776,7 +2776,7 @@
     // Load users for assignment dropdown
     async function loadUsers() {
       try {
-        const response = await fetch('http://localhost:3000/api/users');
+        const response = await fetch('http://localhost:8080/api/users');
         const data = await response.json();
         
         if (data.success && data.users) {
@@ -3073,7 +3073,7 @@
       
       try {
         // Make API call to assign contacts
-        const response = await fetch('http://localhost:3000/api/assign', {
+        const response = await fetch('http://localhost:8080/api/assign', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
