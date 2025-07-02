@@ -1,4 +1,4 @@
-// JavaScript validation script for contacts_new.html
+// JavaScript validation script for list.html
 console.log('Starting validation of contacts page...');
 
 // Check for required functions

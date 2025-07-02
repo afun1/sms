@@ -24,7 +24,7 @@
     </div>
     
     <div id="test-results"></div>
-    <iframe id="contacts-frame" src="contacts_new.html" style="width: 100%; height: 600px; border: 1px solid #ccc; margin-top: 20px;"></iframe>
+    <iframe id="contacts-frame" src="list.html" style="width: 100%; height: 600px; border: 1px solid #ccc; margin-top: 20px;"></iframe>
     
     <script>
         let contactsWindow = null;
@@ -166,7 +166,7 @@
         }
         
         function loadContactsPage() {
-            document.getElementById('contacts-frame').src = 'contacts_new.html?' + Date.now();
+            document.getElementById('contacts-frame').src = 'list.html?' + Date.now();
             addTestResult('🔄 Reloading contacts page...', 'warning');
         }
         

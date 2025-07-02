@@ -132,10 +132,10 @@ class ContactsAPI(BaseHTTPRequestHandler):
         if path.startswith('/static/'):
             self._serve_static_file(path[8:])  # Remove '/static/' prefix
         # Serve HTML files
-        elif path == '/' or path == '/contacts':
-            self._serve_html_file('contacts_new.html')
-        elif path == '/contacts_new.html':
-            self._serve_html_file('contacts_new.html')
+        elif path == '/' or path == '/contacts' or path == '/list':
+            self._serve_html_file('list.html')
+        elif path == '/list.html':
+            self._serve_html_file('list.html')
         elif path == '/index.html':
             self._serve_html_file('index.html')
         # API endpoints

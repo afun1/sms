@@ -3,7 +3,9 @@
 Simple Flask server with Supabase integration for contacts
 """
 
-from flask import Flask, jsonify, send_from_directory, request
+from flask import Flask, jsonifydef contacts_list():
+    """Serve the contact list page"""
+    return send_from_directory('.', 'list.html')end_from_directory, request
 from flask_cors import CORS
 import os
 import requests
@@ -125,10 +127,12 @@ def serve_static(filename):
     """Serve static files"""
     return send_from_directory('.', filename)
 
-@app.route('/contacts_new.html')
-def contacts_new():
-    """Serve the new contacts page"""
-    return send_from_directory('.', 'contacts_new.html')
+@app.route('/list.html')
+@app.route('/contacts')
+@app.route('/list')
+def contacts_list():
+    """Serve the contact list page"""
+    return send_from_directory('.', 'list.html')
 
 if __name__ == '__main__':
     print("🚀 Supabase Server running at http://localhost:3000")

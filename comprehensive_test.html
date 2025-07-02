@@ -24,7 +24,7 @@
     
     <div id="iframe-container">
         <h3>📱 Live Contacts Page Preview:</h3>
-        <iframe id="contacts-iframe" src="contacts_new.html"></iframe>
+        <iframe id="contacts-iframe" src="list.html"></iframe>
     </div>
 
     <script>
@@ -48,9 +48,9 @@
             
             // Test 1: Check if file exists and loads
             try {
-                const response = await fetch('contacts_new.html');
+                const response = await fetch('list.html');
                 if (response.ok) {
-                    addResult('✅ contacts_new.html file is accessible', 'success');
+                    addResult('✅ list.html file is accessible', 'success');
                     const content = await response.text();
                     
                     // Test 2: Check for critical JavaScript elements
@@ -73,10 +73,10 @@
                     }
                     
                 } else {
-                    addResult(`❌ Cannot access contacts_new.html (Status: ${response.status})`, 'error');
+                    addResult(`❌ Cannot access list.html (Status: ${response.status})`, 'error');
                 }
             } catch (error) {
-                addResult(`❌ Error fetching contacts_new.html: ${error.message}`, 'error');
+                addResult(`❌ Error fetching list.html: ${error.message}`, 'error');
             }
             
             // Test 3: Check iframe loading
@@ -119,7 +119,7 @@
         
         function testDirectly() {
             addResult('🎯 Opening main contacts page in new window for direct testing...', 'info');
-            const newWindow = window.open('contacts_new.html', '_blank');
+            const newWindow = window.open('list.html', '_blank');
             
             setTimeout(() => {
                 addResult('ℹ️ Check the new window for any JavaScript console errors', 'info');
