@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Function Test</title>
+</head>
+<body>
+    <h1>Function Availability Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Load the main page in an iframe and test functions
+        const iframe = document.createElement('iframe');
+        iframe.src = 'contacts_new.html';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+        
+        iframe.onload = function() {
+            const results = document.getElementById('results');
+            const iframeWindow = iframe.contentWindow;
+            
+            const functionsToTest = [
+                'getSelectedContacts',
+                'clearContactSelections',
+                'handleFileSelect',
+                'toggleContactSelection',
+                'updateHeaderCheckboxAndDeleteButton',
+                'openAddContactModal',
+                'closeAddContactModal',
+                'addContact',
+                'editContact',
+                'deleteSelectedContacts',
+                'exportContacts',
+                'assignSelectedContacts'
+            ];
+            
+            let resultHTML = '<h2>Function Availability Results:</h2><ul>';
+            
+            functionsToTest.forEach(funcName => {
+                const isAvailable = typeof iframeWindow[funcName] === 'function';
+                const status = isAvailable ? '✅ Available' : '❌ Not Available';
+                resultHTML += `<li><strong>${funcName}</strong>: ${status}</li>`;
+            });
+            
+            resultHTML += '</ul>';
+            results.innerHTML = resultHTML;
+        };
+    </script>
+</body>
+</html>

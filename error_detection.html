@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Error Detection Test</title>
+</head>
+<body>
+    <h1>JavaScript Error Detection</h1>
+    <div id="error-log"></div>
+    <div id="success-log"></div>
+    
+    <script>
+        // Capture any JavaScript errors
+        window.addEventListener('error', function(e) {
+            const errorLog = document.getElementById('error-log');
+            errorLog.innerHTML += `<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px;">
+                <strong>JavaScript Error:</strong><br>
+                Message: ${e.message}<br>
+                File: ${e.filename}<br>
+                Line: ${e.lineno}<br>
+                Column: ${e.colno}
+            </div>`;
+        });
+        
+        // Load the main page
+        const iframe = document.createElement('iframe');
+        iframe.src = 'contacts_new.html';
+        iframe.style.width = '100%';
+        iframe.style.height = '600px';
+        iframe.style.border = '1px solid #ccc';
+        document.body.appendChild(iframe);
+        
+        iframe.onload = function() {
+            const successLog = document.getElementById('success-log');
+            successLog.innerHTML = '<div style="color: green; border: 1px solid green; padding: 10px; margin: 5px;"><strong>✅ Page loaded successfully!</strong></div>';
+            
+            // Test if getSelectedContacts is available in the iframe
+            setTimeout(() => {
+                try {
+                    const iframeWindow = iframe.contentWindow;
+                    if (typeof iframeWindow.getSelectedContacts === 'function') {
+                        successLog.innerHTML += '<div style="color: green; border: 1px solid green; padding: 10px; margin: 5px;"><strong>✅ getSelectedContacts function is available!</strong></div>';
+                        
+                        // Test calling the function
+                        const result = iframeWindow.getSelectedContacts();
+                        successLog.innerHTML += `<div style="color: green; border: 1px solid green; padding: 10px; margin: 5px;"><strong>✅ getSelectedContacts() returned:</strong> ${JSON.stringify(result)}</div>`;
+                    } else {
+                        const errorLog = document.getElementById('error-log');
+                        errorLog.innerHTML += '<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px;"><strong>❌ getSelectedContacts function is NOT available!</strong></div>';
+                    }
+                } catch (error) {
+                    const errorLog = document.getElementById('error-log');
+                    errorLog.innerHTML += `<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px;"><strong>❌ Error testing functions:</strong> ${error.message}</div>`;
+                }
+            }, 2000);
+        };
+        
+        iframe.onerror = function(e) {
+            const errorLog = document.getElementById('error-log');
+            errorLog.innerHTML += '<div style="color: red; border: 1px solid red; padding: 10px; margin: 5px;"><strong>❌ Iframe failed to load!</strong></div>';
+        };
+    </script>
+</body>
+</html>

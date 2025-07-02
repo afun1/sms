@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Contacts Page Loading</title>
+</head>
+<body>
+    <h1>Testing Contacts Page</h1>
+    <div id="test-results"></div>
+    
+    <script>
+        const results = document.getElementById('test-results');
+        
+        function addResult(message, isError = false) {
+            const div = document.createElement('div');
+            div.style.padding = '5px';
+            div.style.color = isError ? 'red' : 'green';
+            div.textContent = message;
+            results.appendChild(div);
+        }
+        
+        // Test by loading the contacts page in an iframe
+        const iframe = document.createElement('iframe');
+        iframe.src = 'contacts_new.html';
+        iframe.style.width = '100%';
+        iframe.style.height = '400px';
+        iframe.style.border = '1px solid #ccc';
+        iframe.style.marginTop = '20px';
+        
+        iframe.onload = function() {
+            addResult('✓ Contacts page loaded successfully');
+            
+            // Try to access the iframe's window to check for errors
+            try {
+                const iframeWindow = iframe.contentWindow;
+                if (iframeWindow && typeof iframeWindow.handleFileSelect === 'function') {
+                    addResult('✓ handleFileSelect function is defined');
+                } else {
+                    addResult('✗ handleFileSelect function is NOT defined', true);
+                }
+                
+                // Check for other key functions
+                const keyFunctions = ['loadContacts', 'renderContacts', 'handleAdd', 'handleDelete'];
+                keyFunctions.forEach(func => {
+                    if (typeof iframeWindow[func] === 'function') {
+                        addResult(`✓ ${func} function is defined`);
+                    } else {
+                        addResult(`✗ ${func} function is NOT defined`, true);
+                    }
+                });
+                
+            } catch (e) {
+                addResult('Cannot access iframe functions (cross-origin restriction)');
+            }
+        };
+        
+        iframe.onerror = function() {
+            addResult('✗ Failed to load contacts page', true);
+        };
+        
+        document.body.appendChild(iframe);
+        
+        // Also test if we can include the script directly
+        setTimeout(() => {
+            addResult('Direct script test completed - check console for any errors');
+        }, 3000);
+    </script>
+</body>
+</html>

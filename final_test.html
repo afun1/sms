@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Final Contacts Function Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .test-controls { margin: 20px 0; }
+        button { padding: 10px 15px; margin: 5px; border: none; border-radius: 3px; cursor: pointer; }
+        .test-btn { background-color: #007bff; color: white; }
+        .test-btn:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>Final Contacts Application Test</h1>
+    <div class="test-controls">
+        <button class="test-btn" onclick="runAllTests()">🧪 Run All Tests</button>
+        <button class="test-btn" onclick="testSelection()">✅ Test Selection Functions</button>
+        <button class="test-btn" onclick="testModals()">📝 Test Modal Functions</button>
+        <button class="test-btn" onclick="loadContactsPage()">🔄 Reload Contacts Page</button>
+    </div>
+    
+    <div id="test-results"></div>
+    <iframe id="contacts-frame" src="contacts_new.html" style="width: 100%; height: 600px; border: 1px solid #ccc; margin-top: 20px;"></iframe>
+    
+    <script>
+        let contactsWindow = null;
+        
+        // Wait for iframe to load
+        document.getElementById('contacts-frame').onload = function() {
+            contactsWindow = this.contentWindow;
+            runAllTests();
+        };
+        
+        function addTestResult(message, type = 'success') {
+            const resultsDiv = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+        
+        function runAllTests() {
+            clearResults();
+            addTestResult('🧪 Starting comprehensive test suite...', 'warning');
+            
+            if (!contactsWindow) {
+                addTestResult('❌ Contacts window not available', 'error');
+                return;
+            }
+            
+            // Test 1: Essential function availability
+            const essentialFunctions = [
+                'getSelectedContacts',
+                'clearContactSelections', 
+                'toggleContactSelection',
+                'updateHeaderCheckboxAndDeleteButton',
+                'handleFileSelect'
+            ];
+            
+            let functionsAvailable = 0;
+            essentialFunctions.forEach(funcName => {
+                if (typeof contactsWindow[funcName] === 'function') {
+                    addTestResult(`✅ ${funcName} is available`);
+                    functionsAvailable++;
+                } else {
+                    addTestResult(`❌ ${funcName} is NOT available`, 'error');
+                }
+            });
+            
+            // Test 2: Variable availability
+            const essentialVariables = ['supabase', 'allContacts', 'filteredContacts', 'selectedContactIds'];
+            let variablesAvailable = 0;
+            essentialVariables.forEach(varName => {
+                if (typeof contactsWindow[varName] !== 'undefined') {
+                    addTestResult(`✅ Variable ${varName} is available`);
+                    variablesAvailable++;
+                } else {
+                    addTestResult(`❌ Variable ${varName} is NOT available`, 'error');
+                }
+            });
+            
+            // Test 3: Try calling getSelectedContacts
+            try {
+                const selected = contactsWindow.getSelectedContacts();
+                addTestResult(`✅ getSelectedContacts() executed successfully, returned: ${JSON.stringify(selected)}`);
+            } catch (error) {
+                addTestResult(`❌ Error calling getSelectedContacts(): ${error.message}`, 'error');
+            }
+            
+            // Test 4: Check if contacts are loaded
+            try {
+                const contactsCount = contactsWindow.allContacts ? contactsWindow.allContacts.length : 0;
+                if (contactsCount > 0) {
+                    addTestResult(`✅ Contacts loaded successfully: ${contactsCount} contacts found`);
+                } else {
+                    addTestResult(`⚠️ No contacts loaded yet (may still be loading)`, 'warning');
+                }
+            } catch (error) {
+                addTestResult(`❌ Error checking contacts: ${error.message}`, 'error');
+            }
+            
+            // Summary
+            const totalFunctions = essentialFunctions.length;
+            const totalVariables = essentialVariables.length;
+            if (functionsAvailable === totalFunctions && variablesAvailable === totalVariables) {
+                addTestResult(`🎉 ALL TESTS PASSED! ${functionsAvailable}/${totalFunctions} functions and ${variablesAvailable}/${totalVariables} variables available`, 'success');
+            } else {
+                addTestResult(`⚠️ Some tests failed. Functions: ${functionsAvailable}/${totalFunctions}, Variables: ${variablesAvailable}/${totalVariables}`, 'warning');
+            }
+        }
+        
+        function testSelection() {
+            if (!contactsWindow) {
+                addTestResult('❌ Contacts window not available', 'error');
+                return;
+            }
+            
+            try {
+                // Test selection functions
+                const initialSelected = contactsWindow.getSelectedContacts();
+                addTestResult(`📋 Initial selection: ${initialSelected.length} contacts`);
+                
+                // Try to clear selections
+                contactsWindow.clearContactSelections();
+                const afterClear = contactsWindow.getSelectedContacts();
+                addTestResult(`🧹 After clearContactSelections(): ${afterClear.length} contacts selected`);
+                
+                if (afterClear.length === 0) {
+                    addTestResult('✅ Selection functions working correctly');
+                } else {
+                    addTestResult('⚠️ Clear selection may not have worked as expected', 'warning');
+                }
+            } catch (error) {
+                addTestResult(`❌ Error testing selection functions: ${error.message}`, 'error');
+            }
+        }
+        
+        function testModals() {
+            if (!contactsWindow) {
+                addTestResult('❌ Contacts window not available', 'error');
+                return;
+            }
+            
+            const modalFunctions = [
+                'openAddContactModal',
+                'closeAddContactModal',
+                'openEditContactModal',
+                'closeEditContactModal'
+            ];
+            
+            modalFunctions.forEach(funcName => {
+                if (typeof contactsWindow[funcName] === 'function') {
+                    addTestResult(`✅ Modal function ${funcName} is available`);
+                } else {
+                    addTestResult(`❌ Modal function ${funcName} is NOT available`, 'error');
+                }
+            });
+        }
+        
+        function loadContactsPage() {
+            document.getElementById('contacts-frame').src = 'contacts_new.html?' + Date.now();
+            addTestResult('🔄 Reloading contacts page...', 'warning');
+        }
+        
+        // Add some styling and auto-scroll to bottom
+        setInterval(() => {
+            const results = document.getElementById('test-results');
+            results.scrollTop = results.scrollHeight;
+        }, 1000);
+    </script>
+</body>
+</html>

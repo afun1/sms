@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comprehensive Contacts Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        #iframe-container { margin-top: 20px; }
+        iframe { width: 100%; height: 500px; border: 2px solid #ccc; }
+        button { padding: 10px 20px; margin: 10px 5px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Comprehensive Contacts Page Test</h1>
+    
+    <div id="test-results"></div>
+    
+    <button onclick="runTests()">🔄 Run Tests Again</button>
+    <button onclick="testDirectly()">🎯 Test Main Page Directly</button>
+    
+    <div id="iframe-container">
+        <h3>📱 Live Contacts Page Preview:</h3>
+        <iframe id="contacts-iframe" src="contacts_new.html"></iframe>
+    </div>
+
+    <script>
+        const results = document.getElementById('test-results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${type.toUpperCase()}:</strong> ${message}`;
+            results.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function clearResults() {
+            results.innerHTML = '';
+        }
+        
+        async function runTests() {
+            clearResults();
+            addResult('Starting comprehensive test suite...', 'info');
+            
+            // Test 1: Check if file exists and loads
+            try {
+                const response = await fetch('contacts_new.html');
+                if (response.ok) {
+                    addResult('✅ contacts_new.html file is accessible', 'success');
+                    const content = await response.text();
+                    
+                    // Test 2: Check for critical JavaScript elements
+                    if (content.includes('function handleFileSelect')) {
+                        addResult('✅ handleFileSelect function found in source code', 'success');
+                    } else {
+                        addResult('❌ handleFileSelect function NOT found in source code', 'error');
+                    }
+                    
+                    if (content.includes('supabase.createClient')) {
+                        addResult('✅ Supabase initialization code found', 'success');
+                    } else {
+                        addResult('⚠️ Supabase initialization code missing', 'warning');
+                    }
+                    
+                    if (content.includes('</script>') && content.includes('</body>') && content.includes('</html>')) {
+                        addResult('✅ HTML file appears to be complete', 'success');
+                    } else {
+                        addResult('⚠️ HTML file may be incomplete', 'warning');
+                    }
+                    
+                } else {
+                    addResult(`❌ Cannot access contacts_new.html (Status: ${response.status})`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Error fetching contacts_new.html: ${error.message}`, 'error');
+            }
+            
+            // Test 3: Check iframe loading
+            const iframe = document.getElementById('contacts-iframe');
+            iframe.onload = function() {
+                addResult('✅ Contacts page loaded in iframe successfully', 'success');
+                
+                // Test 4: Try to access iframe content (may be blocked by CORS)
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    if (iframeDoc) {
+                        const hasTable = iframeDoc.querySelector('.table') !== null;
+                        if (hasTable) {
+                            addResult('✅ Contacts table structure found in DOM', 'success');
+                        } else {
+                            addResult('⚠️ Contacts table structure not found', 'warning');
+                        }
+                        
+                        const hasControls = iframeDoc.querySelector('.controls') !== null;
+                        if (hasControls) {
+                            addResult('✅ Control buttons found in DOM', 'success');
+                        } else {
+                            addResult('⚠️ Control buttons not found', 'warning');
+                        }
+                    }
+                } catch (e) {
+                    addResult('ℹ️ Cannot inspect iframe content (security restriction)', 'info');
+                }
+            };
+            
+            iframe.onerror = function() {
+                addResult('❌ Failed to load contacts page in iframe', 'error');
+            };
+            
+            // Reload iframe to trigger tests
+            iframe.src = iframe.src;
+            
+            addResult('Test suite completed. Check results above.', 'info');
+        }
+        
+        function testDirectly() {
+            addResult('🎯 Opening main contacts page in new window for direct testing...', 'info');
+            const newWindow = window.open('contacts_new.html', '_blank');
+            
+            setTimeout(() => {
+                addResult('ℹ️ Check the new window for any JavaScript console errors', 'info');
+                addResult('ℹ️ In the new window, press F12 and check console for error messages', 'info');
+            }, 2000);
+        }
+        
+        // Auto-run tests when page loads
+        document.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

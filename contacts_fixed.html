@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Contacts - Fixed Version</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="static/supersparky.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="static/global-nav-v2.js"></script>
+  <style>
+    body { 
+      margin: 0; 
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+    }
+    
+    .controls {
+      background: white;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .btn-primary { background: #007bff; color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-warning { background: #ffc107; color: #212529; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-info { background: #17a2b8; color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .table-container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      overflow: auto;
+      max-height: 600px;
+    }
+    
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    
+    .table th,
+    .table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e9ecef;
+      white-space: nowrap;
+    }
+    
+    .table th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #495057;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    .table tbody tr:hover {
+      background-color: #f1f3f4;
+    }
+    
+    .table tbody tr.selected {
+      background-color: #e3f2fd !important;
+    }
+    
+    .search-input {
+      flex: 1;
+      padding: 8px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .search-input:focus {
+      border-color: #667eea;
+    }
+    
+    .status {
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 8px;
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+    }
+    
+    .error {
+      background: #ffebee;
+      border-left-color: #f44336;
+      color: #c62828;
+    }
+    
+    .success {
+      background: #e8f5e8;
+      border-left-color: #4caf50;
+      color: #2e7d32;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Controls -->
+  <div class="controls">
+    <div style="display: flex; gap: 15px; align-items: center;">
+      <button id="delete-btn" class="btn btn-danger" disabled>Delete</button>
+      
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <input id="search-input" type="text" class="search-input" placeholder="Search contacts..." style="width: 300px;" />
+        <button id="search-btn" class="btn btn-primary">Search</button>
+        <button id="reset-btn" class="btn btn-secondary">Reset</button>
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button id="assign-btn" class="btn btn-success">Assign</button>
+      <button id="add-btn" class="btn btn-success">Add</button>
+      <button id="import-btn" class="btn btn-info">Import</button>
+      <button id="export-btn" class="btn btn-warning">Export</button>
+    </div>
+  </div>
+
+  <!-- Status -->
+  <div id="status" class="status">Loading contacts...</div>
+
+  <!-- Table -->
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="header-checkbox"></th>
+          <th>Contact ID</th>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>City</th>
+          <th>State</th>
+          <th>Assignee</th>
+        </tr>
+      </thead>
+      <tbody id="contacts-tbody">
+        <!-- Contacts will be populated here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Global variables
+    let supabase;
+    let allContacts = [];
+    let filteredContacts = [];
+    let selectedContactIds = new Set();
+    
+    // Supabase configuration
+    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    
+    // Utility functions
+    function showStatus(message, type = 'info') {
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = message;
+      statusDiv.className = type === 'error' ? 'status error' : type === 'success' ? 'status success' : 'status';
+      console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+    
+    function showAlert(type, message) {
+      showStatus(message, type);
+      // Also show browser alert for now
+      alert(`${type.toUpperCase()}: ${message}`);
+    }
+    
+    function getSelectedContacts() {
+      return Array.from(selectedContactIds);
+    }
+    
+    function clearContactSelections() {
+      selectedContactIds.clear();
+      document.querySelectorAll('.contact-checkbox').forEach(cb => cb.checked = false);
+      document.querySelectorAll('tr.selected').forEach(row => row.classList.remove('selected'));
+      updateHeaderCheckboxAndDeleteButton();
+    }
+    
+    function updateHeaderCheckboxAndDeleteButton() {
+      const headerCheckbox = document.getElementById('header-checkbox');
+      const deleteBtn = document.getElementById('delete-btn');
+      const allCheckboxes = document.querySelectorAll('.contact-checkbox');
+      const checkedCheckboxes = document.querySelectorAll('.contact-checkbox:checked');
+      
+      if (headerCheckbox) {
+        headerCheckbox.indeterminate = checkedCheckboxes.length > 0 && checkedCheckboxes.length < allCheckboxes.length;
+        headerCheckbox.checked = checkedCheckboxes.length === allCheckboxes.length && allCheckboxes.length > 0;
+      }
+      
+      if (deleteBtn) {
+        deleteBtn.disabled = selectedContactIds.size === 0;
+        deleteBtn.style.opacity = selectedContactIds.size === 0 ? '0.5' : '1';
+        deleteBtn.style.cursor = selectedContactIds.size === 0 ? 'not-allowed' : 'pointer';
+      }
+    }
+    
+    // Main functions
+    async function initializeSupabase() {
+      try {
+        if (typeof window.supabase !== 'undefined') {
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          console.log('Supabase client initialized');
+          
+          // Test connection
+          const { error } = await supabase.from('contacts').select('count', { count: 'exact', head: true });
+          if (error) throw error;
+          
+          console.log('Supabase connection test passed');
+          return true;
+        } else {
+          throw new Error('Supabase library not loaded');
+        }
+      } catch (error) {
+        console.error('Supabase initialization failed:', error);
+        showStatus('Database connection failed: ' + error.message, 'error');
+        return false;
+      }
+    }
+    
+    async function loadContacts() {
+      try {
+        showStatus('Loading contacts...');
+        
+        if (!supabase) {
+          throw new Error('Supabase not initialized');
+        }
+        
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('*')
+          .order('id', { ascending: true });
+        
+        if (error) throw error;
+        
+        allContacts = data || [];
+        filteredContacts = [...allContacts];
+        
+        console.log('Loaded', allContacts.length, 'contacts');
+        renderContacts();
+        showStatus(`Successfully loaded ${allContacts.length} contacts`, 'success');
+        
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+        showStatus('Failed to load contacts: ' + error.message, 'error');
+        
+        // Show empty state
+        allContacts = [];
+        filteredContacts = [];
+        renderContacts();
+      }
+    }
+    
+    function renderContacts() {
+      const tbody = document.getElementById('contacts-tbody');
+      if (!tbody) return;
+      
+      tbody.innerHTML = '';
+      
+      if (filteredContacts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #6c757d;">No contacts found</td></tr>';
+        return;
+      }
+      
+      filteredContacts.forEach((contact, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><input type="checkbox" class="contact-checkbox" data-id="${contact.id}"></td>
+          <td>${contact.id || ''}</td>
+          <td>${contact.first_name || ''}</td>
+          <td>${contact.last_name || ''}</td>
+          <td>${contact.email || ''}</td>
+          <td>${contact.phone || ''}</td>
+          <td>${contact.city || ''}</td>
+          <td>${contact.state || ''}</td>
+          <td>${contact.assignee || ''}</td>
+        `;
+        tbody.appendChild(row);
+      });
+      
+      // Add event listeners to checkboxes
+      document.querySelectorAll('.contact-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', handleContactSelection);
+      });
+      
+      console.log('Rendered', filteredContacts.length, 'contacts');
+    }
+    
+    function handleContactSelection(event) {
+      const contactId = event.target.dataset.id;
+      const row = event.target.closest('tr');
+      
+      if (event.target.checked) {
+        selectedContactIds.add(contactId);
+        row.classList.add('selected');
+      } else {
+        selectedContactIds.delete(contactId);
+        row.classList.remove('selected');
+      }
+      
+      updateHeaderCheckboxAndDeleteButton();
+      console.log('Selected contacts:', Array.from(selectedContactIds));
+    }
+    
+    // Event handlers
+    function handleAdd() {
+      showAlert('info', 'Add contact feature - Coming soon!');
+    }
+    
+    function handleDelete() {
+      const selected = getSelectedContacts();
+      if (selected.length === 0) {
+        showAlert('warning', 'Please select contacts to delete');
+        return;
+      }
+      
+      if (confirm(`Are you sure you want to delete ${selected.length} contact(s)?`)) {
+        showAlert('info', `Delete ${selected.length} contacts - Feature coming soon!`);
+      }
+    }
+    
+    function handleAssign() {
+      const selected = getSelectedContacts();
+      if (selected.length === 0) {
+        showAlert('warning', 'Please select contacts to assign');
+        return;
+      }
+      
+      showAlert('info', `Assign ${selected.length} contacts - Feature coming soon!`);
+    }
+    
+    function handleImport() {
+      showAlert('info', 'Import contacts feature - Coming soon!');
+    }
+    
+    function handleExport() {
+      const contactsToExport = filteredContacts.length > 0 ? filteredContacts : allContacts;
+      if (contactsToExport.length === 0) {
+        showAlert('warning', 'No contacts to export');
+        return;
+      }
+      showAlert('info', `Export ${contactsToExport.length} contacts - Feature coming soon!`);
+    }
+    
+    function handleSearch() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+      
+      if (!searchTerm) {
+        filteredContacts = [...allContacts];
+      } else {
+        filteredContacts = allContacts.filter(contact => {
+          return Object.values(contact).some(value => 
+            value && value.toString().toLowerCase().includes(searchTerm)
+          );
+        });
+      }
+      
+      renderContacts();
+      clearContactSelections();
+      showStatus(`Search results: ${filteredContacts.length} contacts found`);
+    }
+    
+    function handleReset() {
+      document.getElementById('search-input').value = '';
+      filteredContacts = [...allContacts];
+      renderContacts();
+      clearContactSelections();
+      showStatus(`Showing all ${allContacts.length} contacts`);
+    }
+    
+    // Essential functions that were missing - now defined to prevent errors
+    function handleFileSelect(event) {
+      console.log('handleFileSelect called');
+      showAlert('info', 'File select functionality - Coming soon!');
+    }
+    
+    // Setup event listeners
+    function setupEventListeners() {
+      document.getElementById('add-btn')?.addEventListener('click', handleAdd);
+      document.getElementById('delete-btn')?.addEventListener('click', handleDelete);
+      document.getElementById('assign-btn')?.addEventListener('click', handleAssign);
+      document.getElementById('import-btn')?.addEventListener('click', handleImport);
+      document.getElementById('export-btn')?.addEventListener('click', handleExport);
+      document.getElementById('search-btn')?.addEventListener('click', handleSearch);
+      document.getElementById('reset-btn')?.addEventListener('click', handleReset);
+      
+      // Header checkbox for select all
+      document.getElementById('header-checkbox')?.addEventListener('change', function(e) {
+        const isChecked = e.target.checked;
+        document.querySelectorAll('.contact-checkbox').forEach(cb => {
+          cb.checked = isChecked;
+          const event = { target: cb };
+          handleContactSelection(event);
+        });
+      });
+      
+      // Search on Enter key
+      document.getElementById('search-input')?.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          handleSearch();
+        }
+      });
+    }
+    
+    // Initialize app
+    async function initializeApp() {
+      try {
+        console.log('Initializing contacts app...');
+        
+        const supabaseReady = await initializeSupabase();
+        if (!supabaseReady) {
+          showStatus('Running in offline mode', 'error');
+          return;
+        }
+        
+        setupEventListeners();
+        await loadContacts();
+        
+        console.log('App initialization complete');
+        
+      } catch (error) {
+        console.error('Error initializing app:', error);
+        showStatus('Failed to initialize app: ' + error.message, 'error');
+      }
+    }
+    
+    // Start app when DOM is ready
+    document.addEventListener('DOMContentLoaded', initializeApp);
+    
+    // Add global error handler
+    window.addEventListener('error', function(event) {
+      console.error('Global error:', event.error);
+      showStatus('JavaScript error: ' + event.error.message, 'error');
+    });
+    
+    // Add unhandled promise rejection handler
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('Unhandled promise rejection:', event.reason);
+      showStatus('Promise error: ' + event.reason, 'error');
+    });
+    
+    console.log('Contacts app script loaded successfully');
+  </script>
+</body>
+</html>

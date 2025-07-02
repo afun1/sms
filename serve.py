@@ -13,7 +13,7 @@ from pathlib import Path
 # Change to the directory containing the HTML files
 os.chdir(Path(__file__).parent)
 
-PORT = 3002
+PORT = 3000
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):

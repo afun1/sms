@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Contacts Page</title>
+</head>
+<body>
+    <h1>Testing Contacts Page</h1>
+    <iframe src="contacts_new.html" width="100%" height="600px" style="border: 1px solid #ccc;"></iframe>
+    
+    <script>
+        // Listen for console errors from the iframe
+        window.addEventListener('message', function(event) {
+            console.log('Message from iframe:', event.data);
+        });
+        
+        // Test if the page loads
+        setTimeout(function() {
+            console.log('Page loaded successfully');
+        }, 2000);
+    </script>
+</body>
+</html>

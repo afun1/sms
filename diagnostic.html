@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contacts Page Diagnostic</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .diagnostic { 
+            background: #f0f8ff; 
+            padding: 15px; 
+            border-left: 4px solid #4CAF50; 
+            margin: 10px 0;
+        }
+        .error { border-left-color: #f44336; background: #fff5f5; }
+        .success { border-left-color: #4CAF50; background: #f0fff4; }
+        iframe { width: 100%; height: 400px; border: 1px solid #ddd; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Contacts Page Diagnostic</h1>
+    
+    <div id="diagnostic-results"></div>
+    
+    <h2>Live Page</h2>
+    <iframe id="contacts-frame" src="contacts_new.html"></iframe>
+    
+    <script>
+        const diagnosticDiv = document.getElementById('diagnostic-results');
+        
+        function addDiagnostic(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `diagnostic ${type}`;
+            div.textContent = message;
+            diagnosticDiv.appendChild(div);
+        }
+        
+        // Basic file checks
+        addDiagnostic('Starting diagnostic...', 'info');
+        
+        // Check if iframe loads
+        document.getElementById('contacts-frame').onload = function() {
+            addDiagnostic('✓ Contacts page loaded successfully', 'success');
+            
+            try {
+                const iframeDoc = this.contentDocument || this.contentWindow.document;
+                
+                // Check for required elements
+                const requiredElements = [
+                    'contacts-tbody',
+                    'delete-btn', 
+                    'assign-btn',
+                    'add-btn',
+                    'import-btn',
+                    'export-btn',
+                    'search-input'
+                ];
+                
+                requiredElements.forEach(elementId => {
+                    const element = iframeDoc.getElementById(elementId);
+                    if (element) {
+                        addDiagnostic(`✓ Element ${elementId} found`, 'success');
+                    } else {
+                        addDiagnostic(`✗ Element ${elementId} missing`, 'error');
+                    }
+                });
+                
+                // Check if Supabase is available
+                const iframeWindow = this.contentWindow;
+                if (iframeWindow.supabase) {
+                    addDiagnostic('✓ Supabase client available', 'success');
+                } else {
+                    addDiagnostic('✗ Supabase client not available', 'error');
+                }
+                
+                // Check for key functions
+                const requiredFunctions = [
+                    'loadContacts',
+                    'renderContacts', 
+                    'handleAdd',
+                    'handleDelete',
+                    'getSelectedContacts'
+                ];
+                
+                requiredFunctions.forEach(funcName => {
+                    if (typeof iframeWindow[funcName] === 'function') {
+                        addDiagnostic(`✓ Function ${funcName} defined`, 'success');
+                    } else {
+                        addDiagnostic(`✗ Function ${funcName} missing`, 'error');
+                    }
+                });
+                
+            } catch (error) {
+                addDiagnostic(`Error accessing iframe content: ${error.message}`, 'error');
+            }
+        };
+        
+        document.getElementById('contacts-frame').onerror = function() {
+            addDiagnostic('✗ Failed to load contacts page', 'error');
+        };
+    </script>
+</body>
+</html>

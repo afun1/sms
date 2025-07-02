@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Contacts</title>
+</head>
+<body>
+    <h1>Debug Log</h1>
+    <div id="debug-log" style="font-family: monospace; white-space: pre; background: #f0f0f0; padding: 10px; max-height: 400px; overflow-y: auto;"></div>
+    
+    <script>
+        const debugLog = document.getElementById('debug-log');
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        
+        function logToPage(level, ...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ');
+            debugLog.textContent += `[${timestamp}] ${level}: ${message}\n`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            logToPage('LOG', ...args);
+        };
+        
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            logToPage('ERROR', ...args);
+        };
+        
+        // Load the contacts page in an iframe and capture its console output
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('Starting debug session...');
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = 'contacts_new.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = function() {
+                console.log('Contacts page loaded in iframe');
+                try {
+                    const iframeWindow = iframe.contentWindow;
+                    
+                    // Override iframe console to capture its output
+                    if (iframeWindow && iframeWindow.console) {
+                        const originalIframeLog = iframeWindow.console.log;
+                        const originalIframeError = iframeWindow.console.error;
+                        
+                        iframeWindow.console.log = function(...args) {
+                            originalIframeLog.apply(iframeWindow.console, args);
+                            logToPage('IFRAME-LOG', ...args);
+                        };
+                        
+                        iframeWindow.console.error = function(...args) {
+                            originalIframeError.apply(iframeWindow.console, args);
+                            logToPage('IFRAME-ERROR', ...args);
+                        };
+                    }
+                } catch (e) {
+                    console.error('Cannot access iframe console:', e.message);
+                }
+            };
+            
+            iframe.onerror = function() {
+                console.error('Failed to load contacts page');
+            };
+        });
+    </script>
+</body>
+</html>

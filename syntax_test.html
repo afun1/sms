@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Syntax Test</title>
+</head>
+<body>
+    <h1>JavaScript Syntax Test</h1>
+    <div id="status">Testing...</div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        // Try to load and parse the contacts_new.html file
+        fetch('contacts_new.html')
+            .then(response => response.text())
+            .then(html => {
+                // Extract the JavaScript from the HTML
+                const scriptMatch = html.match(/<script[^>]*>([\s\S]*?)<\/script>/g);
+                
+                if (scriptMatch && scriptMatch.length > 0) {
+                    // Get the main script (the last one which is our main application script)
+                    const mainScript = scriptMatch[scriptMatch.length - 1];
+                    const scriptContent = mainScript.replace(/<\/?script[^>]*>/g, '');
+                    
+                    try {
+                        // Try to parse the JavaScript
+                        new Function(scriptContent);
+                        statusDiv.innerHTML = '<div style="color: green;">✅ JavaScript syntax is valid!</div>';
+                        
+                        // Also test if getSelectedContacts is defined in the script
+                        if (scriptContent.includes('function getSelectedContacts()')) {
+                            statusDiv.innerHTML += '<div style="color: green;">✅ getSelectedContacts function is defined!</div>';
+                        } else {
+                            statusDiv.innerHTML += '<div style="color: red;">❌ getSelectedContacts function not found!</div>';
+                        }
+                        
+                    } catch (error) {
+                        statusDiv.innerHTML = `<div style="color: red;">❌ JavaScript syntax error: ${error.message}</div>`;
+                    }
+                } else {
+                    statusDiv.innerHTML = '<div style="color: red;">❌ No script tags found!</div>';
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `<div style="color: red;">❌ Error loading file: ${error.message}</div>`;
+            });
+    </script>
+</body>
+</html>

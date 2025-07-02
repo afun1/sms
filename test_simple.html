@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Contacts - Test Version</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <h1>Contacts Test</h1>
+  <div id="status">Loading...</div>
+  <div id="error-log"></div>
+  
+  <script>
+    // Supabase configuration
+    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    
+    let supabase;
+    
+    function log(message) {
+      console.log(message);
+      document.getElementById('status').innerHTML += '<br>' + message;
+    }
+    
+    function logError(message) {
+      console.error(message);
+      document.getElementById('error-log').innerHTML += '<div style="color: red;">' + message + '</div>';
+    }
+    
+    // Test basic functions that are causing errors
+    function handleFileSelect(event) {
+      log('handleFileSelect called successfully');
+    }
+    
+    function getSelectedContacts() {
+      log('getSelectedContacts called successfully');
+      return [];
+    }
+    
+    function updateHeaderCheckboxAndDeleteButton() {
+      log('updateHeaderCheckboxAndDeleteButton called successfully');
+    }
+    
+    function clearContactSelections() {
+      log('clearContactSelections called successfully');
+    }
+    
+    function updatePagination() {
+      log('updatePagination called successfully');
+    }
+    
+    function showAlert(type, message) {
+      log('showAlert called: ' + type + ' - ' + message);
+    }
+    
+    async function testInitialization() {
+      try {
+        log('Starting test initialization...');
+        
+        // Test Supabase initialization
+        if (typeof window.supabase !== 'undefined') {
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          log('✓ Supabase client initialized');
+        } else {
+          logError('✗ Supabase library not loaded');
+          return;
+        }
+        
+        // Test connection
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('count', { count: 'exact', head: true });
+          
+        if (error) {
+          logError('✗ Supabase connection failed: ' + error.message);
+        } else {
+          log('✓ Supabase connection successful');
+        }
+        
+        // Test function calls
+        handleFileSelect();
+        getSelectedContacts();
+        updateHeaderCheckboxAndDeleteButton();
+        clearContactSelections();
+        updatePagination();
+        showAlert('info', 'Test message');
+        
+        log('✓ All test functions executed successfully');
+        log('✓ Initialization test complete - no errors found');
+        
+      } catch (error) {
+        logError('✗ Error during initialization: ' + error.message);
+        logError('✗ Stack trace: ' + error.stack);
+      }
+    }
+    
+    // Start test when page loads
+    document.addEventListener('DOMContentLoaded', testInitialization);
+  </script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Contacts - Debug Version</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+  <h1>Contacts Debug</h1>
+  <div id="debug-output" style="font-family: monospace; background: #f0f0f0; padding: 10px; margin: 10px 0; white-space: pre-wrap; max-height: 300px; overflow-y: auto;"></div>
+  
+  <script>
+    // Enhanced debugging
+    const debugOutput = document.getElementById('debug-output');
+    
+    function debugLog(message) {
+      const timestamp = new Date().toLocaleTimeString();
+      debugOutput.textContent += `[${timestamp}] ${message}\n`;
+      debugOutput.scrollTop = debugOutput.scrollHeight;
+      console.log(message);
+    }
+    
+    function debugError(message, error) {
+      const timestamp = new Date().toLocaleTimeString();
+      const errorMsg = error ? `${message}: ${error.message}` : message;
+      debugOutput.textContent += `[${timestamp}] ERROR: ${errorMsg}\n`;
+      debugOutput.scrollTop = debugOutput.scrollHeight;
+      console.error(errorMsg, error);
+    }
+    
+    // Override window.onerror to catch all errors
+    window.onerror = function(message, source, lineno, colno, error) {
+      debugError(`Global error at line ${lineno}: ${message}`, error);
+      return false;
+    };
+    
+    // Override unhandled promise rejections
+    window.addEventListener('unhandledrejection', function(event) {
+      debugError('Unhandled promise rejection', event.reason);
+    });
+    
+    debugLog('Starting debug session...');
+    
+    // Supabase configuration
+    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    
+    let supabase;
+    let allContacts = [];
+    let filteredContacts = [];
+    
+    // Test each function individually
+    debugLog('Testing function definitions...');
+    
+    try {
+      // Define essential functions with error handling
+      function handleFileSelect(event) {
+        debugLog('handleFileSelect called');
+        return true;
+      }
+      debugLog('✓ handleFileSelect defined');
+      
+      function getSelectedContacts() {
+        debugLog('getSelectedContacts called');
+        return [];
+      }
+      debugLog('✓ getSelectedContacts defined');
+      
+      function showAlert(type, message) {
+        debugLog(`showAlert: ${type} - ${message}`);
+        alert(`${type.toUpperCase()}: ${message}`);
+      }
+      debugLog('✓ showAlert defined');
+      
+      function renderContacts() {
+        debugLog('renderContacts called');
+        // Simple implementation for testing
+        debugLog('✓ renderContacts executed');
+      }
+      debugLog('✓ renderContacts defined');
+      
+      async function loadContacts() {
+        debugLog('loadContacts called');
+        try {
+          if (!supabase) {
+            throw new Error('Supabase not initialized');
+          }
+          
+          const { data, error } = await supabase
+            .from('contacts')
+            .select('*')
+            .limit(5); // Just test with 5 records
+            
+          if (error) throw error;
+          
+          allContacts = data || [];
+          filteredContacts = [...allContacts];
+          debugLog(`✓ Loaded ${allContacts.length} contacts`);
+          renderContacts();
+          
+        } catch (error) {
+          debugError('loadContacts failed', error);
+          throw error;
+        }
+      }
+      debugLog('✓ loadContacts defined');
+      
+      async function initializeApp() {
+        debugLog('initializeApp called');
+        try {
+          await loadContacts();
+          debugLog('✓ App initialized successfully');
+        } catch (error) {
+          debugError('initializeApp failed', error);
+          throw error;
+        }
+      }
+      debugLog('✓ initializeApp defined');
+      
+    } catch (error) {
+      debugError('Error defining functions', error);
+    }
+    
+    // Test Supabase initialization
+    debugLog('Testing Supabase initialization...');
+    try {
+      if (typeof window.supabase !== 'undefined') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        debugLog('✓ Supabase client created');
+        
+        // Test connection
+        supabase.from('contacts').select('count', { count: 'exact', head: true })
+          .then(({ data, error }) => {
+            if (error) {
+              debugError('Supabase connection test failed', error);
+            } else {
+              debugLog('✓ Supabase connection test passed');
+              
+              // Now try to initialize the app
+              initializeApp().then(() => {
+                debugLog('✓ Full initialization completed successfully');
+              }).catch(error => {
+                debugError('Full initialization failed', error);
+              });
+            }
+          })
+          .catch(err => {
+            debugError('Supabase connection error', err);
+          });
+      } else {
+        debugError('Supabase library not loaded');
+      }
+    } catch (error) {
+      debugError('Supabase initialization failed', error);
+    }
+    
+    debugLog('Debug setup complete - waiting for results...');
+  </script>
+</body>
+</html>

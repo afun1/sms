@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Contacts - New Version</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="static/supersparky.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="static/global-nav-v2.js"></script>
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8f9fa;
+    }
+    
+    /* Reset any margins from global navigation */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body * {
+      margin: revert;
+      padding: revert;
+    }
+    
+    /* Force tight positioning against global nav */
+    #global-nav, .global-nav, [id*="nav"], [class*="nav"] {
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+    }
+    
+    /* Ensure body content starts immediately after nav */
+    body > div:first-child,
+    body > header:first-child,
+    body > nav:first-child {
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+    }
+    
+    .controls {
+      background: white;
+      padding: 5px 20px;
+      margin: -10px 20px 20px 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      position: sticky;
+      top: 60px;
+      z-index: 2000;
+    }
+    
+    .search-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex: 0.33;
+      min-width: 100px;
+      position: relative;
+    }
+    
+    .search-input {
+      flex: 1;
+      padding: 2px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
+    .search-input:focus {
+      border-color: #667eea;
+    }
+    
+    /* Search suggestions dropdown */
+    .search-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+    
+    .suggestion-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .suggestion-item:hover,
+    .suggestion-item.active {
+      background: #f8f9fa;
+    }
+    
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+    
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn-primary { background: #007bff; color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-warning { background: #ffc107; color: #212529; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-info { background: #17a2b8; color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    
+    .table-container {
+      margin: 0 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      overflow: hidden;
+      position: sticky;
+      top: 120px;
+      height: calc(100vh - 160px);
+      z-index: 1000;
+    }
+    
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    
+    .table th,
+    .table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e9ecef;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+    }
+    
+    .table th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #495057;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    /* Custom column backgrounds and sticky positioning */
+    .table th:nth-child(1),
+    .table td:nth-child(1) {
+      background: #e3f2fd;
+      position: sticky;
+      left: 0;
+      z-index: 90;
+      min-width: 50px;
+      max-width: 50px;
+    }
+    
+    .table th:nth-child(2),
+    .table td:nth-child(2) {
+      background: #ffebee;
+      position: sticky;
+      left: 50px;
+      z-index: 89;
+      min-width: 60px;
+      max-width: 60px;
+    }
+    
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+      background: #ffebee;
+      position: sticky;
+      left: 110px;
+      z-index: 88;
+      min-width: 60px;
+      max-width: 60px;
+    }
+    
+    .table th:nth-child(4),
+    .table td:nth-child(4) {
+      background: #ffebee;
+      position: sticky;
+      left: 170px;
+      z-index: 87;
+      min-width: 80px;
+      max-width: 80px;
+    }
+    
+    .table th:nth-child(5),
+    .table td:nth-child(5) {
+      background: #fff3e0;
+      position: sticky;
+      left: 250px;
+      z-index: 86;
+      min-width: 60px;
+      max-width: 60px;
+    }
+    
+    /* Ensure sticky headers appear above data cells */
+    .table thead th {
+      z-index: 200;
+    }
+    
+    .table thead th:nth-child(1) { z-index: 200; }
+    .table thead th:nth-child(2) { z-index: 199; }
+    .table thead th:nth-child(3) { z-index: 198; }
+    .table thead th:nth-child(4) { z-index: 197; }
+    .table thead th:nth-child(5) { z-index: 196; }
+    
+    .table tbody tr:hover {
+      background-color: #f1f3f4;
+    }
+    
+    .checkbox {
+      margin: 0;
+      cursor: pointer;
+    }
+    
+    .red-header {
+      background: #ffebee !important;
+      color: #c62828 !important;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 40px;
+      color: #6c757d;
+    }
+    
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #007bff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .pagination-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      background: white;
+      margin: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .pagination {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+    
+    .pagination button {
+      padding: 8px 12px;
+      border: 1px solid #dee2e6;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    
+    .pagination button:hover:not(:disabled) {
+      background: #e9ecef;
+    }
+    
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .pagination button.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    
+    .page-size-selector {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .page-size-selector select {
+      padding: 5px 10px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      background: white;
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal-content {
+      background-color: white;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .modal-header h3 {
+      margin: 0;
+      color: #495057;
+    }
+    
+    .close {
+      color: #aaa;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 1;
+    }
+    
+    .close:hover {
+      color: #000;
+    }
+    
+    .user-search {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e9ecef;
+      border-radius: 5px;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+    
+    .user-search:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+    
+    .user-results {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #e9ecef;
+      border-radius: 5px;
+      background: white;
+    }
+    
+    .user-item {
+      padding: 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #f8f9fa;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .user-item:hover {
+      background: #f8f9fa;
+    }
+    
+    .user-item:last-child {
+      border-bottom: none;
+    }
+    
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #007bff;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    
+    .user-info {
+      flex: 1;
+    }
+    
+    .user-name {
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .user-email {
+      font-size: 12px;
+      color: #6c757d;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #e9ecef;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Controls -->
+  <div class="controls">
+    <div style="display: flex; gap: 15px; align-items: center;">
+      <button id="delete-btn" class="btn btn-danger">🗑️ Delete</button>
+      
+      <div class="search-group">
+        <input id="search-input" type="text" class="search-input" placeholder="Search contacts..." autocomplete="off" />
+        <div id="search-suggestions" class="search-suggestions"></div>
+        <button id="search-btn" class="btn btn-primary">🔍 Search</button>
+        <button id="reset-btn" class="btn btn-secondary">↻ Reset</button>
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+      <button id="assign-btn" class="btn btn-success">👤 Assign</button>
+      <button id="sms-btn" class="btn btn-success">📱 SMS</button>
+      <button id="email-btn" class="btn btn-info">✉️ Email</button>
+      <button id="rvm-btn" class="btn btn-warning">🎤 RVM</button>
+      <button id="campaign-btn" class="btn btn-primary">🚀 Campaign</button>
+      <button id="add-btn" class="btn btn-success">➕ Add</button>
+      <button id="import-btn" class="btn btn-info">📥 Import</button>
+      <button id="export-btn" class="btn btn-warning">📤 Export</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading contacts...</p>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container">
+    <div class="dnd-indicator" style="color: #dc3545; font-weight: bold; font-size: 12px;">
+      Do Not Disturb = X
+    </div>
+    
+    <div class="page-size-selector">
+      <label>Show:</label>
+      <select id="page-size-select">
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="all">All</option>
+      </select>
+      <span>entries</span>
+    </div>
+    
+    <div class="pagination" id="pagination">
+      <!-- Pagination buttons will be inserted here -->
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>
+            <input type="checkbox" id="header-checkbox" class="checkbox">
+          </th>
+          <th class="red-header">SMS</th>
+          <th class="red-header">Call</th>
+          <th class="red-header">Email</th>
+          <th>No.</th>
+          <th>Assignee</th>
+          <th>Sponsor</th>
+          <th>Sponsor First</th>
+          <th>Sponsor Last</th>
+          <th>User ID</th>
+          <th>First Name</th>
+          <th>Last Name</th>
+          <th>Email</th>
+          <th>Valid</th>
+          <th>Phone</th>
+          <th>Address</th>
+          <th>City</th>
+          <th>State</th>
+          <th>Zip</th>
+          <th>IP</th>
+          <th>Date</th>
+          <th>Timezone</th>
+          <th>Cell</th>
+          <th>Carrier</th>
+          <th>Landline</th>
+          <th>VoIP</th>
+          <th>Other</th>
+          <th>Foreign</th>
+          <th>Country</th>
+        </tr>
+      </thead>
+      <tbody id="contacts-tbody">
+        <!-- Contacts will be populated here -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- User Assignment Modal -->
+  <div id="user-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Assign Users</h3>
+        <span class="close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="user-search" class="user-search" placeholder="Search users..." autocomplete="off">
+        <div id="user-results" class="user-results">
+          <!-- User search results will appear here -->
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="cancel-assign" class="btn btn-secondary">Cancel</button>
+        <button id="confirm-assign" class="btn btn-success">Assign Selected</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Supabase configuration
+    const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+    
+    // Initialize Supabase client
+    let supabase;
+    try {
+      if (typeof window.supabase !== 'undefined') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase client initialized successfully');
+      } else {
+        console.warn('Supabase library not loaded, using sample data');
+        supabase = null;
+      }
+    } catch (error) {
+      console.error('Failed to initialize Supabase client:', error);
+      supabase = null;
+    }
+
+    // Global variables
+    let allContacts = [];
+    let filteredContacts = [];
+    let selectedContactIds = new Set();
+    let pageSize = 25;
+    let currentPage = 1;
+    let paginatedContacts = [];
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Contacts app starting...');
+      adjustTableHeight();
+      initializeApp();
+    });
+
+    // Adjust table height dynamically
+    function adjustTableHeight() {
+      const tableContainer = document.querySelector('.table-container');
+      if (!tableContainer) return;
+      
+      const viewportHeight = window.innerHeight;
+      const availableHeight = viewportHeight - 120;
+      const bottomMargin = 40;
+      
+      const dynamicHeight = Math.max(200, availableHeight - bottomMargin);
+      tableContainer.style.height = dynamicHeight + 'px';
+      
+      console.log('Table height adjusted to:', dynamicHeight, 'px');
+    }
+
+    async function initializeApp() {
+      try {
+        await loadContacts();
+        setupEventListeners();
+        
+        const pageSizeSelect = document.getElementById('page-size-select');
+        pageSize = pageSizeSelect.value === 'all' ? 'all' : parseInt(pageSizeSelect.value);
+        console.log('Initial pageSize set to:', pageSize);
+        
+        updateStats();
+        showAlert('success', 'Contacts loaded successfully!');
+      } catch (error) {
+        console.error('Error initializing app:', error);
+        showAlert('error', 'Failed to load contacts. Please refresh the page.');
+      }
+    }
+
+    // Load contacts from API
+    async function loadContacts() {
+      try {
+        const response = await fetch('/api/contacts');
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          allContacts = data;
+        } else if (data.contacts && Array.isArray(data.contacts)) {
+          allContacts = data.contacts;
+        } else if (data.data && Array.isArray(data.data)) {
+          allContacts = data.data;
+        } else {
+          throw new Error('Invalid API response format');
+        }
+        
+        allContacts = allContacts.map(contact => ({
+          ...contact,
+          assignee: contact.assignee || ''
+        }));
+        
+        filteredContacts = [...allContacts];
+        renderContacts();
+        console.log('Loaded ' + allContacts.length + ' contacts');
+        
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+        
+        // Use sample data for testing when API is not available
+        allContacts = [
+          {
+            id: 1, sms: '', call: '', email_flag: '', sponsor: 'John', sponsor_first: 'John', sponsor_last: 'Doe',
+            user_id: '001', first_name: 'Alice', last_name: 'Smith', email: 'alice@example.com', valid: 'Yes',
+            phone: '555-0101', address: '123 Main St', city: 'New York', state: 'NY', zip: '10001',
+            ip: '192.168.1.1', date: '2024-01-15', timezone: 'EST', cell: 'Yes', carrier: 'Verizon',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA',
+            assignee: 'John Doe'
+          },
+          {
+            id: 2, sms: '', call: '', email_flag: '', sponsor: 'Jane', sponsor_first: 'Jane', sponsor_last: 'Wilson',
+            user_id: '002', first_name: 'Bob', last_name: 'Johnson', email: 'bob@example.com', valid: 'Yes',
+            phone: '555-0102', address: '456 Oak Ave', city: 'Los Angeles', state: 'CA', zip: '90210',
+            ip: '192.168.1.2', date: '2024-01-16', timezone: 'PST', cell: 'Yes', carrier: 'AT&T',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA',
+            assignee: ''
+          },
+          {
+            id: 3, sms: '', call: '', email_flag: '', sponsor: 'Mike', sponsor_first: 'Mike', sponsor_last: 'Brown',
+            user_id: '003', first_name: 'Carol', last_name: 'Davis', email: 'carol@example.com', valid: 'Yes',
+            phone: '555-0103', address: '789 Pine Rd', city: 'Chicago', state: 'IL', zip: '60601',
+            ip: '192.168.1.3', date: '2024-01-17', timezone: 'CST', cell: 'Yes', carrier: 'T-Mobile',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA',
+            assignee: 'Jane Smith'
+          },
+          {
+            id: 4, sms: '', call: '', email_flag: '', sponsor: 'Sarah', sponsor_first: 'Sarah', sponsor_last: 'Miller',
+            user_id: '004', first_name: 'David', last_name: 'Wilson', email: 'david@example.com', valid: 'Yes',
+            phone: '555-0104', address: '321 Elm St', city: 'Houston', state: 'TX', zip: '77001',
+            ip: '192.168.1.4', date: '2024-01-18', timezone: 'CST', cell: 'Yes', carrier: 'Sprint',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA',
+            assignee: ''
+          },
+          {
+            id: 5, sms: '', call: '', email_flag: '', sponsor: 'Tom', sponsor_first: 'Tom', sponsor_last: 'Garcia',
+            user_id: '005', first_name: 'Emma', last_name: 'Taylor', email: 'emma@example.com', valid: 'Yes',
+            phone: '555-0105', address: '654 Maple Dr', city: 'Phoenix', state: 'AZ', zip: '85001',
+            ip: '192.168.1.5', date: '2024-01-19', timezone: 'MST', cell: 'Yes', carrier: 'Verizon',
+            landline: 'No', voip: 'No', other: '', foreign: 'No', country: 'USA',
+            assignee: ''
+          }
+        ];
+        
+        allContacts = allContacts.map(contact => ({
+          ...contact,
+          assignee: contact.assignee || ''
+        }));
+        
+        filteredContacts = [...allContacts];
+        renderContacts();
+        console.log('Loaded ' + allContacts.length + ' sample contacts for testing');
+      }
+    }
+
+    function renderContacts() {
+      console.log('renderContacts called - pageSize:', pageSize, 'currentPage:', currentPage, 'filteredContacts.length:', filteredContacts.length);
+      const tbody = document.getElementById('contacts-tbody');
+      
+      if (!tbody) {
+        console.error('Tbody element not found!');
+        return;
+      }
+      
+      tbody.innerHTML = '';
+      
+      if (filteredContacts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="29" style="text-align: center; padding: 40px; color: #6c757d;">No contacts found</td></tr>';
+        return;
+      }
+
+      // Calculate pagination
+      let contactsToShow;
+      if (pageSize === 'all') {
+        contactsToShow = filteredContacts;
+      } else {
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        contactsToShow = filteredContacts.slice(startIndex, endIndex);
+      }
+
+      contactsToShow.forEach((contact, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = 
+          '<td><input type="checkbox" class="contact-checkbox checkbox" data-id="' + contact.id + '"></td>' +
+          '<td>' + (contact.sms || '') + '</td>' +
+          '<td>' + (contact.call || '') + '</td>' +
+          '<td>' + (contact.email_flag || '') + '</td>' +
+          '<td>' + (contact.id || '') + '</td>' +
+          '<td>' + (contact.assignee || '') + '</td>' +
+          '<td>' + (contact.sponsor || '') + '</td>' +
+          '<td>' + (contact.sponsor_first || '') + '</td>' +
+          '<td>' + (contact.sponsor_last || '') + '</td>' +
+          '<td>' + (contact.user_id || '') + '</td>' +
+          '<td>' + (contact.first_name || '') + '</td>' +
+          '<td>' + (contact.last_name || '') + '</td>' +
+          '<td>' + (contact.email || '') + '</td>' +
+          '<td>' + (contact.valid || '') + '</td>' +
+          '<td>' + (contact.phone || '') + '</td>' +
+          '<td>' + (contact.address || '') + '</td>' +
+          '<td>' + (contact.city || '') + '</td>' +
+          '<td>' + (contact.state || '') + '</td>' +
+          '<td>' + (contact.zip || '') + '</td>' +
+          '<td>' + (contact.ip || '') + '</td>' +
+          '<td>' + (contact.date || '') + '</td>' +
+          '<td>' + (contact.timezone || '') + '</td>' +
+          '<td>' + (contact.cell || '') + '</td>' +
+          '<td>' + (contact.carrier || '') + '</td>' +
+          '<td>' + (contact.landline || '') + '</td>' +
+          '<td>' + (contact.voip || '') + '</td>' +
+          '<td>' + (contact.other || '') + '</td>' +
+          '<td>' + (contact.foreign || '') + '</td>' +
+          '<td>' + (contact.country || '') + '</td>';
+        
+        tbody.appendChild(row);
+      });
+      
+      // Update pagination
+      updatePagination();
+      
+      // Add event listeners to checkboxes
+      document.querySelectorAll('.contact-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', handleContactSelection);
+      });
+      
+      console.log('renderContacts completed - rendered ' + contactsToShow.length + ' rows');
+    }
+
+    function handleContactSelection(event) {
+      const contactId = parseInt(event.target.dataset.id);
+      if (event.target.checked) {
+        selectedContactIds.add(contactId);
+      } else {
+        selectedContactIds.delete(contactId);
+      }
+      
+      // Update header checkbox
+      const headerCheckbox = document.getElementById('header-checkbox');
+      const allCheckboxes = document.querySelectorAll('.contact-checkbox');
+      const checkedCheckboxes = document.querySelectorAll('.contact-checkbox:checked');
+      
+      if (checkedCheckboxes.length === 0) {
+        headerCheckbox.checked = false;
+        headerCheckbox.indeterminate = false;
+      } else if (checkedCheckboxes.length === allCheckboxes.length) {
+        headerCheckbox.checked = true;
+        headerCheckbox.indeterminate = false;
+      } else {
+        headerCheckbox.checked = false;
+        headerCheckbox.indeterminate = true;
+      }
+      
+      console.log('Selected contacts:', Array.from(selectedContactIds));
+    }
+
+    function updatePagination() {
+      const pagination = document.getElementById('pagination');
+      if (!pagination) return;
+      
+      if (pageSize === 'all') {
+        pagination.innerHTML = '<span>Showing all ' + filteredContacts.length + ' contacts</span>';
+        return;
+      }
+      
+      const totalPages = Math.ceil(filteredContacts.length / pageSize);
+      let paginationHTML = '';
+      
+      // Previous button
+      paginationHTML += '<button onclick="goToPage(' + (currentPage - 1) + ')" ' + (currentPage === 1 ? 'disabled' : '') + '>‹ Previous</button>';
+      
+      // Page numbers
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, currentPage + 2);
+      
+      if (startPage > 1) {
+        paginationHTML += '<button onclick="goToPage(1)">1</button>';
+        if (startPage > 2) {
+          paginationHTML += '<span>...</span>';
+        }
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += '<button onclick="goToPage(' + i + ')" ' + (i === currentPage ? 'class="active"' : '') + '>' + i + '</button>';
+      }
+      
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          paginationHTML += '<span>...</span>';
+        }
+        paginationHTML += '<button onclick="goToPage(' + totalPages + ')">' + totalPages + '</button>';
+      }
+      
+      // Next button
+      paginationHTML += '<button onclick="goToPage(' + (currentPage + 1) + ')" ' + (currentPage === totalPages ? 'disabled' : '') + '>Next ›</button>';
+      
+      pagination.innerHTML = paginationHTML;
+    }
+
+    function goToPage(page) {
+      const totalPages = Math.ceil(filteredContacts.length / pageSize);
+      if (page < 1 || page > totalPages) return;
+      
+      currentPage = page;
+      renderContacts();
+    }
+
+    function changePageSize(size) {
+      pageSize = size === 'all' ? 'all' : parseInt(size);
+      currentPage = 1;
+      renderContacts();
+    }
+
+    function setupEventListeners() {
+      console.log('Setting up event listeners...');
+      
+      // Page size selector
+      const pageSizeSelect = document.getElementById('page-size-select');
+      pageSizeSelect.addEventListener('change', function() {
+        changePageSize(this.value);
+      });
+      
+      // Header checkbox
+      const headerCheckbox = document.getElementById('header-checkbox');
+      headerCheckbox.addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.contact-checkbox');
+        checkboxes.forEach(cb => {
+          cb.checked = this.checked;
+          const contactId = parseInt(cb.dataset.id);
+          if (this.checked) {
+            selectedContactIds.add(contactId);
+          } else {
+            selectedContactIds.delete(contactId);
+          }
+        });
+        console.log('All contacts ' + (this.checked ? 'selected' : 'deselected'));
+      });
+      
+      // Search functionality
+      const searchInput = document.getElementById('search-input');
+      const searchBtn = document.getElementById('search-btn');
+      const resetBtn = document.getElementById('reset-btn');
+      
+      searchInput.addEventListener('input', handleSearch);
+      searchBtn.addEventListener('click', handleSearch);
+      resetBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        filteredContacts = [...allContacts];
+        currentPage = 1;
+        renderContacts();
+      });
+      
+      // Button event listeners
+      document.getElementById('delete-btn').addEventListener('click', handleDelete);
+      document.getElementById('assign-btn').addEventListener('click', handleAssign);
+      document.getElementById('sms-btn').addEventListener('click', handleSMS);
+      document.getElementById('email-btn').addEventListener('click', handleEmail);
+      document.getElementById('rvm-btn').addEventListener('click', handleRVM);
+      document.getElementById('campaign-btn').addEventListener('click', handleCampaign);
+      document.getElementById('add-btn').addEventListener('click', handleAdd);
+      document.getElementById('import-btn').addEventListener('click', handleImport);
+      document.getElementById('export-btn').addEventListener('click', handleExport);
+      
+      // Modal event listeners
+      const modal = document.getElementById('user-modal');
+      const closeModal = modal.querySelector('.close');
+      const cancelBtn = document.getElementById('cancel-assign');
+      
+      closeModal.addEventListener('click', function() {
+        modal.style.display = 'none';
+      });
+      
+      cancelBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+      });
+      
+      window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    }
+
+    function handleSearch() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+      
+      if (!searchTerm) {
+        filteredContacts = [...allContacts];
+      } else {
+        filteredContacts = allContacts.filter(contact => {
+          return Object.values(contact).some(value => 
+            value && value.toString().toLowerCase().includes(searchTerm)
+          );
+        });
+      }
+      
+      currentPage = 1;
+      renderContacts();
+      console.log('Search performed for "' + searchTerm + '", found ' + filteredContacts.length + ' contacts');
+    }
+
+    function showAlert(type, message) {
+      console.log('[' + type.toUpperCase() + '] ' + message);
+      
+      // Create a visible alert div on the page
+      const alertDiv = document.createElement('div');
+      alertDiv.className = 'alert alert-' + type;
+      alertDiv.style.cssText = 
+        'position: fixed; ' +
+        'top: 20px; ' +
+        'right: 20px; ' +
+        'background: ' + (type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#17a2b8') + '; ' +
+        'color: white; ' +
+        'padding: 15px; ' +
+        'border-radius: 5px; ' +
+        'z-index: 9999;' +
+        'max-width: 300px;' +
+        'box-shadow: 0 2px 10px rgba(0,0,0,0.2);';
+      alertDiv.textContent = message;
+      document.body.appendChild(alertDiv);
+      
+      // Remove after 5 seconds
+      setTimeout(function() {
+        if (alertDiv.parentNode) {
+          alertDiv.parentNode.removeChild(alertDiv);
+        }
+      }, 5000);
+    }
+
+    function updateStats() {
+      console.log('Stats updated - Total contacts:', allContacts.length, 'Filtered:', filteredContacts.length);
+    }
+
+    // Button handlers
+    function handleDelete() {
+      if (selectedContactIds.size === 0) {
+        showAlert('warning', 'Please select contacts to delete');
+        return;
+      }
+      showAlert('info', 'Delete feature: Would delete ' + selectedContactIds.size + ' selected contacts');
+    }
+    
+    function handleAssign() {
+      if (selectedContactIds.size === 0) {
+        showAlert('warning', 'Please select contacts to assign');
+        return;
+      }
+      
+      const modal = document.getElementById('user-modal');
+      modal.style.display = 'block';
+      
+      // Focus on search input
+      const searchInput = document.getElementById('user-search');
+      searchInput.focus();
+    }
+    
+    function handleSMS() {
+      if (selectedContactIds.size === 0) {
+        showAlert('warning', 'Please select contacts for SMS');
+        return;
+      }
+      showAlert('info', 'SMS feature: Would send SMS to ' + selectedContactIds.size + ' selected contacts');
+    }
+    
+    function handleEmail() {
+      if (selectedContactIds.size === 0) {
+        showAlert('warning', 'Please select contacts for email');
+        return;
+      }
+      showAlert('info', 'Email feature: Would send email to ' + selectedContactIds.size + ' selected contacts');
+    }
+    
+    function handleRVM() {
+      if (selectedContactIds.size === 0) {
+        showAlert('warning', 'Please select contacts for RVM');
+        return;
+      }
+      showAlert('info', 'RVM feature: Would send RVM to ' + selectedContactIds.size + ' selected contacts');
+    }
+    
+    function handleCampaign() {
+      if (selectedContactIds.size === 0) {
+        showAlert('warning', 'Please select contacts for campaign');
+        return;
+      }
+      showAlert('info', 'Campaign feature: Would add ' + selectedContactIds.size + ' contacts to campaign');
+    }
+    
+    function handleAdd() {
+      showAlert('info', 'Add feature: Would open form to add new contact');
+    }
+    
+    function handleImport() {
+      showAlert('info', 'Import feature: Would open file dialog to import contacts');
+    }
+    
+    function handleExport() {
+      showAlert('info', 'Export feature: Would export contacts to CSV');
+    }
+
+    // Window resize handler
+    window.addEventListener('resize', adjustTableHeight);
+  </script>
+</body>
+</html>
