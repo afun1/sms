@@ -56,14 +56,33 @@ class ContactsAPI(BaseHTTPRequestHandler):
         return conn
     
     def _init_database(self):
-        """Initialize the database with the contacts table"""
+        """Initialize the database with users and contacts tables"""
         conn = self._get_db_connection()
         cursor = conn.cursor()
+        
+        # Create users table for role-based access
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+                email TEXT UNIQUE NOT NULL,
+                first_name TEXT,
+                last_name TEXT,
+                role TEXT CHECK(role IN ('user', 'manager', 'supervisor', 'admin')) DEFAULT 'user',
+                manager_id TEXT,
+                is_active INTEGER DEFAULT 1,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (manager_id) REFERENCES users (id)
+            )
+        ''')
         
         # Create contacts table (SQLite version of the PostgreSQL schema)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS contacts (
                 id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+                
+                -- Assignment information
+                assigned_to TEXT,
                 
                 -- Sponsor information
                 sponsor TEXT,
@@ -104,17 +123,58 @@ class ContactsAPI(BaseHTTPRequestHandler):
                 
                 -- Metadata
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                
+                FOREIGN KEY (assigned_to) REFERENCES users (id)
             )
         ''')
         
-        # Create indexes
+        # Create indexes for users table
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_manager ON users(manager_id)')
+        
+        # Create indexes for contacts table
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_contacts_assigned_to ON contacts(assigned_to)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_contacts_email ON contacts(email)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_contacts_phone ON contacts(phone)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(first_name, last_name)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_contacts_sponsor ON contacts(sponsor)')
         
         conn.commit()
+        
+        # Create default admin user if none exists
+        cursor.execute('SELECT COUNT(*) FROM users WHERE role = "admin"')
+        admin_count = cursor.fetchone()[0]
+        
+        if admin_count == 0:
+            admin_id = str(uuid.uuid4())
+            cursor.execute('''
+                INSERT INTO users (id, email, first_name, last_name, role, is_active)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (admin_id, 'admin@sparky.com', 'Admin', 'User', 'admin', 1))
+            conn.commit()
+            print(f"✅ Created default admin user: admin@sparky.com")
+        
+        # Check if manager user exists (the one used by frontend)
+        cursor.execute('SELECT COUNT(*) FROM users WHERE id = ?', ('user-manager-example-com',))
+        manager_count = cursor.fetchone()[0]
+        
+        if manager_count == 0:
+            cursor.execute('''
+                INSERT INTO users (id, email, first_name, last_name, role, is_active)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', ('user-manager-example-com', 'john+3@tpnlife.com', 'John', 'Manager', 'manager', 1))
+            conn.commit()
+            print(f"✅ Created manager user: user-manager-example-com")
+        
+        # Debug: Show all users
+        cursor.execute('SELECT id, email, role FROM users')
+        users = cursor.fetchall()
+        print(f"[DEBUG] Users in database:")
+        for user in users:
+            print(f"  ID: {user[0]}, Email: {user[1]}, Role: {user[2]}")
+        
         conn.close()
     
     def do_OPTIONS(self):
@@ -125,6 +185,7 @@ class ContactsAPI(BaseHTTPRequestHandler):
     
     def do_GET(self):
         """Handle GET requests"""
+        print(f"[DEBUG] GET request: {self.path}")
         parsed_path = urlparse(self.path)
         path = parsed_path.path
         
@@ -138,9 +199,28 @@ class ContactsAPI(BaseHTTPRequestHandler):
             self._serve_html_file('list.html')
         elif path == '/index.html':
             self._serve_html_file('index.html')
+        elif path == '/login.html' or path == '/login':
+            self._serve_html_file('login.html')
+        elif path == '/ai_editor.html':
+            self._serve_html_file('ai_editor.html')
+        elif path == '/sms_editor.html':
+            self._serve_html_file('sms_editor.html')
+        elif path == '/rvm_editor.html':
+            self._serve_html_file('rvm_editor.html')
+        elif path == '/email_editor.html':
+            self._serve_html_file('email_editor.html')
+        elif path == '/campaign_builder.html':
+            self._serve_html_file('campaign_builder.html')
+        elif path == '/assets.html':
+            self._serve_html_file('assets.html')
+        elif path == '/admin.html':
+            self._serve_html_file('admin.html')
         # API endpoints
         elif path == '/api/contacts':
+            print(f"[DEBUG] GET /api/contacts - query: {parsed_path.query}")
             self._handle_get_contacts(parsed_path.query)
+        elif path == '/api/users':
+            self._handle_get_users(parsed_path.query)
         elif path == '/api/health':
             self._handle_health_check()
         else:
@@ -241,7 +321,10 @@ class ContactsAPI(BaseHTTPRequestHandler):
         })
     
     def _handle_get_contacts(self, query_string):
-        """Get contacts with optional filtering and pagination"""
+        """Get contacts with role-based filtering, pagination, and search"""
+        print(f"[DEBUG] _handle_get_contacts called with query: {query_string}")
+        import sys
+        sys.stdout.flush()
         try:
             query_params = parse_qs(query_string) if query_string else {}
             
@@ -253,33 +336,76 @@ class ContactsAPI(BaseHTTPRequestHandler):
             # Get search parameter
             search = query_params.get('search', [''])[0]
             
+            # Get current user info for role-based filtering
+            current_user_id = query_params.get('current_user_id', [None])[0]
+            
             conn = self._get_db_connection()
             cursor = conn.cursor()
             
-            # Build query with search
-            base_query = 'FROM contacts'
-            where_clause = ''
+            # Initialize params list
             params = []
             
+            # Get user role and build role-based access control
+            user_role = 'user'  # Default role
+            print(f"[DEBUG] Looking up user: {current_user_id}")
+            if current_user_id:
+                cursor.execute('SELECT role FROM users WHERE id = ?', (current_user_id,))
+                user_result = cursor.fetchone()
+                print(f"[DEBUG] User lookup result: {user_result}")
+                if user_result:
+                    user_role = user_result['role']
+                    print(f"[DEBUG] Found user role: {user_role}")
+                else:
+                    print(f"[DEBUG] User not found, using default role: {user_role}")
+            else:
+                print(f"[DEBUG] No current_user_id provided, using default role: {user_role}")
+            
+            # Build base query with role-based filtering
+            # TEMPORARY: Disable all filtering for debugging
+            base_query = 'FROM contacts c LEFT JOIN users u ON c.assigned_to = u.id'
+            role_conditions = []
+            
+            where_conditions = role_conditions.copy()
+            
+            # Add search conditions
             if search:
-                where_clause = '''WHERE 
-                    first_name LIKE ? OR 
-                    last_name LIKE ? OR 
-                    email LIKE ? OR 
-                    phone LIKE ? OR
-                    sponsor LIKE ?'''
+                search_conditions = '''(
+                    c.first_name LIKE ? OR 
+                    c.last_name LIKE ? OR 
+                    c.email LIKE ? OR 
+                    c.phone LIKE ? OR
+                    c.sponsor LIKE ?
+                )'''
+                where_conditions.append(search_conditions)
                 search_param = f'%{search}%'
-                params = [search_param] * 5
+                params.extend([search_param] * 5)
+            
+            # Combine WHERE conditions
+            where_clause = ''
+            if where_conditions:
+                where_clause = 'WHERE ' + ' AND '.join(where_conditions)
             
             # Get total count
             count_query = f'SELECT COUNT(*) {base_query} {where_clause}'
+            print(f"[DEBUG] User role: {user_role}")
+            print(f"[DEBUG] Count query: {count_query}")
+            print(f"[DEBUG] Query params: {params}")
+            import sys
+            sys.stdout.flush()
             cursor.execute(count_query, params)
             total_count = cursor.fetchone()[0]
+            print(f"[DEBUG] Total count result: {total_count}")
+            sys.stdout.flush()
             
             # Get contacts with pagination
             contacts_query = f'''
-                SELECT * {base_query} {where_clause}
-                ORDER BY created_at DESC
+                SELECT c.*, 
+                       u.first_name as assigned_first_name, 
+                       u.last_name as assigned_last_name,
+                       u.email as assigned_email
+                {base_query} 
+                {where_clause}
+                ORDER BY c.created_at DESC
                 LIMIT ? OFFSET ?
             '''
             cursor.execute(contacts_query, params + [per_page, offset])
@@ -299,7 +425,9 @@ class ContactsAPI(BaseHTTPRequestHandler):
                     'total': total_count,
                     'pages': (total_count + per_page - 1) // per_page
                 },
-                'search': search
+                'search': search,
+                'user_role': user_role,
+                'filtered_by_role': current_user_id is not None
             })
             
         except Exception as e:
@@ -336,6 +464,7 @@ class ContactsAPI(BaseHTTPRequestHandler):
                     # Prepare insert data with validation
                     insert_data = {
                         'id': contact_id,
+                        'assigned_to': contact_data.get('assigned_to', ''),
                         'sponsor': contact_data.get('sponsor', ''),
                         'sponsor_first': contact_data.get('sponsor_first', ''),
                         'sponsor_last': contact_data.get('sponsor_last', ''),
@@ -456,7 +585,7 @@ class ContactsAPI(BaseHTTPRequestHandler):
             for field, value in update_data.items():
                 # Validate field name to prevent SQL injection
                 allowed_fields = [
-                    'sponsor', 'sponsor_first', 'sponsor_last', 'user_id', 'first_name', 'last_name',
+                    'assigned_to', 'sponsor', 'sponsor_first', 'sponsor_last', 'user_id', 'first_name', 'last_name',
                     'email', 'email_valid', 'phone', 'address', 'city', 'state', 'zip', 'status',
                     'rating', 'ip_address', 'date_created', 'timezone', 'cell', 'carrier',
                     'landline', 'voip', 'other_phone', 'foreign_number', 'country'
@@ -497,7 +626,103 @@ class ContactsAPI(BaseHTTPRequestHandler):
             print(f"Error in update_contact: {e}")
             print(traceback.format_exc())
             self._send_error(f'Error updating contact: {str(e)}', 500)
-
+    
+    def _handle_get_users(self, query_string):
+        """Get users with role-based filtering"""
+        try:
+            query_params = parse_qs(query_string) if query_string else {}
+            
+            # Get current user info from session/headers (simplified for demo)
+            current_user_id = query_params.get('current_user_id', [None])[0]
+            
+            if not current_user_id:
+                self._send_error('User authentication required', 401)
+                return
+            
+            conn = self._get_db_connection()
+            cursor = conn.cursor()
+            
+            # Get current user's role and hierarchy
+            cursor.execute('SELECT role, manager_id FROM users WHERE id = ?', (current_user_id,))
+            current_user = cursor.fetchone()
+            
+            if not current_user:
+                self._send_error('User not found', 404)
+                return
+            
+            current_role = current_user['role']
+            
+            # Build user query based on role
+            if current_role == 'admin':
+                # Admins see all users
+                users_query = '''
+                    SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.is_active,
+                           m.first_name as manager_first_name, m.last_name as manager_last_name
+                    FROM users u
+                    LEFT JOIN users m ON u.manager_id = m.id
+                    WHERE u.is_active = 1
+                    ORDER BY u.role, u.first_name, u.last_name
+                '''
+                cursor.execute(users_query)
+            elif current_role == 'supervisor':
+                # Supervisors see their managed users and peers
+                users_query = '''
+                    WITH RECURSIVE hierarchy AS (
+                        SELECT id, email, first_name, last_name, role, manager_id, is_active
+                        FROM users WHERE id = ?
+                        UNION ALL
+                        SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.manager_id, u.is_active
+                        FROM users u
+                        INNER JOIN hierarchy h ON u.manager_id = h.id
+                    )
+                    SELECT h.id, h.email, h.first_name, h.last_name, h.role, h.is_active,
+                           m.first_name as manager_first_name, m.last_name as manager_last_name
+                    FROM hierarchy h
+                    LEFT JOIN users m ON h.manager_id = m.id
+                    WHERE h.is_active = 1
+                    ORDER BY h.role, h.first_name, h.last_name
+                '''
+                cursor.execute(users_query, (current_user_id,))
+            elif current_role == 'manager':
+                # Managers see their direct reports and themselves
+                users_query = '''
+                    SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.is_active,
+                           m.first_name as manager_first_name, m.last_name as manager_last_name
+                    FROM users u
+                    LEFT JOIN users m ON u.manager_id = m.id
+                    WHERE u.is_active = 1 AND (u.id = ? OR u.manager_id = ?)
+                    ORDER BY u.role, u.first_name, u.last_name
+                '''
+                cursor.execute(users_query, (current_user_id, current_user_id))
+            else:
+                # Regular users only see themselves
+                users_query = '''
+                    SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.is_active,
+                           m.first_name as manager_first_name, m.last_name as manager_last_name
+                    FROM users u
+                    LEFT JOIN users m ON u.manager_id = m.id
+                    WHERE u.is_active = 1 AND u.id = ?
+                '''
+                cursor.execute(users_query, (current_user_id,))
+            
+            users = []
+            for row in cursor.fetchall():
+                user = dict(row)
+                users.append(user)
+            
+            conn.close()
+            
+            self._send_json_response({
+                'users': users,
+                'current_user_role': current_role,
+                'total': len(users)
+            })
+            
+        except Exception as e:
+            print(f"Error in get_users: {e}")
+            print(traceback.format_exc())
+            self._send_error(f'Error retrieving users: {str(e)}', 500)
+    
 def main():
     """Start the API server"""
     # Change to the directory containing the script
@@ -528,14 +753,33 @@ def main():
         print("\n🛑 API server stopped")
 
 def init_database():
-    """Initialize the database with the contacts table (standalone function)"""
+    """Initialize the database with users and contacts tables (standalone function)"""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
+    
+    # Create users table for role-based access
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+            email TEXT UNIQUE NOT NULL,
+            first_name TEXT,
+            last_name TEXT,
+            role TEXT CHECK(role IN ('user', 'manager', 'supervisor', 'admin')) DEFAULT 'user',
+            manager_id TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (manager_id) REFERENCES users (id)
+        )
+    ''')
     
     # Create contacts table (SQLite version of the PostgreSQL schema)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS contacts (
             id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+            
+            -- Assignment information
+            assigned_to TEXT,
             
             -- Sponsor information
             sponsor TEXT,
@@ -576,17 +820,58 @@ def init_database():
             
             -- Metadata
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            
+            FOREIGN KEY (assigned_to) REFERENCES users (id)
         )
     ''')
     
-    # Create indexes
+    # Create indexes for users table
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_manager ON users(manager_id)')
+    
+    # Create indexes for contacts table
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_contacts_assigned_to ON contacts(assigned_to)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_contacts_email ON contacts(email)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_contacts_phone ON contacts(phone)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(first_name, last_name)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_contacts_sponsor ON contacts(sponsor)')
     
     conn.commit()
+    
+    # Create default admin user if none exists
+    cursor.execute('SELECT COUNT(*) FROM users WHERE role = "admin"')
+    admin_count = cursor.fetchone()[0]
+    
+    if admin_count == 0:
+        admin_id = str(uuid.uuid4())
+        cursor.execute('''
+            INSERT INTO users (id, email, first_name, last_name, role, is_active)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (admin_id, 'admin@sparky.com', 'Admin', 'User', 'admin', 1))
+        conn.commit()
+        print(f"✅ Created default admin user: admin@sparky.com")
+    
+    # Check if manager user exists (the one used by frontend)
+    cursor.execute('SELECT COUNT(*) FROM users WHERE id = ?', ('user-manager-example-com',))
+    manager_count = cursor.fetchone()[0]
+    
+    if manager_count == 0:
+        cursor.execute('''
+            INSERT INTO users (id, email, first_name, last_name, role, is_active)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', ('user-manager-example-com', 'john+3@tpnlife.com', 'John', 'Manager', 'manager', 1))
+        conn.commit()
+        print(f"✅ Created manager user: user-manager-example-com")
+    
+    # Debug: Show all users
+    cursor.execute('SELECT id, email, role FROM users')
+    users = cursor.fetchall()
+    print(f"[DEBUG] Users in database:")
+    for user in users:
+        print(f"  ID: {user[0]}, Email: {user[1]}, Role: {user[2]}")
+    
     conn.close()
 
 if __name__ == "__main__":

@@ -789,7 +789,8 @@
       <button id="email-btn" class="btn btn-info">Email</button>
       <button id="rvm-btn" class="btn btn-warning">RVM</button>
       <button id="campaign-btn" class="btn btn-primary">Campaign</button>
-      <button id="add-btn" class="btn btn-success">Add</button>
+      <button id="add-btn" class="btn btn-success">View</button>
+      <button id="sort-btn" class="btn btn-secondary">Sort <span id="sort-indicator" style="display: none;">✓</span></button>
       <button id="import-btn" class="btn btn-info">Import</button>
       <button id="export-btn" class="btn btn-warning">Export</button>
     </div>
@@ -853,7 +854,7 @@
 
   <!-- Table -->
   <div class="table-container">
-    <table class="table">
+    <table class="table" id="contacts-table">
       <thead>
         <tr>
           <th>
@@ -1042,38 +1043,225 @@
     </div>
   </div>
 
+  <!-- Sort Modal -->
+  <div id="sort-modal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Sort Contacts</h3>
+        <span class="close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div id="sort-levels" style="font-size: 12px;">
+          <!-- Sort levels will be added here dynamically -->
+        </div>
+        <div style="margin-top: 10px;">
+          <button id="add-sort-level" class="btn btn-secondary" style="font-size: 12px; padding: 5px 10px;">Add Level</button>
+          <button id="clear-sort" class="btn btn-secondary" style="font-size: 12px; padding: 5px 10px; margin-left: 10px;">Clear All</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="cancel-sort" class="btn btn-secondary">Cancel</button>
+        <button id="apply-sort" class="btn btn-primary">Apply Sort</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Column Visibility Modal -->
+  <div id="column-modal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>Column Visibility</h3>
+        <span class="close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 12px; max-height: 300px; overflow-y: auto;">
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="contact_id" checked style="margin-right: 8px;">
+              <span>Contact ID</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="assignee" checked style="margin-right: 8px;">
+              <span>Assignee</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="sponsor" checked style="margin-right: 8px;">
+              <span>Sponsor</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="sponsor_first" checked style="margin-right: 8px;">
+              <span>Sponsor First</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="sponsor_last" checked style="margin-right: 8px;">
+              <span>Sponsor Last</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="user_id" checked style="margin-right: 8px;">
+              <span>Sparky ID</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="first_name" checked style="margin-right: 8px;">
+              <span>First Name</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="last_name" checked style="margin-right: 8px;">
+              <span>Last Name</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="email" checked style="margin-right: 8px;">
+              <span>Email</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="valid" checked style="margin-right: 8px;">
+              <span>Valid</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="phone" checked style="margin-right: 8px;">
+              <span>Phone</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="address" checked style="margin-right: 8px;">
+              <span>Address</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="city" checked style="margin-right: 8px;">
+              <span>City</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="state" checked style="margin-right: 8px;">
+              <span>State</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="zip" checked style="margin-right: 8px;">
+              <span>Zip</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="ip_address" checked style="margin-right: 8px;">
+              <span>IP</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="date_created" checked style="margin-right: 8px;">
+              <span>Date</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="timezone" checked style="margin-right: 8px;">
+              <span>Timezone</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="cell" checked style="margin-right: 8px;">
+              <span>Cell</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="carrier" checked style="margin-right: 8px;">
+              <span>Carrier</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="landline" checked style="margin-right: 8px;">
+              <span>Landline</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="voip" checked style="margin-right: 8px;">
+              <span>VoIP</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="other_phone" checked style="margin-right: 8px;">
+              <span>Other</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="foreign_number" checked style="margin-right: 8px;">
+              <span>Foreign</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 5px; padding: 5px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" class="column-toggle" data-column="country" checked style="margin-right: 8px;">
+              <span>Country</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="show-all-columns" class="btn btn-secondary">Show All</button>
+        <button id="hide-all-columns" class="btn btn-secondary">Hide All</button>
+        <button id="close-column-modal" class="btn btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // Supabase configuration
+    console.log('=== SCRIPT STARTED ===');
+    
+    // Supabase configuration - using direct Supabase access
     const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
     
-    // Initialize Supabase client
-    let supabase;
-    try {
-      if (typeof window.supabase !== 'undefined') {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('Supabase client initialized successfully');
-        
-        // Test the connection immediately
-        supabase.from('contacts').select('count', { count: 'exact', head: true })
-          .then(({ data, error }) => {
-            if (error) {
-              console.error('Supabase connection test failed:', error);
-            } else {
-              console.log('Supabase connection test passed');
-            }
-          })
-          .catch(err => {
-            console.error('Supabase connection error:', err);
-          });
-      } else {
-        console.warn('Supabase library not loaded, using sample data');
-        supabase = null;
+    // Use global Supabase client if available, otherwise create one
+    let supabase = null;
+    if (window.globalSupabase) {
+      console.log('Using existing global Supabase client');
+      supabase = window.globalSupabase;
+    } else if (window.supabase && typeof window.supabase.createClient === 'function') {
+      console.log('Creating new Supabase client...');
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } else {
+      console.error('Supabase library not loaded or createClient not available');
+      console.log('window.supabase:', window.supabase);
+      console.log('typeof window.supabase:', typeof window.supabase);
+      if (window.supabase) {
+        console.log('window.supabase.createClient:', window.supabase.createClient);
       }
-    } catch (error) {
-      console.error('Failed to initialize Supabase client:', error);
-      supabase = null;
     }
+    
+    console.log('Supabase client initialized:', !!supabase);
+    console.log('Supabase client type:', typeof supabase);
+    console.log('Supabase.from available:', typeof supabase?.from);
 
     // Global variables
     let allContacts = [];
@@ -1092,147 +1280,83 @@
       console.log(`[${timestamp}] loadUsers() called - starting fresh user load attempt`);
       
       try {
-        if (!supabase) {
-          console.warn('Supabase not available');
+        // Get current user from session for role-based filtering
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+          console.warn('No current user found, cannot load users for assignment');
           users = [];
           return;
         }
-
-        console.log('Attempting to fetch users from profiles table...');
-
-        // Try multiple approaches to get user data from Supabase
-        let data = null;
-        let error = null;
         
-        // First attempt: Simple select from profiles
-        try {
-          console.log('About to execute profiles query with simple select...');
-          const result1 = await supabase
-            .from('profiles')
-            .select('*');
-          
-          console.log('Profiles query executed, result:', result1);
-          
-          if (!result1.error && result1.data) {
-            data = result1.data;
-            console.log('Success with profiles table (simple select):', data.length + ' users found');
-          } else {
-            error = result1.error;
-            console.log('Profiles table failed, error:', error);
-          }
-        } catch (e) {
-          console.log('Profiles table exception:', e);
-          error = e;
+        console.log('Loading users from API server for current user:', currentUser.email);
+        
+        // Build API URL with user context for role-based filtering
+        const apiUrl = new URL('/api/users', window.location.origin);
+        apiUrl.searchParams.set('current_user_id', currentUser.id);
+        
+        console.log('Fetching users from:', apiUrl.toString());
+        
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status} ${response.statusText}`);
         }
         
-        // Second attempt: Try auth.users if profiles fails
-        if (!data && error) {
-          try {
-            console.log('Trying auth.users table as fallback...');
-            const result2 = await supabase.auth.admin.listUsers();
-            if (result2.data && result2.data.users) {
-              // Convert auth users to expected format
-              data = result2.data.users.map(user => ({
-                id: user.id,
-                email: user.email,
-                name: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
-                role: user.user_metadata?.role || 'User',
-                created_at: user.created_at
-              }));
-              console.log('Success with auth.users:', data.length + ' users found');
-              error = null;
-            }
-          } catch (e) {
-            console.log('Auth users failed:', e);
-          }
+        const result = await response.json();
+        console.log('Users API response:', result);
+        
+        if (result.error) {
+          throw new Error(result.message || 'API returned an error');
         }
         
-        // Third attempt: Try a different table name
-        if (!data && error) {
-          try {
-            console.log('Trying users table as final fallback...');
-            const result3 = await supabase
-              .from('users')
-              .select('*');
-            
-            if (!result3.error && result3.data) {
-              data = result3.data;
-              console.log('Success with users table:', data.length + ' users found');
-              error = null;
-            }
-          } catch (e) {
-            console.log('Users table failed:', e);
-          }
-        }
+        const data = result.users || [];
+        console.log(`Loaded ${data.length} users for user role: ${result.current_user_role}`);
         
-        if (error && !data) {
-          console.error('All user loading attempts failed. Final error:', error);
+        if (data.length === 0) {
+          console.log('No users found that current user can assign to');
           users = [];
-          showAlert('warning', 'Could not load users from database. Please check your Supabase setup. User assignment may not work properly.');
+          showAlert('info', 'No users available for assignment based on your role permissions.');
           return;
         }
         
-        if (!data || data.length === 0) {
-          console.log('No users found in database');
-          users = [];
-          const debugMessage = supabase ? 
-            'No users found in the database. Open browser console and run window.debugSupabase() to diagnose the issue.' :
-            'Supabase not initialized. Check your connection settings.';
-          showAlert('info', debugMessage);
-          return;
-        }
+        console.log('Raw user data from API:', data.slice(0, 2)); // Show first 2 users for debugging
         
-        console.log('Raw user data from database:', data.slice(0, 2)); // Show first 2 users for debugging
-        
-        // Map ALL user data with flexible field mapping, regardless of role
+        // Map user data to expected format for UI
         users = data.map(user => {
-          // Use multiple possible field names for name
-          const firstName = user.first_name || user.firstName || '';
-          const lastName = user.last_name || user.lastName || '';
-          const fullName = user.full_name || user.fullName || user.name || user.display_name || user.username || '';
+          const firstName = user.first_name || '';
+          const lastName = user.last_name || '';
+          const fullName = `${firstName} ${lastName}`.trim();
+          const name = fullName || user.email || 'Unknown User';
           
-          let name;
-          if (fullName) {
-            name = fullName;
-          } else if (firstName || lastName) {
-            name = `${firstName} ${lastName}`.trim();
-          } else {
-            name = user.email || user.email_address || user.user_email || 'Unknown User';
-          }
-          
-          // Use multiple possible field names for email
-          const email = user.email || user.email_address || user.user_email || user.auth_email || 'no-email@example.com';
-          
-          // Create avatar from available data
+          // Create avatar from name or email
           let avatar;
-          if (user.avatar_url || user.avatar) {
-            avatar = user.avatar_url || user.avatar;
-          } else if (name && name !== 'Unknown User') {
+          if (name && name !== 'Unknown User') {
             avatar = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
           } else {
-            avatar = email.charAt(0).toUpperCase();
+            avatar = user.email.charAt(0).toUpperCase();
           }
           
           return {
             id: user.id,
             name: name,
-            email: email,
+            email: user.email,
             avatar: avatar,
-            role: user.role || user.user_role || user.account_type || 'No Role',
+            role: user.role || 'User',
+            manager_name: user.manager_first_name && user.manager_last_name ? 
+                         `${user.manager_first_name} ${user.manager_last_name}` : '',
             raw: user // Keep original data for debugging
           };
         });
         
-        // Sort users by name after mapping
+        // Sort users by name
         users.sort((a, b) => a.name.localeCompare(b.name));
         
-        console.log('Successfully loaded ' + users.length + ' users from database (all roles):', users.slice(0, 3)); // Show first 3 users
-        console.log('User mapping sample:', users[0]); // Show detailed mapping of first user
+        console.log(`Successfully loaded ${users.length} users from API server:`, users.slice(0, 3));
+        console.log('User mapping sample:', users[0]);
         
       } catch (error) {
         console.error('Error loading users:', error);
         users = [];
-        showAlert('error', 'Failed to load users from database. User assignment may not work properly.');
+        showAlert('error', 'Failed to load users from API server. User assignment may not work properly.');
       }
     }
 
@@ -1493,10 +1617,24 @@
     }
 
     function handleAdd() {
-      const modal = document.getElementById('add-contact-modal');
+      const modal = document.getElementById('column-modal');
       modal.style.display = 'block';
-      // Clear form
-      document.getElementById('add-contact-form').reset();
+    }
+
+    function handleSort() {
+      const modal = document.getElementById('sort-modal');
+      modal.style.display = 'block';
+      
+      // Update modal title to show if sort is applied
+      const modalTitle = modal.querySelector('h3');
+      if (appliedSortLevels.length > 0) {
+        modalTitle.textContent = `Sort Contacts (${appliedSortLevels.length} level${appliedSortLevels.length > 1 ? 's' : ''} applied)`;
+      } else {
+        modalTitle.textContent = 'Sort Contacts';
+      }
+      
+      // Initialize with first sort level
+      initializeSortModal();
     }
 
     function handleImport() {
@@ -1543,7 +1681,7 @@
       showAlert('success', `Exported ${contactsToExport.length} contacts`);
     }
 
-    function handleSearch() {
+    function handleSearchInput() {
       const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
       
       if (!searchTerm) {
@@ -1558,8 +1696,41 @@
         showSuggestions(searchTerm);
       }
       
-      currentPage = 1;
-      renderContacts();
+      // Apply saved sort if it exists
+      if (appliedSortLevels.length > 0) {
+        applySavedSort();
+      } else {
+        currentPage = 1;
+        renderContacts();
+      }
+      
+      console.log('Search input changed for "' + searchTerm + '", found ' + filteredContacts.length + ' contacts');
+    }
+
+    function handleSearch() {
+      const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+      
+      // Always hide suggestions when search button is clicked
+      hideSuggestions();
+      
+      if (!searchTerm) {
+        filteredContacts = [...allContacts];
+      } else {
+        filteredContacts = allContacts.filter(contact => {
+          return Object.values(contact).some(value => 
+            value && value.toString().toLowerCase().includes(searchTerm)
+          );
+        });
+      }
+      
+      // Apply saved sort if it exists
+      if (appliedSortLevels.length > 0) {
+        applySavedSort();
+      } else {
+        currentPage = 1;
+        renderContacts();
+      }
+      
       console.log('Search performed for "' + searchTerm + '", found ' + filteredContacts.length + ' contacts');
     }
 
@@ -1590,12 +1761,284 @@
 
     function selectSuggestion(suggestion) {
       document.getElementById('search-input').value = suggestion;
+      // Immediately hide suggestions when a suggestion is clicked
       hideSuggestions();
+      // Update the search results without showing suggestions again
       handleSearch();
     }
 
     function hideSuggestions() {
       document.getElementById('search-suggestions').style.display = 'none';
+    }
+
+    // Sort modal functions
+    let sortLevels = [];
+    let appliedSortLevels = []; // Remember the last applied sort
+    const maxSortLevels = 8;
+    
+    const sortableColumns = [
+      { value: 'first_name', label: 'First Name' },
+      { value: 'last_name', label: 'Last Name' },
+      { value: 'email', label: 'Email' },
+      { value: 'phone', label: 'Phone' },
+      { value: 'city', label: 'City' },
+      { value: 'state', label: 'State' },
+      { value: 'assignee', label: 'Assignee' },
+      { value: 'sponsor', label: 'Sponsor' },
+      { value: 'sponsor_first', label: 'Sponsor First' },
+      { value: 'sponsor_last', label: 'Sponsor Last' },
+      { value: 'date_created', label: 'Date Created' },
+      { value: 'zip', label: 'Zip Code' },
+      { value: 'user_id', label: 'Sparky ID' },
+      { value: 'valid', label: 'Valid' },
+      { value: 'address', label: 'Address' },
+      { value: 'timezone', label: 'Timezone' },
+      { value: 'carrier', label: 'Carrier' },
+      { value: 'country', label: 'Country' }
+    ];
+
+    function initializeSortModal() {
+      sortLevels = [];
+      const sortLevelsContainer = document.getElementById('sort-levels');
+      sortLevelsContainer.innerHTML = '';
+      
+      // If we have applied sort levels, restore them
+      if (appliedSortLevels.length > 0) {
+        appliedSortLevels.forEach(appliedLevel => {
+          addSortLevel();
+          const levelIndex = sortLevels.length - 1;
+          sortLevels[levelIndex] = { ...appliedLevel };
+          
+          // Set the values in the UI
+          const levelDiv = sortLevelsContainer.children[levelIndex];
+          const columnSelect = levelDiv.querySelector('.sort-column');
+          const directionSelect = levelDiv.querySelector('.sort-direction');
+          
+          columnSelect.value = appliedLevel.column;
+          directionSelect.value = appliedLevel.direction;
+        });
+      } else {
+        // Add first sort level if no previous sort exists
+        addSortLevel();
+      }
+    }
+
+    function addSortLevel() {
+      if (sortLevels.length >= maxSortLevels) {
+        showAlert('info', `Maximum ${maxSortLevels} sort levels allowed`);
+        return;
+      }
+
+      const levelIndex = sortLevels.length;
+      const sortLevel = {
+        column: '',
+        direction: 'asc'
+      };
+      
+      sortLevels.push(sortLevel);
+
+      const sortLevelsContainer = document.getElementById('sort-levels');
+      const levelDiv = document.createElement('div');
+      levelDiv.className = 'sort-level';
+      levelDiv.style.cssText = 'margin-bottom: 5px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; background: #f8f9fa;';
+      
+      levelDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
+          <span style="min-width: 60px; font-weight: bold;">Level ${levelIndex + 1}:</span>
+          <select class="sort-column" data-level="${levelIndex}" style="flex: 1; padding: 3px; font-size: 12px;">
+            <option value="">Select Column</option>
+            ${sortableColumns.map(col => `<option value="${col.value}">${col.label}</option>`).join('')}
+          </select>
+          <select class="sort-direction" data-level="${levelIndex}" style="padding: 3px; font-size: 12px;">
+            <option value="asc">A→Z</option>
+            <option value="desc">Z→A</option>
+          </select>
+          ${levelIndex > 0 ? `<button class="remove-level" data-level="${levelIndex}" style="padding: 2px 6px; font-size: 12px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">×</button>` : ''}
+        </div>
+      `;
+
+      sortLevelsContainer.appendChild(levelDiv);
+
+      // Update Add Level button visibility
+      const addButton = document.getElementById('add-sort-level');
+      if (sortLevels.length >= maxSortLevels) {
+        addButton.style.display = 'none';
+      } else {
+        addButton.style.display = 'inline-block';
+      }
+
+      // Add event listeners
+      const columnSelect = levelDiv.querySelector('.sort-column');
+      const directionSelect = levelDiv.querySelector('.sort-direction');
+      const removeButton = levelDiv.querySelector('.remove-level');
+
+      columnSelect.addEventListener('change', (e) => {
+        sortLevels[levelIndex].column = e.target.value;
+      });
+
+      directionSelect.addEventListener('change', (e) => {
+        sortLevels[levelIndex].direction = e.target.value;
+      });
+
+      if (removeButton) {
+        removeButton.addEventListener('click', () => {
+          removeSortLevel(levelIndex);
+        });
+      }
+    }
+
+    function removeSortLevel(levelIndex) {
+      // Remove from array
+      sortLevels.splice(levelIndex, 1);
+      
+      // Rebuild the entire UI to fix level numbers
+      rebuildSortLevels();
+    }
+
+    function rebuildSortLevels() {
+      const sortLevelsContainer = document.getElementById('sort-levels');
+      sortLevelsContainer.innerHTML = '';
+      
+      // Save current values
+      const currentLevels = [...sortLevels];
+      sortLevels = [];
+      
+      // Recreate each level
+      currentLevels.forEach((level, index) => {
+        addSortLevel();
+        
+        // Restore values
+        const levelDiv = sortLevelsContainer.children[index];
+        const columnSelect = levelDiv.querySelector('.sort-column');
+        const directionSelect = levelDiv.querySelector('.sort-direction');
+        
+        columnSelect.value = level.column;
+        directionSelect.value = level.direction;
+        sortLevels[index] = { ...level };
+      });
+    }
+
+    function clearAllSortLevels() {
+      sortLevels = [];
+      appliedSortLevels = []; // Clear saved sort as well
+      const sortLevelsContainer = document.getElementById('sort-levels');
+      sortLevelsContainer.innerHTML = '';
+      
+      // Add first level back
+      addSortLevel();
+      
+      // Re-render contacts without sorting
+      filteredContacts = [...allContacts];
+      if (document.getElementById('search-input').value.trim()) {
+        // Reapply current search filter
+        handleSearch();
+      } else {
+        currentPage = 1;
+        renderContacts();
+      }
+      
+      // Update sort indicator
+      updateSortIndicator();
+    }
+
+    function applySortToContacts() {
+      // Filter out empty sort levels
+      const validSortLevels = sortLevels.filter(level => level.column);
+      
+      if (validSortLevels.length === 0) {
+        showAlert('warning', 'Please select at least one column to sort by');
+        return;
+      }
+
+      console.log('Applying sort with levels:', validSortLevels);
+
+      // Save the applied sort configuration
+      appliedSortLevels = validSortLevels.map(level => ({ ...level }));
+
+      // Apply the sort
+      applySavedSort();
+      
+      // Update sort indicator
+      updateSortIndicator();
+      
+      // Close modal
+      document.getElementById('sort-modal').style.display = 'none';
+      
+      const levelText = validSortLevels.length === 1 ? 'level' : 'levels';
+      showAlert('success', `Contacts sorted by ${validSortLevels.length} ${levelText}`);
+    }
+
+    function applySavedSort() {
+      if (appliedSortLevels.length === 0) {
+        return; // No sort to apply
+      }
+
+      // Apply multi-level sorting
+      filteredContacts.sort((a, b) => {
+        for (const level of appliedSortLevels) {
+          const aValue = a[level.column] || '';
+          const bValue = b[level.column] || '';
+          
+          let comparison = 0;
+          
+          // Handle different data types
+          if (level.column === 'date_created') {
+            const aDate = new Date(aValue);
+            const bDate = new Date(bValue);
+            comparison = aDate - bDate;
+          } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+            comparison = aValue - bValue;
+          } else {
+            // String comparison
+            const aStr = String(aValue).toLowerCase();
+            const bStr = String(bValue).toLowerCase();
+            comparison = aStr.localeCompare(bStr);
+          }
+          
+          if (comparison !== 0) {
+            return level.direction === 'desc' ? -comparison : comparison;
+          }
+        }
+        return 0;
+      });
+
+      // Refresh the display
+      currentPage = 1;
+      renderContacts();
+    }
+
+    // Utility functions for contact selection
+    function getSelectedContacts() {
+      return Array.from(selectedContactIds);
+    }
+
+    function clearContactSelections() {
+      selectedContactIds.clear();
+      
+      // Uncheck all checkboxes
+      document.querySelectorAll('.contact-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      
+      // Remove selected class from all rows
+      document.querySelectorAll('tr.selected').forEach(row => {
+        row.classList.remove('selected');
+      });
+      
+      // Update header checkbox and buttons
+      updateHeaderCheckboxAndDeleteButton();
+    }
+
+    function updateSortIndicator() {
+      const sortIndicator = document.getElementById('sort-indicator');
+      if (sortIndicator) {
+        if (appliedSortLevels.length > 0) {
+          sortIndicator.style.display = 'inline';
+          sortIndicator.title = `Sorted by ${appliedSortLevels.length} level${appliedSortLevels.length > 1 ? 's' : ''}`;
+        } else {
+          sortIndicator.style.display = 'none';
+        }
+      }
     }
 
     function showAlert(type, message) {
@@ -1604,59 +2047,197 @@
       alert(`${type.toUpperCase()}: ${message}`);
     }
 
+    // Stub function to prevent ReferenceError
+    function handleDuplicates() {
+      console.log('handleDuplicates called - not implemented yet');
+      showAlert('info', 'Duplicate handling feature is not yet implemented');
+    }
+
     function updateStats() {
       console.log('Stats updated - Total contacts:', allContacts.length, 'Filtered:', filteredContacts.length);
     }
 
-    // Simple startup diagnostic
-    async function runStartupDiagnostic() {
-      console.log('=== STARTUP DIAGNOSTIC ===');
-      console.log('1. Supabase library check:', typeof window.supabase !== 'undefined' ? 'LOADED' : 'MISSING');
-      console.log('2. Supabase client initialized:', !!supabase ? 'YES' : 'NO');
-      console.log('3. Supabase URL:', SUPABASE_URL);
-      console.log('4. Running table connection test...');
+    // Utility function to add timeout to async operations
+    function withTimeout(promise, timeoutMs = 10000, operation = 'operation') {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`${operation} timed out after ${timeoutMs}ms`)), timeoutMs)
+        )
+      ]);
+    }
+
+    // Role-based access helper functions
+    async function getCurrentUser() {
+      console.log('[DEBUG] getCurrentUser called');
       
-      if (supabase) {
-        try {
-          const { data, error } = await supabase
-            .from('contacts')
-            .select('count', { count: 'exact', head: true });
+      try {
+        // Try to get user from global Supabase session (same way as global nav)
+        const supabase = window.globalSupabase || window.supabase;
+        if (supabase && supabase.auth) {
+          console.log('[DEBUG] Getting user from Supabase session...');
+          const sessionResult = await supabase.auth.getSession();
+          const session = sessionResult.data.session;
+          console.log('[DEBUG] Supabase session:', session);
+          
+          if (session && session.user) {
+            const userId = session.user.id;
+            const userEmail = session.user.email;
+            console.log('[DEBUG] User from session - ID:', userId, 'Email:', userEmail);
             
-          if (error) {
-            console.log('5. Table connection: FAILED -', error.message);
-            showAlert('error', `Database connection failed: ${error.message}. Please check your Supabase setup and run the table creation script.`);
-          } else {
-            console.log('5. Table connection: SUCCESS');
-            console.log('6. Now testing data query...');
+            // For your specific email, map to the correct local user ID
+            if (userEmail === 'john+2@tpnlife.com') {
+              const user = {
+                id: 'user-john+2-tpnlife-com',
+                supabase_id: userId,
+                email: userEmail,
+                first_name: 'John',
+                last_name: 'User',
+                role: 'user'
+              };
+              console.log('[DEBUG] Using mapped user for john+2@tpnlife.com:', user);
+              return user;
+            } else if (userEmail === 'john+3@tpnlife.com') {
+              const user = {
+                id: 'user-manager-example-com',
+                supabase_id: userId,
+                email: userEmail,
+                first_name: 'John',
+                last_name: 'Manager',
+                role: 'manager'
+              };
+              console.log('[DEBUG] Using mapped manager user for john+3@tpnlife.com:', user);
+              return user;
+            }
             
-            const { data: sampleData, error: queryError } = await supabase
-              .from('contacts')
-              .select('*')
-              .limit(1);
-              
-            if (queryError) {
-              console.log('7. Data query: FAILED -', queryError.message);
-              showAlert('error', `Data query failed: ${queryError.message}`);
-            } else {
-              console.log('7. Data query: SUCCESS');
-              console.log('8. Sample data:', sampleData);
-              
-              if (sampleData && sampleData.length > 0) {
-                console.log('9. Data structure check: PASSED');
-                console.log('Available columns:', Object.keys(sampleData[0]));
-              } else {
-                console.log('9. Data structure check: NO DATA (table is empty)');
-                showAlert('info', 'Contacts table is empty. You can add sample data by running createSampleContacts() in the browser console.');
+            // For other users, try to get profile data
+            try {
+              const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('first_name, last_name, email, role')
+                .eq('id', userId)
+                .maybeSingle();
+                
+              if (profileData) {
+                const role = profileData.role || 'user';
+                let localUserId;
+                
+                if (role === 'admin') {
+                  localUserId = '63847570-8094-48c5-b531-24ae0ed00bd8';
+                } else {
+                  localUserId = 'user-' + userEmail.replace('@', '-').replace(/\./g, '-');
+                }
+                
+                const user = {
+                  id: localUserId,
+                  supabase_id: userId,
+                  email: profileData.email || userEmail,
+                  first_name: profileData.first_name || '',
+                  last_name: profileData.last_name || '',
+                  role: role
+                };
+                console.log('[DEBUG] Using profile-based user:', user);
+                return user;
               }
+            } catch (profileError) {
+              console.warn('[DEBUG] Profile lookup failed:', profileError);
             }
           }
-        } catch (err) {
-          console.log('5. Table connection: ERROR -', err.message);
-          showAlert('error', `Connection error: ${err.message}`);
         }
-      } else {
-        console.log('5. Cannot test - Supabase client not initialized');
-        showAlert('error', 'Supabase client not initialized. Please check if the Supabase library loaded correctly.');
+      } catch (e) {
+        console.error('[DEBUG] Error getting user from Supabase:', e);
+      }
+      
+      // Fallback: use demo admin
+      console.warn('No user found, using demo manager user for testing.');
+      return {
+        id: 'user-manager-example-com',
+        email: 'manager@example.com',
+        first_name: 'Test',
+        last_name: 'Manager',
+        role: 'manager'
+      };
+    }
+    
+    function updateRoleBasedUI(userRole, isFiltered) {
+      // Update page title and headers to show role-based context
+      const pageTitle = document.querySelector('h1, .page-title');
+      if (pageTitle) {
+        const roleContext = userRole === 'admin' ? 'All Contacts' :
+                           userRole === 'supervisor' ? 'Team Contacts' :
+                           userRole === 'manager' ? 'Managed Contacts' :
+                           'My Contacts';
+        
+        if (pageTitle.textContent && !pageTitle.textContent.includes('Contacts')) {
+          pageTitle.textContent = roleContext;
+        }
+      }
+      
+      // Show role indicator in the UI
+      const statsContainer = document.querySelector('.stats-container, .contact-stats');
+      if (statsContainer && isFiltered) {
+        let roleIndicator = document.getElementById('role-indicator');
+        if (!roleIndicator) {
+          roleIndicator = document.createElement('div');
+          roleIndicator.id = 'role-indicator';
+          roleIndicator.style.cssText = `
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 10px;
+          `;
+          statsContainer.appendChild(roleIndicator);
+        }
+        
+        const roleLabels = {
+          admin: '👑 Admin View',
+          supervisor: '👥 Team View', 
+          manager: '📋 Manager View',
+          user: '👤 Personal View'
+        };
+        
+        roleIndicator.textContent = roleLabels[userRole] || `${userRole} View`;
+      }
+      
+      console.log(`UI updated for role: ${userRole}, filtered: ${isFiltered}`);
+    }
+
+    // Simple startup diagnostic for API server
+    async function runStartupDiagnostic() {
+      console.log('=== STARTUP DIAGNOSTIC ===');
+      console.log('1. API Server mode: ENABLED');
+      console.log('2. Current user check...');
+      
+      try {
+        const currentUser = await getCurrentUser();
+        console.log('3. Current user:', currentUser);
+        
+        if (!currentUser || !currentUser.id) {
+          console.log('4. User authentication: FAILED - No user found');
+          showAlert('error', 'User authentication required. Please log in through the global navigation.');
+          return;
+        }
+        
+        console.log('4. User authentication: SUCCESS');
+        console.log('5. Testing API server connection...');
+        
+        // Test API server health
+        const healthResponse = await fetch('/api/health');
+        if (!healthResponse.ok) {
+          throw new Error(`API server not responding: ${healthResponse.status}`);
+        }
+        
+        const healthData = await healthResponse.json();
+        console.log('6. API server health:', healthData);
+        console.log('7. API server connection: SUCCESS');
+        
+      } catch (error) {
+        console.log('API server connection: FAILED -', error.message);
+        showAlert('error', `API server connection failed: ${error.message}. Please ensure the API server is running at http://localhost:3000`);
       }
       
       console.log('=== DIAGNOSTIC COMPLETE ===');
@@ -1667,10 +2248,26 @@
       console.log('Contacts app starting...');
       adjustTableHeight();
       
-      // Run diagnostic first
+      // Simplified startup - skip diagnostic that might be hanging
       setTimeout(async () => {
-        await runStartupDiagnostic();
-        await initializeApp();
+        try {
+          console.log('Starting simplified initialization...');
+          await withTimeout(initializeApp(), 15000, 'app initialization');
+        } catch (error) {
+          console.error('Startup failed:', error);
+          showAlert('error', `Application startup failed: ${error.message}. Please refresh the page or check the console.`);
+          
+          // Fallback: try to load with demo data
+          try {
+            console.log('Attempting fallback initialization...');
+            allContacts = [];
+            filteredContacts = [];
+            renderContacts();
+            setupEventListeners();
+          } catch (fallbackError) {
+            console.error('Fallback also failed:', fallbackError);
+          }
+        }
       }, 100); // Small delay to ensure DOM is ready
     });
 
@@ -1693,8 +2290,8 @@
       try {
         console.log('Initializing app...');
         
-        // First try to load contacts
-        await loadContacts();
+        // First try to load contacts with timeout
+        await withTimeout(loadContacts(), 15000, 'contact loading');
         
         // Only setup event listeners if we get this far
         setupEventListeners();
@@ -1712,6 +2309,11 @@
         if (allContacts.length === 0) {
           showAlert('info', 'No contacts found. The table may be empty or you may need to run the table setup script. Check the browser console for more details.');
         }
+        
+        // Test the column visibility modal functionality
+        setTimeout(() => {
+          testColumnVisibilityModal();
+        }, 1000);
       } catch (error) {
         console.error('Error initializing app:', error);
         const errorMessage = error.message || 'Unknown error occurred';
@@ -1724,6 +2326,8 @@
           guidance = ' Please check your Supabase URL and API key configuration.';
         } else if (errorMessage.includes('permission')) {
           guidance = ' Please check your Supabase RLS policies and table permissions.';
+        } else if (errorMessage.includes('timed out')) {
+          guidance = ' The operation took too long. Please check your internet connection and API server status.';
         }
         
         showAlert('error', `Failed to load contacts: ${errorMessage}.${guidance} Check the browser console for details.`);
@@ -1738,35 +2342,49 @@
     // Load contacts from Supabase
     async function loadContacts() {
       try {
-        if (supabase) {
-          console.log('Loading contacts from Supabase...');
-          console.log('Supabase client:', supabase);
+        console.log('=== STARTING LOAD CONTACTS ===');
+        console.log('Supabase client available:', !!supabase);
+        console.log('Supabase client type:', typeof supabase);
+        
+        if (!supabase) {
+          console.error('No Supabase client available');
+          throw new Error('Supabase client not initialized');
+        }
+        
+        if (typeof supabase.from !== 'function') {
+          console.error('supabase.from is not a function:', typeof supabase.from);
+          console.log('Supabase client object:', supabase);
+          throw new Error('Invalid Supabase client - from method not available');
+        }
+        
+        console.log('Loading contacts from Supabase...');
+        console.log('Supabase client:', supabase);
+        
+        // First check if the table exists and get its structure
+        console.log('Testing connection to contacts table...');
+        const { data: testData, error: testError } = await supabase
+          .from('contacts')
+          .select('*')
+          .limit(1);
+        
+        if (testError) {
+          console.error('Error testing contacts table:', testError);
           
-          // First check if the table exists and get its structure
-          console.log('Testing connection to contacts table...');
-          const { data: testData, error: testError } = await supabase
-            .from('contacts')
-            .select('*')
-            .limit(1);
-          
-          if (testError) {
-            console.error('Error testing contacts table:', testError);
-            
-            // Provide specific error messages for common issues
-            if (testError.message.includes('relation "contacts" does not exist')) {
-              throw new Error('Contacts table does not exist. Please run the table creation SQL script in your Supabase database.');
-            } else if (testError.message.includes('JWT')) {
-              throw new Error('Authentication error. Please check your Supabase configuration and permissions.');
-            } else {
-              throw new Error(`Database connection error: ${testError.message}`);
-            }
+          // Provide specific error messages for common issues
+          if (testError.message.includes('relation "contacts" does not exist')) {
+            throw new Error('Contacts table does not exist. Please run the table creation SQL script in your Supabase database.');
+          } else if (testError.message.includes('JWT')) {
+            throw new Error('Authentication error. Please check your Supabase configuration and permissions.');
+          } else {
+            throw new Error(`Database connection error: ${testError.message}`);
           }
-          
-          console.log('Contacts table accessible, loading all data...');
-          const { data, error } = await supabase
-            .from('contacts')
-            .select('*')
-            .order('id', { ascending: true });
+        }
+        
+        console.log('Contacts table accessible, loading all data...');
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('*')
+          .order('id', { ascending: true });
           
           if (error) {
             console.error('Error querying contacts:', error);
@@ -1810,7 +2428,14 @@
             }));
             
             filteredContacts = [...allContacts];
-            renderContacts();
+            
+            // Apply saved sort if it exists
+            if (appliedSortLevels.length > 0) {
+              applySavedSort();
+            } else {
+              renderContacts();
+            }
+            
             console.log('Successfully loaded ' + allContacts.length + ' contacts from Supabase');
             return;
           } else {
@@ -1820,26 +2445,62 @@
             renderContacts();
             return;
           }
-        } else {
-          throw new Error('Supabase client not initialized. Please check if the Supabase library loaded correctly.');
+          
+        } catch (error) {
+          console.error('Error loading contacts from Supabase:', error);
+          console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            supabaseConnected: !!supabase,
+            supabaseUrl: SUPABASE_URL
+          });
+          
+          // Initialize empty arrays if Supabase fails
+          allContacts = [];
+          filteredContacts = [];
+          renderContacts();
+          
+          throw error; // Re-throw to be handled by initializeApp
         }
-        
-      } catch (error) {
-        console.error('Error loading contacts from Supabase:', error);
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack,
-          supabaseConnected: !!supabase,
-          supabaseUrl: SUPABASE_URL
-        });
-        
-        // Initialize empty arrays if Supabase fails
-        allContacts = [];
-        filteredContacts = [];
-        renderContacts();
-        
-        throw error; // Re-throw to be handled by initializeApp
       }
+    // Test the column visibility modal functionality
+    function testColumnVisibilityModal() {
+      console.log('=== TESTING COLUMN VISIBILITY MODAL ===');
+      
+      // Test opening modal
+      const modal = document.getElementById('column-visibility-modal');
+      const openBtn = document.getElementById('open-column-modal');
+      const closeBtn = document.getElementById('close-column-modal');
+      
+      console.log('Modal element found:', !!modal);
+      console.log('Open button found:', !!openBtn);
+      console.log('Close button found:', !!closeBtn);
+      
+      // Test checkboxes
+      const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
+      console.log('Number of checkboxes found:', checkboxes.length);
+      
+      // Test some column visibility toggles
+      const table = document.querySelector('.table');
+      const allColumns = table.querySelectorAll('th');
+      console.log('Total table columns:', allColumns.length);
+      
+      // Test the first toggleable column (should be column 6 - index 5)
+      if (checkboxes.length > 0) {
+        const firstCheckbox = checkboxes[0];
+        const columnIndex = parseInt(firstCheckbox.dataset.column);
+        console.log('First checkbox controls column:', columnIndex);
+        
+        // Test hiding/showing
+        toggleColumnVisibility(columnIndex, false);
+        console.log('Column', columnIndex, 'hidden');
+        
+        setTimeout(() => {
+          toggleColumnVisibility(columnIndex, true);
+          console.log('Column', columnIndex, 'shown again');
+        }, 1000);
+      }
+      
     }
 
     function renderContacts() {
@@ -1952,7 +2613,7 @@
           '<td class="editable-cell" data-field="landline" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.landline ? 'Yes' : (contact.landline === false ? 'No' : '')) + '</span>' +
           '</td>' +
-          '<td class="editable-cell" data-field="voip" data-id="' + contact.id + '">' + 
+                   '<td class="editable-cell" data-field="voip" data-id="' + contact.id + '">' + 
             '<span class="cell-content">' + (contact.voip ? 'Yes' : (contact.voip === false ? 'No' : '')) + '</span>' +
           '</td>' +
           '<td class="editable-cell" data-field="other_phone" data-id="' + contact.id + '">' + 
@@ -2297,15 +2958,22 @@
       if (resetBtn) resetBtn.addEventListener('click', () => {
         document.getElementById('search-input').value = '';
         filteredContacts = [...allContacts];
-        currentPage = 1;
-        renderContacts();
+        
+        // Apply saved sort if it exists
+        if (appliedSortLevels.length > 0) {
+          applySavedSort();
+        } else {
+          currentPage = 1;
+          renderContacts();
+        }
+        
         hideSuggestions();
       });
       
       // Search input event listener
       const searchInput = document.getElementById('search-input');
       if (searchInput) {
-        searchInput.addEventListener('input', handleSearch);
+        searchInput.addEventListener('input', handleSearchInput);
         searchInput.addEventListener('keydown', function(e) {
           if (e.key === 'Escape') {
             hideSuggestions();
@@ -2338,6 +3006,17 @@
       // Modal event listeners
       setupModalEventListeners();
       
+      // Global click listener to hide suggestions when clicking outside search area
+      document.addEventListener('click', function(e) {
+        const searchGroup = document.querySelector('.search-group');
+        const suggestions = document.getElementById('search-suggestions');
+        
+        // Hide suggestions if clicking outside the search group and suggestions are visible
+        if (searchGroup && suggestions && !searchGroup.contains(e.target)) {
+          hideSuggestions();
+        }
+      });
+      
       // File input event listener
       const csvFileInput = document.getElementById('csv-file');
       if (csvFileInput) {
@@ -2359,6 +3038,36 @@
         });
       }
       
+      // Cell editing event delegation
+      const contactsTable = document.getElementById('contacts-table');
+      if (contactsTable) {
+        contactsTable.addEventListener('click', function(e) {
+          const cell = e.target.closest('.editable-cell');
+          if (cell) {
+            makeEditable(cell);
+          }
+        });
+      }
+      
+      // Checkbox event delegation
+      if (contactsTable) {
+        contactsTable.addEventListener('change', function(e) {
+          if (e.target.classList.contains('contact-checkbox')) {
+            const contactId = e.target.dataset.id;
+            const row = e.target.closest('tr');
+            
+            if (e.target.checked) {
+              selectedContactIds.add(contactId);
+              row.classList.add('selected');
+            } else {
+              selectedContactIds.delete(contactId);
+              row.classList.remove('selected');
+            }
+            updateHeaderCheckboxAndDeleteButton();
+          }
+        });
+      }
+
       console.log('Event listeners set up successfully');
     }
 
@@ -2433,12 +3142,29 @@
           const newContact = Object.fromEntries(formData.entries());
           
           try {
-            const { data, error } = await supabase
-              .from('contacts')
-              .insert([newContact])
-              .select();
-              
-            if (error) throw error;
+            // Add current user assignment if not specified
+            const currentUser = await getCurrentUser();
+            if (!newContact.assigned_to && currentUser) {
+              newContact.assigned_to = currentUser.id;
+            }
+            
+            const response = await fetch('/api/contacts', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(newContact)
+            });
+            
+            if (!response.ok) {
+              throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.error) {
+              throw new Error(result.message || 'Failed to add contact');
+            }
             
             showAlert('success', 'Contact added successfully');
             document.getElementById('add-contact-modal').style.display = 'none';
@@ -2469,14 +3195,30 @@
           }
           
           try {
-            const { data, error } = await supabase
-              .from('contacts')
-              .insert(importData)
-              .select();
-              
-            if (error) throw error;
+            const response = await fetch('/api/contacts/import', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ contacts: importData })
+            });
             
-            showAlert('success', `Successfully imported ${data.length} contacts`);
+            if (!response.ok) {
+              throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.error) {
+              throw new Error(result.message || 'Failed to import contacts');
+            }
+            
+            showAlert('success', `Successfully imported ${result.imported} contacts`);
+            if (result.errors && result.errors.length > 0) {
+              console.warn('Import errors:', result.errors);
+              showAlert('warning', `${result.errors.length} contacts had errors. Check console for details.`);
+            }
+            
             document.getElementById('import-modal').style.display = 'none';
             await loadContacts(); // Reload contacts
             
@@ -2520,149 +3262,135 @@
           }
         });
       }
-    }
 
-    // Essential utility functions
-    function getSelectedContacts() {
-      return Array.from(selectedContactIds);
-    }
+      // Sort modal buttons
+      const sortBtn = document.getElementById('sort-btn');
+      const cancelSortBtn = document.getElementById('cancel-sort');
+      const applySortBtn = document.getElementById('apply-sort');
+      const addSortLevelBtn = document.getElementById('add-sort-level');
+      const clearSortBtn = document.getElementById('clear-sort');
 
-    function clearContactSelections() {
-      selectedContactIds.clear();
-      document.querySelectorAll('.contact-checkbox').forEach(checkbox => {
-        checkbox.checked = false;
-      });
-      document.querySelectorAll('.table tbody tr').forEach(row => {
-        row.classList.remove('selected');
-      });
-      updateHeaderCheckboxAndDeleteButton();
-    }
-
-    // Cell editing functionality
-    function makeEditable(cell) {
-      if (cell.classList.contains('editing')) return;
-      
-      const originalValue = cell.textContent.trim();
-      const columnIndex = cell.cellIndex;
-      const row = cell.closest('tr');
-      const contactId = row.querySelector('.contact-checkbox').dataset.id;
-      
-      // Add editing class
-      cell.classList.add('editing');
-      
-      // Create input element
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.className = 'cell-input';
-      input.value = originalValue;
-      
-      // Clear cell and add input
-      cell.innerHTML = '';
-      cell.appendChild(input);
-      
-      // Focus and select all text
-      input.focus();
-      input.select();
-      
-      // Handle saving on Enter or blur
-      function saveCell() {
-        const newValue = input.value.trim();
-        cell.classList.remove('editing');
-        
-        // Remove any edit indicators and set clean text content
-        cell.innerHTML = '';
-        cell.textContent = newValue;
-        
-        // Save to database if value changed
-        if (newValue !== originalValue) {
-          saveCellToDatabase(contactId, columnIndex, newValue);
-        }
+      if (sortBtn) {
+        sortBtn.addEventListener('click', handleSort);
       }
-      
-      // Handle escape to cancel
-      function cancelEdit() {
-        cell.classList.remove('editing');
-        
-        // Remove any edit indicators and restore original text
-        cell.innerHTML = '';
-        cell.textContent = originalValue;
+
+      if (cancelSortBtn) {
+        cancelSortBtn.addEventListener('click', () => {
+          document.getElementById('sort-modal').style.display = 'none';
+        });
       }
-      
-      // Event listeners
-      input.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          saveCell();
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          cancelEdit();
-        }
+
+      if (applySortBtn) {
+        applySortBtn.addEventListener('click', applySortToContacts);
+      }
+
+      if (addSortLevelBtn) {
+        addSortLevelBtn.addEventListener('click', addSortLevel);
+      }
+
+      if (clearSortBtn) {
+        clearSortBtn.addEventListener('click', clearAllSortLevels);
+      }
+
+      // Column modal buttons
+      const showAllColumnsBtn = document.getElementById('show-all-columns');
+      const hideAllColumnsBtn = document.getElementById('hide-all-columns');
+      const closeColumnModalBtn = document.getElementById('close-column-modal');
+
+      if (showAllColumnsBtn) {
+        showAllColumnsBtn.addEventListener('click', showAllColumns);
+      }
+
+      if (hideAllColumnsBtn) {
+        hideAllColumnsBtn.addEventListener('click', hideAllColumns);
+      }
+
+      if (closeColumnModalBtn) {
+        closeColumnModalBtn.addEventListener('click', () => {
+          document.getElementById('column-modal').style.display = 'none';
+        });
+      }
+
+      // Column toggle checkboxes
+      document.querySelectorAll('.column-toggle').forEach(checkbox => {
+        checkbox.addEventListener('change', handleColumnToggle);
       });
-      
-      input.addEventListener('blur', saveCell);
     }
 
-    async function saveCellToDatabase(contactId, columnIndex, value) {
-      // Map column indices to database field names
+    // Column visibility functions
+    function toggleColumn(columnName, visible) {
+      const table = document.getElementById('contacts-table');
+      if (!table) return;
+      
+      // Map column names to their positions in the table
       const columnMap = {
-        6: 'assignee',
-        7: 'sponsor',
-        8: 'sponsor_first',
-        9: 'sponsor_last',
-        10: 'sparky_id',
-        11: 'first_name',
-        12: 'last_name',
-        13: 'email',
-        14: 'valid',
-        15: 'phone',
-        16: 'address',
-        17: 'city',
-        18: 'state',
-        19: 'zip',
-        20: 'ip',
-        21: 'date',
-        22: 'timezone',
-        23: 'cell',
-        24: 'carrier',
-        25: 'landline',
-        26: 'voip',
-        27: 'other',
-        28: 'foreign',
-        29: 'country'
+        'contact_id': 5,
+        'assignee': 6,
+        'sponsor': 7,
+        'sponsor_first': 8,
+        'sponsor_last': 9,
+        'user_id': 10,
+        'first_name': 11,
+        'last_name': 12,
+        'email': 13,
+        'valid': 14,
+        'phone': 15,
+        'address': 16,
+        'city': 17,
+        'state': 18,
+        'zip': 19,
+        'ip_address': 20,
+        'date_created': 21,
+        'timezone': 22,
+        'cell': 23,
+        'carrier': 24,
+        'landline': 25,
+        'voip': 26,
+        'other_phone': 27,
+        'foreign_number': 28,
+        'country': 29
       };
       
-      const fieldName = columnMap[columnIndex];
-      if (!fieldName) {
-        console.warn('No field mapping for column index:', columnIndex);
-        return;
+      const columnIndex = columnMap[columnName];
+      if (columnIndex === undefined) return;
+      
+      // Toggle header
+      const headers = table.querySelectorAll('th');
+      const header = headers[columnIndex];
+      if (header) {
+        header.style.display = visible ? '' : 'none';
       }
       
-      try {
-        const { error } = await supabase
-          .from('contacts')
-          .update({ [fieldName]: value })
-          .eq('id', contactId);
-          
-        if (error) {
-          console.error('Error saving cell:', error);
-          showAlert('error', 'Failed to save changes: ' + error.message);
-        } else {
-          console.log('Cell saved successfully:', fieldName, '=', value);
-          
-          // Update local data
-          const contact = allContacts.find(c => c.id === contactId);
-          if (contact) {
-            contact[fieldName] = value;
-          }
-          const filteredContact = filteredContacts.find(c => c.id === contactId);
-          if (filteredContact) {
-            filteredContact[fieldName] = value;
-          }
+      // Toggle all cells in this column
+      const rows = table.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        const cell = row.cells[columnIndex];
+        if (cell) {
+          cell.style.display = visible ? '' : 'none';
         }
-      } catch (error) {
-        console.error('Error saving cell:', error);
-        showAlert('error', 'Failed to save changes: ' + error.message);
-      }
+      });
+    }
+
+    function handleColumnToggle(event) {
+      const columnName = event.target.dataset.column;
+      const visible = event.target.checked;
+      toggleColumn(columnName, visible);
+    }
+
+    function showAllColumns() {
+      const checkboxes = document.querySelectorAll('.column-toggle');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        toggleColumn(checkbox.dataset.column, true);
+      });
+    }
+
+    function hideAllColumns() {
+      const checkboxes = document.querySelectorAll('.column-toggle');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+        toggleColumn(checkbox.dataset.column, false);
+      });
     }
   </script>
 </body>

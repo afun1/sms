@@ -242,18 +242,41 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
         var logoutBtn = nav.querySelector('#logoutBtn');
         if (logoutBtn) {
             logoutBtn.onclick = async function() {
+                console.log('[DEBUG] Logout button clicked');
+                
+                // Show loading state
+                logoutBtn.textContent = 'Logging out...';
+                logoutBtn.disabled = true;
+                
                 try {
                     const supabase = window.globalSupabase || window.supabase;
                     if (supabase && supabase.auth) {
-                        await supabase.auth.signOut();
-                        console.log('[DEBUG] User signed out');
+                        console.log('[DEBUG] Attempting Supabase signOut...');
+                        
+                        // Add timeout to prevent hanging
+                        const signOutPromise = supabase.auth.signOut();
+                        const timeoutPromise = new Promise((_, reject) => {
+                            setTimeout(() => reject(new Error('Logout timeout after 5 seconds')), 5000);
+                        });
+                        
+                        await Promise.race([signOutPromise, timeoutPromise]);
+                        console.log('[DEBUG] Supabase signOut completed');
                     } else {
                         console.warn('[DEBUG] Supabase not available for logout');
                     }
+                    
+                    // Clear any local storage
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    console.log('[DEBUG] Local storage cleared');
+                    
                 } catch (e) {
                     console.error('[DEBUG] Error during logout:', e);
+                } finally {
+                    // Always redirect regardless of Supabase result
+                    console.log('[DEBUG] Redirecting to login page...');
+                    window.location.href = 'login.html';
                 }
-                window.location.href = 'login.html';
             };
         } else {
             console.warn('[DEBUG] Logout button not found in nav');
