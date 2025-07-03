@@ -766,6 +766,52 @@
         padding-top: 10px;
       }
     }
+    
+    /* Hierarchical view styles for supervisor */
+    .manager-header-row {
+      background: linear-gradient(135deg, #2196F3, #1976D2) !important;
+      color: white !important;
+      font-weight: bold !important;
+      cursor: pointer !important;
+    }
+    
+    .manager-header-row:hover {
+      background: linear-gradient(135deg, #1976D2, #1565C0) !important;
+    }
+    
+    .user-header-row {
+      background: linear-gradient(135deg, #4CAF50, #388E3C) !important;
+      color: white !important;
+      font-weight: bold !important;
+      cursor: pointer !important;
+    }
+    
+    .user-header-row:hover {
+      background: linear-gradient(135deg, #388E3C, #2E7D32) !important;
+    }
+    
+    .manager-contact-row {
+      background-color: #E3F2FD !important;
+    }
+    
+    .manager-contact-row:hover {
+      background-color: #BBDEFB !important;
+    }
+    
+    .user-contact-row {
+      background-color: #F1F8E9 !important;
+    }
+    
+    .user-contact-row:hover {
+      background-color: #DCEDC8 !important;
+    }
+    
+    /* Ensure header cells maintain their styling */
+    .manager-header-row td,
+    .user-header-row td {
+      color: white !important;
+      font-weight: bold !important;
+    }
   </style>
 </head>
 
@@ -2108,6 +2154,17 @@
               };
               console.log('[DEBUG] Using mapped manager user for john+3@tpnlife.com:', user);
               return user;
+            } else if (userEmail === 'john+4@tpnlife.com') {
+              const user = {
+                id: 'user-supervisor-example-com',
+                supabase_id: userId,
+                email: userEmail,
+                first_name: 'John',
+                last_name: 'Supervisor',
+                role: 'supervisor'
+              };
+              console.log('[DEBUG] Using mapped supervisor user for john+4@tpnlife.com:', user);
+              return user;
             }
             
             // For other users, try to get profile data
@@ -2148,14 +2205,14 @@
         console.error('[DEBUG] Error getting user from Supabase:', e);
       }
       
-      // Fallback: use demo admin
-      console.warn('No user found, using demo manager user for testing.');
+      // Fallback: use demo supervisor for testing
+      console.warn('No user found, using demo supervisor user for testing.');
       return {
-        id: 'user-manager-example-com',
-        email: 'manager@example.com',
+        id: 'user-supervisor-example-com',
+        email: 'supervisor@example.com',
         first_name: 'Test',
-        last_name: 'Manager',
-        role: 'manager'
+        last_name: 'Supervisor',
+        role: 'supervisor'
       };
     }
     
@@ -2164,7 +2221,7 @@
       const pageTitle = document.querySelector('h1, .page-title');
       if (pageTitle) {
         const roleContext = userRole === 'admin' ? 'All Contacts' :
-                           userRole === 'supervisor' ? 'Team Contacts' :
+                           userRole === 'supervisor' ? 'Team Hierarchy View' :
                            userRole === 'manager' ? 'Managed Contacts' :
                            'My Contacts';
         
@@ -2175,7 +2232,7 @@
       
       // Show role indicator in the UI
       const statsContainer = document.querySelector('.stats-container, .contact-stats');
-      if (statsContainer && isFiltered) {
+      if (statsContainer && (isFiltered || userRole === 'supervisor')) {
         let roleIndicator = document.getElementById('role-indicator');
         if (!roleIndicator) {
           roleIndicator = document.createElement('div');
@@ -2195,12 +2252,19 @@
         
         const roleLabels = {
           admin: '👑 Admin View',
-          supervisor: '👥 Team View', 
+          supervisor: '🏢 Supervisor - Team Hierarchy', 
           manager: '📋 Manager View',
           user: '👤 Personal View'
         };
         
         roleIndicator.textContent = roleLabels[userRole] || `${userRole} View`;
+        
+        // Special styling for supervisor mode
+        if (userRole === 'supervisor') {
+          roleIndicator.style.background = '#2196F3';
+          roleIndicator.style.color = 'white';
+          roleIndicator.style.fontWeight = 'bold';
+        }
       }
       
       console.log(`UI updated for role: ${userRole}, filtered: ${isFiltered}`);
@@ -2339,6 +2403,132 @@
       }
     }
 
+    // Load hierarchical data for supervisor view
+    async function loadSupervisorHierarchicalData(supervisor) {
+      try {
+        console.log('Loading hierarchical data for supervisor:', supervisor.id);
+        
+        // First, get all managers assigned to this supervisor
+        const { data: managers, error: managersError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email, role, manager_id')
+          .eq('manager_id', supervisor.id)
+          .eq('role', 'manager');
+        
+        if (managersError) {
+          console.error('Error loading managers:', managersError);
+          throw new Error(`Failed to load managers: ${managersError.message}`);
+        }
+        
+        console.log('Found managers:', managers);
+        
+        if (!managers || managers.length === 0) {
+          console.log('No managers found for supervisor, returning empty array');
+          return [];
+        }
+        
+        // Get all manager IDs to fetch their assigned users and contacts
+        const managerIds = managers.map(m => m.id);
+        
+        // Get all users assigned to these managers
+        const { data: users, error: usersError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email, role, manager_id')
+          .in('manager_id', managerIds)
+          .eq('role', 'user');
+        
+        if (usersError) {
+          console.error('Error loading users:', usersError);
+          throw new Error(`Failed to load users: ${usersError.message}`);
+        }
+        
+        console.log('Found users:', users);
+        
+        // Get all user IDs to fetch their contacts
+        const allUserIds = [...managerIds, ...(users || []).map(u => u.id)];
+        
+        // Get contacts assigned to managers and their users
+        const { data: contacts, error: contactsError } = await supabase
+          .from('contacts')
+          .select('*')
+          .in('assignee', allUserIds)
+          .order('assignee', { ascending: true });
+        
+        if (contactsError) {
+          console.error('Error loading contacts:', contactsError);
+          throw new Error(`Failed to load contacts: ${contactsError.message}`);
+        }
+        
+        console.log('Found contacts:', contacts);
+        
+        // Create hierarchical structure by adding hierarchy indicators to contacts
+        const hierarchicalContacts = [];
+        
+        managers.forEach(manager => {
+          // Add manager header row
+          const managerHeader = {
+            id: `manager-header-${manager.id}`,
+            assignee: manager.id,
+            first_name: `📋 MANAGER: ${manager.first_name} ${manager.last_name}`,
+            last_name: manager.email,
+            email: '',
+            phone: '',
+            city: '',
+            state: '',
+            isManagerHeader: true,
+            managerData: manager
+          };
+          hierarchicalContacts.push(managerHeader);
+          
+          // Add contacts assigned directly to this manager
+          const managerContacts = (contacts || []).filter(c => c.assignee === manager.id);
+          managerContacts.forEach(contact => {
+            hierarchicalContacts.push({
+              ...contact,
+              first_name: `    ${contact.first_name || ''}`, // Indent to show hierarchy
+              isManagerContact: true
+            });
+          });
+          
+          // Add users under this manager
+          const managerUsers = (users || []).filter(u => u.manager_id === manager.id);
+          managerUsers.forEach(user => {
+            // Add user header row
+            const userHeader = {
+              id: `user-header-${user.id}`,
+              assignee: user.id,
+              first_name: `    👤 USER: ${user.first_name} ${user.last_name}`,
+              last_name: user.email,
+              email: '',
+              phone: '',
+              city: '',
+              state: '',
+              isUserHeader: true,
+              userData: user
+            };
+            hierarchicalContacts.push(userHeader);
+            
+            // Add contacts assigned to this user
+            const userContacts = (contacts || []).filter(c => c.assignee === user.id);
+            userContacts.forEach(contact => {
+              hierarchicalContacts.push({
+                ...contact,
+                first_name: `        ${contact.first_name || ''}`, // Double indent for user contacts
+                isUserContact: true
+              });
+            });
+          });
+        });
+        
+        console.log('Created hierarchical structure with', hierarchicalContacts.length, 'items');
+        return hierarchicalContacts;
+        
+      } catch (error) {
+        console.error('Error in loadSupervisorHierarchicalData:', error);
+        throw error;
+      }
+    }
+
     // Load contacts from Supabase
     async function loadContacts() {
       try {
@@ -2360,6 +2550,10 @@
         console.log('Loading contacts from Supabase...');
         console.log('Supabase client:', supabase);
         
+        // Get current user to determine data access
+        const currentUser = await getCurrentUser();
+        console.log('Current user:', currentUser);
+        
         // First check if the table exists and get its structure
         console.log('Testing connection to contacts table...');
         const { data: testData, error: testError } = await supabase
@@ -2380,24 +2574,33 @@
           }
         }
         
-        console.log('Contacts table accessible, loading all data...');
-        const { data, error } = await supabase
-          .from('contacts')
-          .select('*')
-          .order('id', { ascending: true });
-          
+        // Load data based on user role
+        let contactData;
+        if (currentUser.role === 'supervisor') {
+          console.log('Loading supervisor view - hierarchical data...');
+          contactData = await loadSupervisorHierarchicalData(currentUser);
+        } else {
+          console.log('Loading standard contacts view...');
+          const { data, error } = await supabase
+            .from('contacts')
+            .select('*')
+            .order('id', { ascending: true });
+            
           if (error) {
             console.error('Error querying contacts:', error);
             throw new Error(`Query error: ${error.message}`);
           }
           
-          console.log('Raw data from Supabase:', data);
-          console.log('Data type:', typeof data, 'Is array:', Array.isArray(data), 'Length:', data?.length);
-          
-          if (data && Array.isArray(data)) {
-            // Map data and ensure all expected fields exist with defaults
-            allContacts = data.map(contact => ({
-              id: contact.id || '',
+          contactData = data;
+        }
+        
+        console.log('Raw data from Supabase:', contactData);
+        console.log('Data type:', typeof contactData, 'Is array:', Array.isArray(contactData), 'Length:', contactData?.length);
+        
+        if (contactData && Array.isArray(contactData)) {
+          // Map data and ensure all expected fields exist with defaults
+          allContacts = contactData.map(contact => ({
+            id: contact.id || '',
               sms: contact.sms || '',
               call: contact.call || '',
               email_flag: contact.email_flag || '',
@@ -2428,6 +2631,9 @@
             }));
             
             filteredContacts = [...allContacts];
+            
+            // Update UI based on current user role
+            updateRoleBasedUI(currentUser.role, true);
             
             // Apply saved sort if it exists
             if (appliedSortLevels.length > 0) {
@@ -2535,96 +2741,155 @@
         // Calculate row number based on pagination
         const rowNumber = pageSize === 'all' ? index + 1 : ((currentPage - 1) * pageSize) + index + 1;
         
-        // All columns are now editable except the checkbox
-        row.innerHTML = 
-          '<td><input type="checkbox" class="contact-checkbox checkbox" data-id="' + contact.id + '"></td>' +
-          '<td class="editable-cell" data-field="sms" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.sms || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="call" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.call || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="email_flag" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.email_flag || '') + '</span>' +
-          '</td>' +
-          '<td class="readonly-cell">' + 
-            '<span class="cell-content">' + rowNumber + '</span>' +
-          '</td>' +
-          '<td class="readonly-cell">' + 
-            '<span class="cell-content">' + (contact.id || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="assignee" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.assignee || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="sponsor" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.sponsor || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="sponsor_first" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.sponsor_first || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="sponsor_last" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.sponsor_last || '') + '</span>' +
-          '</td>' +
-          '<td class="readonly-cell">' + 
-            '<span class="cell-content">' + (contact.user_id || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="first_name" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.first_name || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="last_name" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.last_name || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="email" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.email || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="valid" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.valid || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="phone" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.phone || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="address" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.address || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="city" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.city || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="state" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.state || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="zip" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.zip || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="ip_address" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.ip_address || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="date_created" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.date_created || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="timezone" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.timezone || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="cell" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.cell ? 'Yes' : (contact.cell === false ? 'No' : '')) + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="carrier" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.carrier || '') + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="landline" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.landline ? 'Yes' : (contact.landline === false ? 'No' : '')) + '</span>' +
-          '</td>' +
-                   '<td class="editable-cell" data-field="voip" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.voip ? 'Yes' : (contact.voip === false ? 'No' : '')) + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="other_phone" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.other_phone ? 'Yes' : (contact.other_phone === false ? 'No' : '')) + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="foreign_number" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.foreign_number ? 'Yes' : (contact.foreign_number === false ? 'No' : '')) + '</span>' +
-          '</td>' +
-          '<td class="editable-cell" data-field="country" data-id="' + contact.id + '">' + 
-            '<span class="cell-content">' + (contact.country || '') + '</span>' +
-          '</td>';
+        // Check if this is a header row (manager or user header)
+        if (contact.isManagerHeader) {
+          // Manager header row with special styling
+          row.className = 'manager-header-row';
+          row.style.cssText = 'background: linear-gradient(135deg, #2196F3, #1976D2); color: white; font-weight: bold;';
+          
+          row.innerHTML = 
+            '<td style="background: #1976D2;"><input type="checkbox" disabled style="opacity: 0.5;"></td>' +
+            '<td style="background: #1976D2; color: white;"></td>' +
+            '<td style="background: #1976D2; color: white;"></td>' +
+            '<td style="background: #1976D2; color: white;"></td>' +
+            '<td style="background: #1976D2; color: white;">' + rowNumber + '</td>' +
+            '<td style="background: #1976D2; color: white;">MANAGER</td>' +
+            '<td style="background: #1976D2; color: white;">' + (contact.managerData?.first_name || '') + ' ' + (contact.managerData?.last_name || '') + '</td>' +
+            '<td style="background: #1976D2; color: white;"></td>' +
+            '<td style="background: #1976D2; color: white;"></td>' +
+            '<td style="background: #1976D2; color: white;"></td>' +
+            '<td style="background: #1976D2; color: white;"></td>' +
+            '<td style="background: #1976D2; color: white; font-size: 14px; font-weight: bold;">' + (contact.managerData?.first_name || '') + '</td>' +
+            '<td style="background: #1976D2; color: white; font-size: 14px; font-weight: bold;">' + (contact.managerData?.last_name || '') + '</td>' +
+            '<td style="background: #1976D2; color: white; font-size: 14px; font-weight: bold;">' + (contact.managerData?.email || '') + '</td>' +
+            '<td colspan="16" style="background: #1976D2; color: white; text-align: center; font-size: 14px; font-weight: bold;">📋 MANAGER - Click to expand/collapse</td>';
+        } else if (contact.isUserHeader) {
+          // User header row with special styling
+          row.className = 'user-header-row';
+          row.style.cssText = 'background: linear-gradient(135deg, #4CAF50, #388E3C); color: white; font-weight: bold;';
+          
+          row.innerHTML = 
+            '<td style="background: #388E3C;"><input type="checkbox" disabled style="opacity: 0.5;"></td>' +
+            '<td style="background: #388E3C; color: white;"></td>' +
+            '<td style="background: #388E3C; color: white;"></td>' +
+            '<td style="background: #388E3C; color: white;"></td>' +
+            '<td style="background: #388E3C; color: white;">' + rowNumber + '</td>' +
+            '<td style="background: #388E3C; color: white;">USER</td>' +
+            '<td style="background: #388E3C; color: white;">' + (contact.userData?.first_name || '') + ' ' + (contact.userData?.last_name || '') + '</td>' +
+            '<td style="background: #388E3C; color: white;"></td>' +
+            '<td style="background: #388E3C; color: white;"></td>' +
+            '<td style="background: #388E3C; color: white;"></td>' +
+            '<td style="background: #388E3C; color: white;"></td>' +
+            '<td style="background: #388E3C; color: white; font-size: 13px; padding-left: 20px;">    👤 ' + (contact.userData?.first_name || '') + '</td>' +
+            '<td style="background: #388E3C; color: white; font-size: 13px;">' + (contact.userData?.last_name || '') + '</td>' +
+            '<td style="background: #388E3C; color: white; font-size: 13px;">' + (contact.userData?.email || '') + '</td>' +
+            '<td colspan="16" style="background: #388E3C; color: white; text-align: center; font-size: 13px;">👤 USER - Assigned contacts below</td>';
+        } else {
+          // Regular contact row with appropriate indentation and styling
+          let rowClass = '';
+          let indentStyle = '';
+          
+          if (contact.isManagerContact) {
+            rowClass = 'manager-contact-row';
+            indentStyle = 'padding-left: 10px; background-color: #E3F2FD;';
+          } else if (contact.isUserContact) {
+            rowClass = 'user-contact-row';
+            indentStyle = 'padding-left: 20px; background-color: #F1F8E9;';
+          }
+          
+          row.className = rowClass;
+          
+          // All columns are now editable except the checkbox
+          row.innerHTML = 
+            '<td style="' + indentStyle + '"><input type="checkbox" class="contact-checkbox checkbox" data-id="' + contact.id + '"></td>' +
+            '<td class="editable-cell" data-field="sms" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.sms || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="call" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.call || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="email_flag" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.email_flag || '') + '</span>' +
+            '</td>' +
+            '<td class="readonly-cell" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + rowNumber + '</span>' +
+            '</td>' +
+            '<td class="readonly-cell" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.id || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="assignee" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.assignee || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="sponsor" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.sponsor || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="sponsor_first" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.sponsor_first || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="sponsor_last" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.sponsor_last || '') + '</span>' +
+            '</td>' +
+            '<td class="readonly-cell" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.user_id || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="first_name" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.first_name || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="last_name" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.last_name || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="email" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.email || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="valid" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.valid || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="phone" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.phone || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="address" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.address || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="city" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.city || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="state" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.state || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="zip" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.zip || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="ip_address" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.ip_address || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="date_created" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.date_created || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="timezone" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.timezone || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="cell" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.cell ? 'Yes' : (contact.cell === false ? 'No' : '')) + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="carrier" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.carrier || '') + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="landline" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.landline ? 'Yes' : (contact.landline === false ? 'No' : '')) + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="voip" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.voip ? 'Yes' : (contact.voip === false ? 'No' : '')) + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="other_phone" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.other_phone ? 'Yes' : (contact.other_phone === false ? 'No' : '')) + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="foreign_number" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.foreign_number ? 'Yes' : (contact.foreign_number === false ? 'No' : '')) + '</span>' +
+            '</td>' +
+            '<td class="editable-cell" data-field="country" data-id="' + contact.id + '" style="' + indentStyle + '">' + 
+              '<span class="cell-content">' + (contact.country || '') + '</span>' +
+            '</td>';
+        }
         
         tbody.appendChild(row);
       });
@@ -2632,7 +2897,7 @@
       // Update pagination
       updatePagination();
       
-      // Add event listeners to checkboxes
+      // Add event listeners to checkboxes (only for actual contacts, not headers)
       document.querySelectorAll('.contact-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', handleContactSelection);
       });
@@ -2652,8 +2917,67 @@
         });
       });
       
+      // Add click handlers for expandable headers
+      document.querySelectorAll('.manager-header-row, .user-header-row').forEach(header => {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', function() {
+          toggleHierarchySection(this);
+        });
+      });
+      
       console.log('renderContacts completed - rendered ' + contactsToShow.length + ' rows');
       updatePagination();
+    }
+
+    // Function to toggle visibility of hierarchy sections
+    function toggleHierarchySection(headerRow) {
+      const isManagerHeader = headerRow.classList.contains('manager-header-row');
+      const isUserHeader = headerRow.classList.contains('user-header-row');
+      
+      if (!isManagerHeader && !isUserHeader) return;
+      
+      const tbody = headerRow.parentNode;
+      const rows = Array.from(tbody.children);
+      const headerIndex = rows.indexOf(headerRow);
+      
+      // Find the next header or end of table to determine section bounds
+      let nextHeaderIndex = rows.length;
+      for (let i = headerIndex + 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (isManagerHeader && (row.classList.contains('manager-header-row'))) {
+          nextHeaderIndex = i;
+          break;
+        } else if (isUserHeader && (row.classList.contains('manager-header-row') || row.classList.contains('user-header-row'))) {
+          nextHeaderIndex = i;
+          break;
+        }
+      }
+      
+      // Toggle visibility of rows in this section
+      const isCurrentlyExpanded = headerRow.getAttribute('data-expanded') !== 'false';
+      const newExpanded = !isCurrentlyExpanded;
+      
+      for (let i = headerIndex + 1; i < nextHeaderIndex; i++) {
+        const row = rows[i];
+        if (isManagerHeader || (isUserHeader && !row.classList.contains('user-header-row'))) {
+          row.style.display = newExpanded ? '' : 'none';
+        }
+      }
+      
+      // Update header indicator
+      headerRow.setAttribute('data-expanded', newExpanded.toString());
+      const expandIcon = newExpanded ? '▼' : '▶';
+      
+      // Update the header text to show expand/collapse state
+      const cells = headerRow.children;
+      if (cells.length > 6) {
+        const nameCell = cells[6];
+        const originalText = nameCell.textContent;
+        const cleanText = originalText.replace(/^[▼▶]\s*/, '');
+        nameCell.textContent = expandIcon + ' ' + cleanText;
+      }
+      
+      console.log(`Toggled ${isManagerHeader ? 'manager' : 'user'} section - expanded: ${newExpanded}`);
     }
 
     function handleContactSelection(event) {
