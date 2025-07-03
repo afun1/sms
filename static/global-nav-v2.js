@@ -50,7 +50,8 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
                                        `${impersonatedUser.first_name || ''} ${impersonatedUser.last_name || ''}`.trim() ||
                                        impersonatedUser.email?.split('@')[0] || '';
                     const userRole = impersonatedUser.role || 'user';
-                    return { displayName, userRole };
+                    const secondaryRole = impersonatedUser.secondary_role || null;
+                    return { displayName, userRole, secondaryRole };
                 }
             } catch (e) {
                 console.error('[DEBUG] Error parsing impersonation data:', e);
@@ -60,7 +61,7 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
         const supabase = window.globalSupabase || window.supabase;
         if (!supabase || !supabase.auth) {
             console.warn('[DEBUG] supabase or supabase.auth missing:', supabase, supabase && supabase.auth);
-            return { displayName: '', userRole: null };
+            return { displayName: '', userRole: null, secondaryRole: null };
         }
         try {
             const sessionResult = await supabase.auth.getSession();
@@ -68,22 +69,22 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
             console.log('[DEBUG] Supabase session:', session);
             if (!session || !session.user) {
                 console.warn('[DEBUG] No Supabase session or user found');
-                return { displayName: '', userRole: null };
+                return { displayName: '', userRole: null, secondaryRole: null };
             }
             const userId = session.user.id;
             const { data, error } = await supabase
                 .from('profiles')
-                .select('first_name, last_name, email, role')
+                .select('first_name, last_name, email, role, secondary_role')
                 .eq('id', userId)
                 .maybeSingle();
             console.log('[DEBUG] Supabase profiles query:', { userId, data, error });
             if (error) {
                 console.error('[DEBUG] Error fetching profile:', error);
-                return { displayName: '', userRole: null };
+                return { displayName: '', userRole: null, secondaryRole: null };
             }
             if (!data) {
                 console.warn('[DEBUG] No profile row found for user:', userId);
-                return { displayName: '', userRole: null };
+                return { displayName: '', userRole: null, secondaryRole: null };
             }
             
             let displayName = '';
@@ -97,16 +98,17 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
             }
             
             const userRole = data.role || null;
-            console.log('[DEBUG] User role:', userRole);
+            const secondaryRole = data.secondary_role || null;
+            console.log('[DEBUG] User role:', userRole, 'Secondary role:', secondaryRole);
             
-            return { displayName, userRole };
+            return { displayName, userRole, secondaryRole };
         } catch (e) {
             console.error('[DEBUG] Exception in getDisplayName:', e);
-            return { displayName: '', userRole: null };
+            return { displayName: '', userRole: null, secondaryRole: null };
         }
     }
 
-    function renderNav(displayName, userRole = null) {
+    function renderNav(displayName, userRole = null, secondaryRole = null) {
         // Check if user has admin privileges
         const isAdmin = userRole && ['admin', 'manager', 'supervisor'].includes(userRole.toLowerCase());
         console.log('[DEBUG] User role check - Role:', userRole, 'Is Admin:', isAdmin);
@@ -142,9 +144,69 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
             }
         }
         
-        // Build admin link if user has privileges (hide during impersonation)
-        const adminLink = (isAdmin && !isImpersonating) ? 
-            `<a href="admin.html" style="color:#e53935;text-decoration:none;font-weight:500;font-size:1.08em;border-left:1px solid #ddd;padding-left:22px;">Admin</a>` : 
+        // Build admin link - always visible regardless of role (hide during impersonation)
+        // Show "View as" with appropriate role name and destination
+        // Dynamic role switching based on current page and URL parameters
+        let roleText = 'Admin';
+        let roleDestination = 'admin.html';
+        
+        // Check current page to determine what to show
+        const currentPage = window.location.pathname.split('/').pop() || window.location.pathname;
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentView = urlParams.get('view');
+        
+        if (currentPage === 'admin.html') {
+            // If on admin page, show option to toggle view based on current view and user role
+            if (currentView === 'manager') {
+                // Currently viewing as manager, show option to go back to admin (only if secondary role is admin)
+                if (secondaryRole && secondaryRole.toLowerCase() === 'admin') {
+                    roleText = 'Admin';
+                    roleDestination = 'admin.html';
+                } else {
+                    // If no admin secondary role, keep showing manager
+                    roleText = 'Manager';
+                    roleDestination = 'admin.html?view=manager';
+                }
+            } else if (currentView === 'supervisor') {
+                // Currently viewing as supervisor, show option to go back to admin (only if secondary role is admin)
+                if (secondaryRole && secondaryRole.toLowerCase() === 'admin') {
+                    roleText = 'Admin';
+                    roleDestination = 'admin.html';
+                } else {
+                    // If no admin secondary role, keep showing supervisor
+                    roleText = 'Supervisor';
+                    roleDestination = 'admin.html?view=supervisor';
+                }
+            } else {
+                // Currently in admin view, show option to view as user's primary role
+                if (userRole && userRole.toLowerCase() === 'supervisor') {
+                    roleText = 'Supervisor';
+                    roleDestination = 'admin.html?view=supervisor';
+                } else if (userRole && userRole.toLowerCase() === 'manager') {
+                    roleText = 'Manager';
+                    roleDestination = 'admin.html?view=manager';
+                } else {
+                    // If user is actually admin, keep it as admin
+                    roleText = 'Admin';
+                    roleDestination = 'admin.html';
+                }
+            }
+        } else {
+            // Default behavior for other pages - show admin with appropriate view based on primary role
+            if (userRole && userRole.toLowerCase() === 'supervisor') {
+                roleText = 'Supervisor';
+                roleDestination = 'admin.html?view=supervisor';
+            } else if (userRole && userRole.toLowerCase() === 'manager') {
+                roleText = 'Manager';
+                roleDestination = 'admin.html?view=manager';
+            } else {
+                roleText = 'Admin';
+                roleDestination = 'admin.html';
+            }
+        }
+        
+        const adminLink = (!isImpersonating) ? 
+            `<a href="${roleDestination}" style="color:#e53935;text-decoration:none;font-weight:500;font-size:1.08em;border-left:1px solid #ddd;padding-left:22px;line-height:1.2;"><span style="font-size:10px;">View as</span><br>${roleText}</a>` : 
             '';
         
         // Build impersonation banner
@@ -179,7 +241,7 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
             </div>
             <div style="display:flex;align-items:center;justify-content:flex-end;height:60px;padding:0;margin:0;">
                 <span style="color:#1976ff;font-weight:600;font-size:1.08em;margin-right:18px;">Welcome,${displayName ? ' ' + displayName : ''}</span>
-                <button id="logoutBtn" style="background:none;border:none;color:#e53935;font-weight:700;font-size:1.08em;cursor:pointer;padding:8px 0;">Log Out</button>
+                <button id="logoutBtn" style="background:none;border:none;color:#e53935;font-weight:700;font-size:1.08em;cursor:pointer;padding:8px 0;line-height:1.2;">Log<br>Out</button>
             </div>
         </div>
         `;
@@ -223,6 +285,7 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
         document.body.style.paddingTop = requiredPadding;
         let displayName = '';
         let userRole = null;
+        let secondaryRole = null;
         try {
             const supabase = window.globalSupabase || window.supabase;
             console.log('[DEBUG] Using supabase client:', !!supabase);
@@ -231,50 +294,53 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
                 const result = await getDisplayName();
                 displayName = result.displayName;
                 userRole = result.userRole;
-                console.log('[DEBUG] getDisplayName returned:', { displayName, userRole });
+                secondaryRole = result.secondaryRole;
+                console.log('[DEBUG] getDisplayName returned:', { displayName, userRole, secondaryRole });
             }
         } catch (e) {
             console.error('[DEBUG] Error in setupNav getDisplayName:', e);
         }
-        nav.innerHTML = renderNav(displayName, userRole);
+        nav.innerHTML = renderNav(displayName, userRole, secondaryRole);
         
         // Handle logout button
         var logoutBtn = nav.querySelector('#logoutBtn');
         if (logoutBtn) {
-            logoutBtn.onclick = async function() {
+            logoutBtn.onclick = function() {
                 console.log('[DEBUG] Logout button clicked');
                 
                 // Show loading state
                 logoutBtn.textContent = 'Logging out...';
                 logoutBtn.disabled = true;
                 
+                // Set a maximum time for logout process
+                const logoutTimeout = setTimeout(() => {
+                    console.log('[DEBUG] Logout timeout reached, forcing redirect');
+                    window.location.href = 'login.html';
+                }, 2000); // 2 second timeout
+                
                 try {
-                    const supabase = window.globalSupabase || window.supabase;
-                    if (supabase && supabase.auth) {
-                        console.log('[DEBUG] Attempting Supabase signOut...');
-                        
-                        // Add timeout to prevent hanging
-                        const signOutPromise = supabase.auth.signOut();
-                        const timeoutPromise = new Promise((_, reject) => {
-                            setTimeout(() => reject(new Error('Logout timeout after 5 seconds')), 5000);
-                        });
-                        
-                        await Promise.race([signOutPromise, timeoutPromise]);
-                        console.log('[DEBUG] Supabase signOut completed');
-                    } else {
-                        console.warn('[DEBUG] Supabase not available for logout');
-                    }
-                    
-                    // Clear any local storage
+                    // Clear any local storage immediately
                     localStorage.clear();
                     sessionStorage.clear();
                     console.log('[DEBUG] Local storage cleared');
                     
+                    // Try Supabase signOut in background (don't wait for it)
+                    const supabase = window.globalSupabase || window.supabase;
+                    if (supabase && supabase.auth) {
+                        console.log('[DEBUG] Attempting Supabase signOut...');
+                        supabase.auth.signOut().catch(e => {
+                            console.warn('[DEBUG] Supabase signOut error (ignored):', e);
+                        });
+                    }
+                    
+                    // Clear timeout and redirect immediately
+                    clearTimeout(logoutTimeout);
+                    console.log('[DEBUG] Redirecting to login page...');
+                    window.location.href = 'login.html';
+                    
                 } catch (e) {
                     console.error('[DEBUG] Error during logout:', e);
-                } finally {
-                    // Always redirect regardless of Supabase result
-                    console.log('[DEBUG] Redirecting to login page...');
+                    clearTimeout(logoutTimeout);
                     window.location.href = 'login.html';
                 }
             };
@@ -415,7 +481,7 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
             if (!document.body.style.paddingTop) {
                 document.body.style.paddingTop = '80px';
             }
-            nav.innerHTML = renderNav('');
+            nav.innerHTML = renderNav('', null, null);
             console.error('[ERROR] Supabase UMD not found. Header will be static.');
         }
     });

@@ -76,11 +76,12 @@ document.querySelectorAll('script').forEach(s => console.log(s.src));
                   <a href="list.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">List</a>
                   <a href="campaign_builder.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">Campaign</a>
                   <a href="assets.html" style="color:#1976ff;text-decoration:none;font-weight:500;font-size:1.08em;">Profile</a>
+                  <a href="admin.html" style="color:#e53935;text-decoration:none;font-weight:500;font-size:1.08em;border-left:1px solid #ddd;padding-left:22px;line-height:1.2;"><span style="font-size:10px;">View as</span><br>Admin</a>
                 </nav>
             </div>
             <div style="display:flex;align-items:center;justify-content:flex-end;height:60px;padding:0;margin:0;">
                 <span style="color:#1976ff;font-weight:600;font-size:1.08em;margin-right:18px;">Welcome,${displayName ? ' ' + displayName : ''}</span>
-                <button style="background:none;border:none;color:#e53935;font-weight:700;font-size:1.08em;cursor:pointer;padding:8px 0;">Log Out</button>
+                <button style="background:none;border:none;color:#e53935;font-weight:700;font-size:1.08em;cursor:pointer;padding:8px 0;line-height:1.2;">Log<br>Out</button>
             </div>
         </div>
         `;

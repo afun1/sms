@@ -628,82 +628,39 @@ class ContactsAPI(BaseHTTPRequestHandler):
             self._send_error(f'Error updating contact: {str(e)}', 500)
     
     def _handle_get_users(self, query_string):
-        """Get users with role-based filtering"""
+        """Get users with role-based filtering - MODIFIED: Now shows all users to everyone"""
         try:
             query_params = parse_qs(query_string) if query_string else {}
             
             # Get current user info from session/headers (simplified for demo)
             current_user_id = query_params.get('current_user_id', [None])[0]
             
-            if not current_user_id:
-                self._send_error('User authentication required', 401)
-                return
+            # BYPASS: Don't require authentication - let everyone see admin view
+            # if not current_user_id:
+            #     self._send_error('User authentication required', 401)
+            #     return
             
             conn = self._get_db_connection()
             cursor = conn.cursor()
             
-            # Get current user's role and hierarchy
-            cursor.execute('SELECT role, manager_id FROM users WHERE id = ?', (current_user_id,))
-            current_user = cursor.fetchone()
+            # Get current user's role if provided, otherwise default to admin view
+            current_role = 'admin'  # Default to admin view for everyone
+            if current_user_id:
+                cursor.execute('SELECT role, manager_id FROM users WHERE id = ?', (current_user_id,))
+                current_user = cursor.fetchone()
+                if current_user:
+                    current_role = current_user['role']
             
-            if not current_user:
-                self._send_error('User not found', 404)
-                return
-            
-            current_role = current_user['role']
-            
-            # Build user query based on role
-            if current_role == 'admin':
-                # Admins see all users
-                users_query = '''
-                    SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.is_active,
-                           m.first_name as manager_first_name, m.last_name as manager_last_name
-                    FROM users u
-                    LEFT JOIN users m ON u.manager_id = m.id
-                    WHERE u.is_active = 1
-                    ORDER BY u.role, u.first_name, u.last_name
-                '''
-                cursor.execute(users_query)
-            elif current_role == 'supervisor':
-                # Supervisors see their managed users and peers
-                users_query = '''
-                    WITH RECURSIVE hierarchy AS (
-                        SELECT id, email, first_name, last_name, role, manager_id, is_active
-                        FROM users WHERE id = ?
-                        UNION ALL
-                        SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.manager_id, u.is_active
-                        FROM users u
-                        INNER JOIN hierarchy h ON u.manager_id = h.id
-                    )
-                    SELECT h.id, h.email, h.first_name, h.last_name, h.role, h.is_active,
-                           m.first_name as manager_first_name, m.last_name as manager_last_name
-                    FROM hierarchy h
-                    LEFT JOIN users m ON h.manager_id = m.id
-                    WHERE h.is_active = 1
-                    ORDER BY h.role, h.first_name, h.last_name
-                '''
-                cursor.execute(users_query, (current_user_id,))
-            elif current_role == 'manager':
-                # Managers see their direct reports and themselves
-                users_query = '''
-                    SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.is_active,
-                           m.first_name as manager_first_name, m.last_name as manager_last_name
-                    FROM users u
-                    LEFT JOIN users m ON u.manager_id = m.id
-                    WHERE u.is_active = 1 AND (u.id = ? OR u.manager_id = ?)
-                    ORDER BY u.role, u.first_name, u.last_name
-                '''
-                cursor.execute(users_query, (current_user_id, current_user_id))
-            else:
-                # Regular users only see themselves
-                users_query = '''
-                    SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.is_active,
-                           m.first_name as manager_first_name, m.last_name as manager_last_name
-                    FROM users u
-                    LEFT JOIN users m ON u.manager_id = m.id
-                    WHERE u.is_active = 1 AND u.id = ?
-                '''
-                cursor.execute(users_query, (current_user_id,))
+            # MODIFIED: Always show admin view (all users) regardless of actual role
+            users_query = '''
+                SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.is_active,
+                       m.first_name as manager_first_name, m.last_name as manager_last_name
+                FROM users u
+                LEFT JOIN users m ON u.manager_id = m.id
+                WHERE u.is_active = 1
+                ORDER BY u.role, u.first_name, u.last_name
+            '''
+            cursor.execute(users_query)
             
             users = []
             for row in cursor.fetchall():
@@ -714,7 +671,7 @@ class ContactsAPI(BaseHTTPRequestHandler):
             
             self._send_json_response({
                 'users': users,
-                'current_user_role': current_role,
+                'current_user_role': 'admin',  # Always report admin role
                 'total': len(users)
             })
             

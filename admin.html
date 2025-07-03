@@ -2535,6 +2535,69 @@
             // The user impersonation system should auto-initialize from user_impersonation.js
             console.log('🎭 Admin panel loaded, impersonation system should be ready');
         });
+
+        // Handle view parameter to show/hide sections based on role view
+        function handleViewParameter() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const view = urlParams.get('view');
+            
+            const header = document.querySelector('.header h1');
+            const headerDesc = document.querySelector('.header p');
+            
+            if (view === 'manager') {
+                if (header) header.textContent = '👔 Manager Panel';
+                if (headerDesc) headerDesc.textContent = 'Manager view - User and team management';
+                
+                // Hide admin section, show supervisor, manager, and user sections
+                const adminSection = document.querySelector('#admin-table').closest('div');
+                const supervisorSection = document.querySelector('#supervisor-table').closest('div');
+                const managerSection = document.querySelector('#manager-table').closest('div');
+                const userSection = document.querySelector('#user-table').closest('div');
+                
+                if (adminSection) adminSection.style.display = 'none';
+                if (supervisorSection) supervisorSection.style.display = 'block';
+                if (managerSection) managerSection.style.display = 'block';
+                if (userSection) userSection.style.display = 'block';
+                
+            } else if (view === 'supervisor') {
+                if (header) header.textContent = '🎯 Supervisor Panel';
+                if (headerDesc) headerDesc.textContent = 'Supervisor view - Team oversight and management';
+                
+                // Hide admin section, show supervisor, manager, and user sections
+                const adminSection = document.querySelector('#admin-table').closest('div');
+                const supervisorSection = document.querySelector('#supervisor-table').closest('div');
+                const managerSection = document.querySelector('#manager-table').closest('div');
+                const userSection = document.querySelector('#user-table').closest('div');
+                
+                if (adminSection) adminSection.style.display = 'none';
+                if (supervisorSection) supervisorSection.style.display = 'block';
+                if (managerSection) managerSection.style.display = 'block';
+                if (userSection) userSection.style.display = 'block';
+                
+            } else {
+                if (header) header.textContent = '⚙️ Admin Panel';
+                if (headerDesc) headerDesc.textContent = 'System administration and management';
+                
+                // Show all sections
+                const adminSection = document.querySelector('#admin-table').closest('div');
+                const supervisorSection = document.querySelector('#supervisor-table').closest('div');
+                const managerSection = document.querySelector('#manager-table').closest('div');
+                const userSection = document.querySelector('#user-table').closest('div');
+                
+                if (adminSection) adminSection.style.display = 'block';
+                if (supervisorSection) supervisorSection.style.display = 'block';
+                if (managerSection) managerSection.style.display = 'block';
+                if (userSection) userSection.style.display = 'block';
+            }
+        }
+        
+        // Initialize when page loads
+        setTimeout(handleViewParameter, 500);
+        
+        // Also handle when the URL changes (for back/forward navigation)
+        window.addEventListener('popstate', function() {
+            handleViewParameter();
+        });
     </script>
 </body>
 </html>
