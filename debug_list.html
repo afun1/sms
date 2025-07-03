@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Contact List</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .loading { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Debug Contact List</h1>
+    <div id="status-container"></div>
+    <button onclick="testStep1()">1. Check Login</button>
+    <button onclick="testStep2()">2. Get Current User</button>
+    <button onclick="testStep3()">3. Test API Health</button>
+    <button onclick="testStep4()">4. Load Contacts</button>
+    <button onclick="testStep5()">5. Full Test</button>
+    <button onclick="clearStatus()">Clear</button>
+
+    <script>
+        let statusContainer = document.getElementById('status-container');
+        
+        function addStatus(type, title, message, data = null) {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `
+                <strong>${title}</strong><br>
+                ${message}
+                ${data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : ''}
+            `;
+            statusContainer.appendChild(div);
+            console.log(`[${type.toUpperCase()}] ${title}: ${message}`, data);
+        }
+        
+        function clearStatus() {
+            statusContainer.innerHTML = '';
+        }
+        
+        async function testStep1() {
+            addStatus('loading', 'Step 1', 'Checking Supabase login status...');
+            
+            try {
+                const supabase = window.globalSupabase || window.supabase;
+                if (!supabase) {
+                    throw new Error('Supabase not available');
+                }
+                
+                const sessionResult = await supabase.auth.getSession();
+                const session = sessionResult.data.session;
+                
+                if (session && session.user) {
+                    addStatus('success', 'Step 1 ✅', 'User is logged in', {
+                        userId: session.user.id,
+                        email: session.user.email,
+                        expiresAt: new Date(session.expires_at * 1000)
+                    });
+                } else {
+                    addStatus('error', 'Step 1 ❌', 'No active session found');
+                }
+            } catch (error) {
+                addStatus('error', 'Step 1 ❌', 'Error checking login', { error: error.message });
+            }
+        }
+        
+        async function testStep2() {
+            addStatus('loading', 'Step 2', 'Getting current user data...');
+            
+            try {
+                const currentUser = await getCurrentUser();
+                if (currentUser && currentUser.id) {
+                    addStatus('success', 'Step 2 ✅', 'Current user retrieved successfully', currentUser);
+                } else {
+                    addStatus('error', 'Step 2 ❌', 'Failed to get current user');
+                }
+            } catch (error) {
+                addStatus('error', 'Step 2 ❌', 'Error getting current user', { error: error.message });
+            }
+        }
+        
+        async function testStep3() {
+            addStatus('loading', 'Step 3', 'Testing API server health...');
+            
+            try {
+                const response = await fetch('/api/health');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                addStatus('success', 'Step 3 ✅', 'API server is healthy', data);
+            } catch (error) {
+                addStatus('error', 'Step 3 ❌', 'API server not responding', { error: error.message });
+            }
+        }
+        
+        async function testStep4() {
+            addStatus('loading', 'Step 4', 'Loading contacts from API...');
+            
+            try {
+                const currentUser = await getCurrentUser();
+                if (!currentUser) {
+                    throw new Error('No current user available');
+                }
+                
+                const apiUrl = new URL('/api/contacts', window.location.origin);
+                apiUrl.searchParams.set('current_user_id', currentUser.id);
+                apiUrl.searchParams.set('per_page', '10'); // Limit for testing
+                
+                addStatus('info', 'Step 4', `Fetching from: ${apiUrl.toString()}`);
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                if (result.error) {
+                    throw new Error(result.message || 'API returned an error');
+                }
+                
+                addStatus('success', 'Step 4 ✅', `Loaded ${result.contacts.length} contacts`, {
+                    userRole: result.user_role,
+                    totalContacts: result.contacts.length,
+                    firstContact: result.contacts[0] || null
+                });
+            } catch (error) {
+                addStatus('error', 'Step 4 ❌', 'Failed to load contacts', { error: error.message });
+            }
+        }
+        
+        async function testStep5() {
+            clearStatus();
+            addStatus('loading', 'Full Test', 'Running complete diagnostic...');
+            
+            await testStep1();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testStep2();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testStep3();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testStep4();
+            
+            addStatus('success', 'Full Test ✅', 'All tests completed');
+        }
+        
+        // Copy the getCurrentUser function from list.html
+        async function getCurrentUser() {
+            console.log('[DEBUG] getCurrentUser called');
+            
+            const supabase = window.globalSupabase || window.supabase;
+            if (supabase && supabase.auth) {
+                try {
+                    console.log('[DEBUG] Getting user from Supabase session...');
+                    const sessionResult = await supabase.auth.getSession();
+                    const session = sessionResult.data.session;
+                    console.log('[DEBUG] Supabase session:', session);
+                    
+                    if (session && session.user) {
+                        const userId = session.user.id;
+                        const userEmail = session.user.email;
+                        console.log('[DEBUG] User from session - ID:', userId, 'Email:', userEmail);
+                        
+                        // For specific test emails, map to correct local user ID
+                        if (userEmail === 'john+2@tpnlife.com') {
+                            const user = {
+                                id: 'user-john+2-tpnlife-com',
+                                supabase_id: userId,
+                                email: userEmail,
+                                first_name: 'John',
+                                last_name: 'User',
+                                role: 'user'
+                            };
+                            console.log('[DEBUG] Using mapped user for john+2@tpnlife.com:', user);
+                            return user;
+                        } else if (userEmail === 'john+3@tpnlife.com') {
+                            const user = {
+                                id: 'user-manager-example-com',
+                                supabase_id: userId,
+                                email: userEmail,
+                                first_name: 'John',
+                                last_name: 'Manager',
+                                role: 'manager'
+                            };
+                            console.log('[DEBUG] Using mapped manager user for john+3@tpnlife.com:', user);
+                            return user;
+                        }
+                        
+                        // For other users, try to get profile data
+                        const { data: profileData, error } = await supabase
+                            .from('profiles')
+                            .select('first_name, last_name, email, role')
+                            .eq('id', userId)
+                            .maybeSingle();
+                            
+                        if (profileData) {
+                            const role = profileData.role || 'user';
+                            let localUserId;
+                            
+                            if (role === 'admin') {
+                                localUserId = '63847570-8094-48c5-b531-24ae0ed00bd8';
+                            } else {
+                                localUserId = 'user-' + userEmail.replace('@', '-').replace(/\./g, '-');
+                            }
+                            
+                            const user = {
+                                id: localUserId,
+                                supabase_id: userId,
+                                email: profileData.email || userEmail,
+                                first_name: profileData.first_name || '',
+                                last_name: profileData.last_name || '',
+                                role: role
+                            };
+                            console.log('[DEBUG] Using profile-based user:', user);
+                            return user;
+                        }
+                    }
+                } catch (e) {
+                    console.error('[DEBUG] Error getting user from Supabase:', e);
+                }
+            }
+            
+            // Fallback: use demo admin
+            console.warn('No user found, using demo admin user.');
+            return {
+                id: '63847570-8094-48c5-b531-24ae0ed00bd8',
+                email: 'admin@sparky.com',
+                first_name: 'Demo',
+                last_name: 'Admin',
+                role: 'admin'
+            };
+        }
+    </script>
+</body>
+</html>

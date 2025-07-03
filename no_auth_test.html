@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manager Contacts (No Auth)</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #f8f9fa; }
+        .direct { background: #e6f3ff; }
+        .report { background: #fff2e6; }
+    </style>
+</head>
+<body>
+    <h1>Manager Contacts (john+3@tpnlife.com)</h1>
+    <div id="status">Loading...</div>
+    <div id="stats"></div>
+    <div id="contacts"></div>
+    
+    <script>
+        async function loadContacts() {
+            const status = document.getElementById('status');
+            const stats = document.getElementById('stats');
+            const contactsDiv = document.getElementById('contacts');
+            
+            try {
+                status.textContent = 'Fetching contacts...';
+                
+                // Direct API call without any authentication checks
+                const response = await fetch('/api/contacts?current_user_id=user-manager-example-com&per_page=100');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.message || 'API error');
+                }
+                
+                const contacts = data.contacts || [];
+                
+                // Count assignments
+                const directCount = contacts.filter(c => c.assigned_to === 'user-manager-example-com').length;
+                const reportCount = contacts.filter(c => c.assigned_to && c.assigned_to !== 'user-manager-example-com').length;
+                
+                status.innerHTML = `✅ Loaded ${contacts.length} contacts successfully`;
+                stats.innerHTML = `<strong>Summary:</strong> ${directCount} direct assignments, ${reportCount} from reports`;
+                
+                // Display contacts
+                if (contacts.length === 0) {
+                    contactsDiv.innerHTML = '<p>No contacts found.</p>';
+                    return;
+                }
+                
+                let html = `
+                    <table>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Assigned To</th>
+                            <th>Type</th>
+                        </tr>
+                `;
+                
+                contacts.forEach(contact => {
+                    const assigneeName = contact.assigned_first_name && contact.assigned_last_name 
+                        ? `${contact.assigned_first_name} ${contact.assigned_last_name}`
+                        : contact.assigned_to || 'Unassigned';
+                    
+                    const isDirect = contact.assigned_to === 'user-manager-example-com';
+                    const rowClass = isDirect ? 'direct' : 'report';
+                    const type = isDirect ? 'Direct' : 'From Report';
+                    
+                    html += `
+                        <tr class="${rowClass}">
+                            <td>${contact.first_name || ''} ${contact.last_name || ''}</td>
+                            <td>${contact.email || ''}</td>
+                            <td>${contact.phone || ''}</td>
+                            <td>${assigneeName}</td>
+                            <td>${type}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</table>';
+                contactsDiv.innerHTML = html;
+                
+            } catch (error) {
+                status.innerHTML = `❌ Error: ${error.message}`;
+                console.error('Error:', error);
+            }
+        }
+        
+        // Load immediately when page loads
+        loadContacts();
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct API Test</title>
+</head>
+<body>
+    <h1>Direct API Test</h1>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            result.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('/api/contacts?current_user_id=user-manager-example-com&per_page=100');
+                const data = await response.json();
+                
+                result.innerHTML = `
+                    <h3>API Response:</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Contacts: ${data.contacts ? data.contacts.length : 'none'}</p>
+                    <p>User Role: ${data.user_role || 'unknown'}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                result.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Auto-test on load
+        window.onload = testAPI;
+    </script>
+</body>
+</html>

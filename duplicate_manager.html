@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Duplicate Contact Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #007bff; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .duplicate-group { margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #ffc107; }
+        .contact-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 10px; 
+            margin: 5px 0; 
+            background: white; 
+            border-radius: 3px; 
+            border: 1px solid #dee2e6;
+        }
+        .contact-info { flex-grow: 1; }
+        .contact-actions { margin-left: 15px; }
+        .btn { padding: 8px 15px; margin: 0 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn:hover { opacity: 0.8; }
+        .stats { display: flex; gap: 20px; margin: 15px 0; }
+        .stat-box { padding: 15px; background: #e9ecef; border-radius: 5px; text-align: center; }
+        .loading { text-align: center; padding: 50px; }
+        .hidden { display: none; }
+        .keep { background-color: #d4edda !important; border-color: #c3e6cb !important; }
+        .remove { background-color: #f8d7da !important; border-color: #f5c6cb !important; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 Duplicate Contact Manager</h1>
+        <p>Find and remove duplicate contacts in your database</p>
+    </div>
+
+    <div id="loading" class="loading">
+        <h3>Scanning for duplicates...</h3>
+        <p>This may take a moment...</p>
+    </div>
+
+    <div id="results" class="hidden">
+        <div class="section">
+            <h2>Duplicate Scan Results</h2>
+            <div class="stats">
+                <div class="stat-box">
+                    <strong id="total-contacts">0</strong><br>
+                    Total Contacts
+                </div>
+                <div class="stat-box">
+                    <strong id="duplicate-groups">0</strong><br>
+                    Duplicate Groups
+                </div>
+                <div class="stat-box">
+                    <strong id="potential-removals">0</strong><br>
+                    Potential Removals
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Actions</h3>
+            <button class="btn btn-success" onclick="autoResolve()">Auto-Resolve (Keep Oldest)</button>
+            <button class="btn btn-primary" onclick="refreshScan()">Refresh Scan</button>
+            <button class="btn btn-danger" onclick="removeSelected()">Remove Selected</button>
+        </div>
+
+        <div id="duplicate-groups-container">
+            <!-- Duplicate groups will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_P4joo9i6y5PmtDM4bIznNg_Wrv5Cjew';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        
+        let allContacts = [];
+        let duplicateGroups = [];
+        let selectedForRemoval = new Set();
+
+        async function getCurrentUser() {
+            try {
+                const sessionResult = await supabase.auth.getSession();
+                const session = sessionResult.data.session;
+                
+                if (session?.user?.email === 'john+3@tpnlife.com') {
+                    return {
+                        id: 'user-manager-example-com',
+                        email: 'john+3@tpnlife.com',
+                        role: 'manager'
+                    };
+                }
+                
+                return {
+                    id: '63847570-8094-48c5-b531-24ae0ed00bd8',
+                    email: 'admin@sparky.com',
+                    role: 'admin'
+                };
+            } catch (error) {
+                console.error('Error getting user:', error);
+                throw error;
+            }
+        }
+
+        async function loadAllContacts() {
+            try {
+                const currentUser = await getCurrentUser();
+                
+                // For duplicate detection, admins and managers should see more contacts
+                let apiUrl = new URL('/api/contacts', window.location.origin);
+                if (currentUser.role === 'admin') {
+                    // Admin sees all contacts - no user filter
+                    apiUrl.searchParams.set('per_page', '1000');
+                } else {
+                    apiUrl.searchParams.set('current_user_id', currentUser.id);
+                    apiUrl.searchParams.set('per_page', '1000');
+                }
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                if (result.error) {
+                    throw new Error(result.message);
+                }
+                
+                allContacts = result.contacts || [];
+                console.log(`Loaded ${allContacts.length} contacts for duplicate analysis`);
+                return allContacts;
+                
+            } catch (error) {
+                console.error('Error loading contacts:', error);
+                throw error;
+            }
+        }
+
+        function findDuplicates(contacts) {
+            const groups = [];
+            const processed = new Set();
+            
+            // Group by email
+            const emailGroups = {};
+            contacts.forEach(contact => {
+                if (contact.email && !processed.has(contact.id)) {
+                    const email = contact.email.toLowerCase().trim();
+                    if (!emailGroups[email]) emailGroups[email] = [];
+                    emailGroups[email].push(contact);
+                }
+            });
+            
+            // Find email duplicates
+            Object.values(emailGroups).forEach(group => {
+                if (group.length > 1) {
+                    groups.push({
+                        type: 'email',
+                        key: group[0].email,
+                        contacts: group.sort((a, b) => new Date(a.date_created) - new Date(b.date_created))
+                    });
+                    group.forEach(c => processed.add(c.id));
+                }
+            });
+            
+            // Group by name + phone for remaining contacts
+            const namePhoneGroups = {};
+            contacts.forEach(contact => {
+                if (!processed.has(contact.id) && contact.first_name && contact.last_name && contact.phone) {
+                    const key = `${contact.first_name.toLowerCase()}_${contact.last_name.toLowerCase()}_${contact.phone}`;
+                    if (!namePhoneGroups[key]) namePhoneGroups[key] = [];
+                    namePhoneGroups[key].push(contact);
+                }
+            });
+            
+            // Find name+phone duplicates
+            Object.values(namePhoneGroups).forEach(group => {
+                if (group.length > 1) {
+                    groups.push({
+                        type: 'name_phone',
+                        key: `${group[0].first_name} ${group[0].last_name} - ${group[0].phone}`,
+                        contacts: group.sort((a, b) => new Date(a.date_created) - new Date(b.date_created))
+                    });
+                }
+            });
+            
+            return groups;
+        }
+
+        function renderDuplicateGroups(groups) {
+            const container = document.getElementById('duplicate-groups-container');
+            
+            if (groups.length === 0) {
+                container.innerHTML = `
+                    <div class="section">
+                        <h3>✅ No Duplicates Found</h3>
+                        <p>Your contact database appears to be clean!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            groups.forEach((group, groupIndex) => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'duplicate-group';
+                groupDiv.innerHTML = `
+                    <h4>Duplicate Group ${groupIndex + 1}: ${group.type === 'email' ? 'Same Email' : 'Same Name + Phone'}</h4>
+                    <p><strong>Key:</strong> ${group.key}</p>
+                    <div class="contacts">
+                        ${group.contacts.map((contact, index) => `
+                            <div class="contact-item" id="contact-${contact.id}">
+                                <div class="contact-info">
+                                    <strong>${contact.first_name || ''} ${contact.last_name || ''}</strong><br>
+                                    📧 ${contact.email || 'No email'} | 📞 ${contact.phone || 'No phone'}<br>
+                                    <small>Created: ${contact.date_created || 'Unknown'} | Assigned: ${contact.assigned_first_name && contact.assigned_last_name ? contact.assigned_first_name + ' ' + contact.assigned_last_name : 'Unassigned'}</small>
+                                </div>
+                                <div class="contact-actions">
+                                    ${index === 0 ? 
+                                        '<button class="btn btn-success" onclick="markAsKeep(\'' + contact.id + '\')">Keep (Oldest)</button>' : 
+                                        '<button class="btn btn-danger" onclick="markForRemoval(\'' + contact.id + '\')">Remove</button>'
+                                    }
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(groupDiv);
+            });
+        }
+
+        function markForRemoval(contactId) {
+            selectedForRemoval.add(contactId);
+            const element = document.getElementById(`contact-${contactId}`);
+            element.classList.add('remove');
+            element.querySelector('button').textContent = 'Will Remove';
+            element.querySelector('button').className = 'btn btn-danger';
+        }
+
+        function markAsKeep(contactId) {
+            selectedForRemoval.delete(contactId);
+            const element = document.getElementById(`contact-${contactId}`);
+            element.classList.add('keep');
+            element.classList.remove('remove');
+            element.querySelector('button').textContent = 'Keep';
+            element.querySelector('button').className = 'btn btn-success';
+        }
+
+        async function removeSelected() {
+            if (selectedForRemoval.size === 0) {
+                alert('No contacts selected for removal.');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to remove ${selectedForRemoval.size} contacts? This cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                const contactIds = Array.from(selectedForRemoval);
+                
+                for (const contactId of contactIds) {
+                    const response = await fetch(`/api/contacts/${contactId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Failed to delete contact ${contactId}`);
+                    }
+                }
+                
+                alert(`Successfully removed ${contactIds.length} duplicate contacts!`);
+                refreshScan();
+                
+            } catch (error) {
+                console.error('Error removing contacts:', error);
+                alert(`Error removing contacts: ${error.message}`);
+            }
+        }
+
+        function autoResolve() {
+            duplicateGroups.forEach(group => {
+                // Keep the first (oldest) contact, mark others for removal
+                group.contacts.slice(1).forEach(contact => {
+                    markForRemoval(contact.id);
+                });
+            });
+            
+            const totalSelected = selectedForRemoval.size;
+            if (totalSelected > 0) {
+                alert(`Auto-resolved ${duplicateGroups.length} groups. ${totalSelected} contacts marked for removal. Click "Remove Selected" to proceed.`);
+            }
+        }
+
+        async function refreshScan() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+            selectedForRemoval.clear();
+            
+            await scanForDuplicates();
+        }
+
+        async function scanForDuplicates() {
+            try {
+                const contacts = await loadAllContacts();
+                duplicateGroups = findDuplicates(contacts);
+                
+                // Update stats
+                document.getElementById('total-contacts').textContent = contacts.length;
+                document.getElementById('duplicate-groups').textContent = duplicateGroups.length;
+                document.getElementById('potential-removals').textContent = 
+                    duplicateGroups.reduce((sum, group) => sum + (group.contacts.length - 1), 0);
+                
+                // Render results
+                renderDuplicateGroups(duplicateGroups);
+                
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('results').classList.remove('hidden');
+                
+            } catch (error) {
+                console.error('Error scanning for duplicates:', error);
+                alert(`Error scanning for duplicates: ${error.message}`);
+            }
+        }
+
+        // Start scanning when page loads
+        window.addEventListener('load', scanForDuplicates);
+    </script>
+</body>
+</html>

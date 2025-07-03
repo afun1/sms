@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Minimal Contact Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+    <h1>Minimal Contact Test for john+3@tpnlife.com</h1>
+    <div id="output"></div>
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="testAPI()">Test API</button>
+    
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_P4joo9i6y5PmtDM4bIznNg_Wrv5Cjew';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            output.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
+            console.log(message);
+        }
+        
+        async function testLogin() {
+            log('Testing login...');
+            try {
+                const sessionResult = await supabase.auth.getSession();
+                const session = sessionResult.data.session;
+                
+                if (session?.user) {
+                    log(`✅ Logged in as: ${session.user.email}`);
+                    return session.user;
+                } else {
+                    log('❌ Not logged in');
+                    return null;
+                }
+            } catch (error) {
+                log(`❌ Login error: ${error.message}`);
+                return null;
+            }
+        }
+        
+        async function testAPI() {
+            log('Testing API...');
+            try {
+                // For john+3@tpnlife.com, use the manager user ID
+                const userId = 'user-manager-example-com';
+                const apiUrl = `http://localhost:3000/api/contacts?current_user_id=${userId}&per_page=5`;
+                
+                log(`Fetching: ${apiUrl}`);
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                log(`✅ API Success: ${data.contacts.length} contacts, role: ${data.user_role}`);
+                
+                // Show first contact
+                if (data.contacts.length > 0) {
+                    const contact = data.contacts[0];
+                    log(`First contact: ${contact.first_name} ${contact.last_name} (${contact.email})`);
+                }
+                
+            } catch (error) {
+                log(`❌ API error: ${error.message}`);
+            }
+        }
+        
+        // Auto test on load
+        window.addEventListener('load', async () => {
+            await testLogin();
+            await testAPI();
+        });
+    </script>
+</body>
+</html>

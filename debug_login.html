@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Login Status</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+    <h1>Debug Login Status</h1>
+    <div id="status">Checking...</div>
+    <button onclick="checkLogin()">Refresh Status</button>
+    <button onclick="goToLogin()">Go to Login</button>
+    <button onclick="goToList()">Go to List</button>
+    
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_P4joo9i6y5PmtDM4bIznNg_Wrv5Cjew';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        
+        async function checkLogin() {
+            const status = document.getElementById('status');
+            status.innerHTML = 'Checking login status...';
+            
+            try {
+                const sessionResult = await supabase.auth.getSession();
+                const session = sessionResult.data.session;
+                
+                if (session && session.user) {
+                    status.innerHTML = `
+                        <h3>✅ Logged in</h3>
+                        <p><strong>User ID:</strong> ${session.user.id}</p>
+                        <p><strong>Email:</strong> ${session.user.email}</p>
+                        <p><strong>Session expires:</strong> ${new Date(session.expires_at * 1000)}</p>
+                    `;
+                } else {
+                    status.innerHTML = `
+                        <h3>❌ Not logged in</h3>
+                        <p>No active session found</p>
+                    `;
+                }
+            } catch (error) {
+                status.innerHTML = `
+                    <h3>⚠️ Error</h3>
+                    <p>${error.message}</p>
+                `;
+                console.error('Login check error:', error);
+            }
+        }
+        
+        function goToLogin() {
+            window.location.href = '/login.html';
+        }
+        
+        function goToList() {
+            window.location.href = '/list.html';
+        }
+        
+        // Check on page load
+        checkLogin();
+    </script>
+</body>
+</html>

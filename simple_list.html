@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Contact List (No Global Nav)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .loading { text-align: center; padding: 50px; }
+        .contacts-table { width: 100%; border-collapse: collapse; }
+        .contacts-table th, .contacts-table td { padding: 8px; border: 1px solid #ddd; }
+        .error { color: red; padding: 10px; background: #ffe6e6; border-radius: 4px; }
+        .success { color: green; padding: 10px; background: #e6ffe6; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Contact List (Debug Version)</h1>
+    <div id="status">Loading...</div>
+    <div id="content"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_P4joo9i6y5PmtDM4bIznNg_Wrv5Cjew';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.innerHTML = `<div class="${type}">${message}</div>`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        async function getCurrentUser() {
+            console.log('Getting current user...');
+            
+            try {
+                const sessionResult = await supabase.auth.getSession();
+                const session = sessionResult.data.session;
+                
+                if (session?.user) {
+                    const userEmail = session.user.email;
+                    console.log('User email:', userEmail);
+                    
+                    // Map john+3@tpnlife.com to manager
+                    if (userEmail === 'john+3@tpnlife.com') {
+                        return {
+                            id: 'user-manager-example-com',
+                            email: userEmail,
+                            first_name: 'John',
+                            last_name: 'Manager',
+                            role: 'manager'
+                        };
+                    }
+                    
+                    // Fallback for other users
+                    return {
+                        id: '63847570-8094-48c5-b531-24ae0ed00bd8',
+                        email: 'admin@sparky.com',
+                        first_name: 'Demo',
+                        last_name: 'Admin',
+                        role: 'admin'
+                    };
+                }
+                
+                throw new Error('No user session found');
+                
+            } catch (error) {
+                console.error('Error getting user:', error);
+                throw error;
+            }
+        }
+        
+        async function loadContacts() {
+            console.log('Loading contacts...');
+            
+            try {
+                const currentUser = await getCurrentUser();
+                updateStatus(`Loading contacts for ${currentUser.first_name} ${currentUser.last_name} (${currentUser.role})...`);
+                
+                const apiUrl = new URL('/api/contacts', window.location.origin);
+                apiUrl.searchParams.set('current_user_id', currentUser.id);
+                apiUrl.searchParams.set('per_page', '10');
+                
+                console.log('Fetching from:', apiUrl.toString());
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('API response:', result);
+                
+                if (result.error) {
+                    throw new Error(result.message || 'API returned an error');
+                }
+                
+                const contacts = result.contacts || [];
+                updateStatus(`✅ Loaded ${contacts.length} contacts successfully!`, 'success');
+                
+                // Display contacts in a simple table
+                displayContacts(contacts);
+                
+            } catch (error) {
+                console.error('Error loading contacts:', error);
+                updateStatus(`❌ Error loading contacts: ${error.message}`, 'error');
+            }
+        }
+        
+        function displayContacts(contacts) {
+            const content = document.getElementById('content');
+            
+            if (contacts.length === 0) {
+                content.innerHTML = '<p>No contacts found.</p>';
+                return;
+            }
+            
+            let html = '<table class="contacts-table"><tr><th>Name</th><th>Email</th><th>Phone</th><th>Assigned To</th></tr>';
+            
+            contacts.forEach(contact => {
+                const displayName = contact.assigned_first_name && contact.assigned_last_name 
+                    ? `${contact.assigned_first_name} ${contact.assigned_last_name}`
+                    : contact.assigned_email || contact.assigned_to || 'Unassigned';
+                
+                html += `
+                    <tr>
+                        <td>${contact.first_name || ''} ${contact.last_name || ''}</td>
+                        <td>${contact.email || ''}</td>
+                        <td>${contact.phone || ''}</td>
+                        <td>${displayName}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+            content.innerHTML = html;
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            updateStatus('Initializing...');
+            
+            try {
+                await loadContacts();
+            } catch (error) {
+                updateStatus(`❌ Initialization failed: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

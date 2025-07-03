@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Login Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 50px; }
+        .login-form { max-width: 400px; margin: 0 auto; }
+        input, button { display: block; width: 100%; margin: 10px 0; padding: 10px; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .loading { background: #fff3cd; color: #856404; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="login-form">
+        <h1>Simple Login Test</h1>
+        <div id="status"></div>
+        
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="Email" value="john+3@tpnlife.com" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit" id="loginBtn">Login</button>
+        </form>
+        
+        <button onclick="testConnection()">Test Supabase Connection</button>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'loading') {
+            const status = document.getElementById('status');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let supabase;
+        
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            updateStatus('Supabase client initialized', 'success');
+        } catch (error) {
+            updateStatus(`Failed to initialize Supabase: ${error.message}`, 'error');
+        }
+        
+        async function testConnection() {
+            updateStatus('Testing Supabase connection...');
+            
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                if (error) {
+                    updateStatus(`Connection test failed: ${error.message}`, 'error');
+                } else {
+                    updateStatus('Supabase connection working!', 'success');
+                    console.log('Session data:', data);
+                }
+            } catch (error) {
+                updateStatus(`Connection test error: ${error.message}`, 'error');
+            }
+        }
+        
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            
+            updateStatus('Attempting login...');
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Logging in...';
+            
+            try {
+                // Add timeout protection
+                const loginPromise = supabase.auth.signInWithPassword({ email, password });
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Login timeout after 8 seconds')), 8000);
+                });
+                
+                const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
+                
+                if (error) {
+                    updateStatus(`Login failed: ${error.message}`, 'error');
+                    console.error('Login error:', error);
+                } else {
+                    updateStatus('Login successful! Redirecting...', 'success');
+                    console.log('Login data:', data);
+                    
+                    // Redirect after brief delay
+                    setTimeout(() => {
+                        window.location.href = '/list.html';
+                    }, 1000);
+                }
+                
+            } catch (error) {
+                updateStatus(`Login error: ${error.message}`, 'error');
+                console.error('Login exception:', error);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
+        });
+        
+        // Test connection on load
+        window.addEventListener('load', testConnection);
+    </script>
+</body>
+</html>

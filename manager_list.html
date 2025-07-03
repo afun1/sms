@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Manager Contact List</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background: #007bff; color: white; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #f8f9fa; font-weight: 600; }
+        tr:nth-child(even) { background: #f8f9fa; }
+        .stats { margin: 15px 0; padding: 10px; background: #e9ecef; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Manager Contact List</h1>
+        <p>Logged in as: john+3@tpnlife.com (Manager Role)</p>
+    </div>
+    
+    <div id="status" class="status loading">Loading contacts...</div>
+    <div id="stats" class="stats" style="display: none;"></div>
+    <div id="content"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_P4joo9i6y5PmtDM4bIznNg_Wrv5Cjew';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        
+        let allContacts = [];
+        
+        function updateStatus(message, type = 'loading') {
+            const status = document.getElementById('status');
+            status.innerHTML = message;
+            status.className = `status ${type}`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function updateStats(contacts) {
+            const stats = document.getElementById('stats');
+            const directContacts = contacts.filter(c => c.assigned_to === 'user-manager-example-com').length;
+            const reportContacts = contacts.filter(c => c.assigned_to !== 'user-manager-example-com' && c.assigned_to).length;
+            
+            stats.innerHTML = `
+                <strong>Contact Summary:</strong> 
+                ${contacts.length} total contacts | 
+                ${directContacts} directly assigned | 
+                ${reportContacts} from direct reports
+            `;
+            stats.style.display = 'block';
+        }
+        
+        async function getCurrentUser() {
+            try {
+                const sessionResult = await supabase.auth.getSession();
+                const session = sessionResult.data.session;
+                
+                if (session?.user?.email === 'john+3@tpnlife.com') {
+                    return {
+                        id: 'user-manager-example-com',
+                        email: 'john+3@tpnlife.com',
+                        first_name: 'John',
+                        last_name: 'Manager',
+                        role: 'manager'
+                    };
+                }
+                
+                throw new Error('Not logged in as the expected manager user');
+                
+            } catch (error) {
+                console.error('Error getting user:', error);
+                throw error;
+            }
+        }
+        
+        async function loadContacts() {
+            try {
+                updateStatus('Verifying user session...');
+                const currentUser = await getCurrentUser();
+                
+                updateStatus('Loading contacts from API...');
+                const apiUrl = new URL('/api/contacts', window.location.origin);
+                apiUrl.searchParams.set('current_user_id', currentUser.id);
+                apiUrl.searchParams.set('per_page', '100'); // Get more contacts
+                
+                console.log('Fetching from:', apiUrl.toString());
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('API response:', result);
+                
+                if (result.error) {
+                    throw new Error(result.message || 'API returned an error');
+                }
+                
+                allContacts = result.contacts || [];
+                updateStatus(`✅ Successfully loaded ${allContacts.length} contacts`, 'success');
+                updateStats(allContacts);
+                displayContacts(allContacts);
+                
+            } catch (error) {
+                console.error('Error loading contacts:', error);
+                updateStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function displayContacts(contacts) {
+            const content = document.getElementById('content');
+            
+            if (contacts.length === 0) {
+                content.innerHTML = '<p>No contacts found.</p>';
+                return;
+            }
+            
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Assigned To</th>
+                            <th>Assignment Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            contacts.forEach(contact => {
+                const displayName = contact.assigned_first_name && contact.assigned_last_name 
+                    ? `${contact.assigned_first_name} ${contact.assigned_last_name}`
+                    : contact.assigned_email || contact.assigned_to || 'Unassigned';
+                
+                const assignmentType = contact.assigned_to === 'user-manager-example-com' 
+                    ? 'Direct' 
+                    : contact.assigned_to 
+                    ? 'From Report' 
+                    : 'Unassigned';
+                
+                html += `
+                    <tr>
+                        <td>${contact.first_name || ''} ${contact.last_name || ''}</td>
+                        <td>${contact.email || ''}</td>
+                        <td>${contact.phone || ''}</td>
+                        <td>${displayName}</td>
+                        <td>${assignmentType}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            content.innerHTML = html;
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            console.log('Page loaded, starting initialization...');
+            
+            // Add a timeout to prevent infinite hanging
+            const timeout = setTimeout(() => {
+                updateStatus('❌ Initialization timed out after 10 seconds', 'error');
+            }, 10000);
+            
+            try {
+                await loadContacts();
+                clearTimeout(timeout);
+            } catch (error) {
+                clearTimeout(timeout);
+                updateStatus(`❌ Initialization failed: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>
