@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout Fix Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        
+        button {
+            padding: 12px 24px;
+            margin: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .result.success { background: #d4edda; color: #155724; }
+        .result.error { background: #f8d7da; color: #721c24; }
+        .result.info { background: #d1ecf1; color: #0c5460; }
+        
+        .test-steps {
+            counter-reset: step-counter;
+        }
+        .test-step {
+            counter-increment: step-counter;
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .test-step::before {
+            content: "Step " counter(step-counter) ": ";
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Logout Fix Verification</h1>
+        
+        <div class="test-section info">
+            <h2>What Was Fixed</h2>
+            <p>The logout process has been improved to:</p>
+            <ul>
+                <li>✅ Perform Supabase signOut BEFORE clearing storage</li>
+                <li>✅ Clear auth-related storage items specifically</li>
+                <li>✅ Clear cookies properly</li>
+                <li>✅ Add delay before redirect to ensure cleanup</li>
+                <li>✅ Enhanced login page session clearing</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Current State</h2>
+            <button class="btn-primary" onclick="testCurrentState()">🔍 Check Current State</button>
+            <div id="currentStateResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Logout Process</h2>
+            <p>This will test the improved logout functionality:</p>
+            <div class="test-steps">
+                <div class="test-step">Supabase signOut first</div>
+                <div class="test-step">Clear impersonation data</div>
+                <div class="test-step">Clear auth-related storage</div>
+                <div class="test-step">Clear all remaining storage</div>
+                <div class="test-step">Clear cookies</div>
+                <div class="test-step">Redirect to login</div>
+            </div>
+            <button class="btn-danger" onclick="testLogout()">🚪 Test Logout</button>
+            <div id="logoutResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Navigation Test</h2>
+            <button class="btn-success" onclick="testNavigation()">🔗 Test Navigation</button>
+            <div id="navigationResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Quick Actions</h2>
+            <button class="btn-primary" onclick="openLoginPage()">🔐 Go to Login</button>
+            <button class="btn-primary" onclick="openListPage()">📋 Go to List</button>
+            <button class="btn-warning" onclick="clearAllData()">🧹 Clear All Data</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('[DEBUG] Supabase initialized');
+        } catch (error) {
+            console.error('[DEBUG] Supabase initialization failed:', error);
+        }
+        
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+        
+        function addResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML += `<div class="result ${type}">${message}</div>`;
+        }
+        
+        async function testCurrentState() {
+            showResult('currentStateResult', 'Checking current state...', 'info');
+            
+            try {
+                // Check Supabase session
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                    addResult('currentStateResult', `❌ Supabase session error: ${error.message}`, 'error');
+                } else if (session) {
+                    addResult('currentStateResult', `✅ Active session: ${session.user.email}`, 'success');
+                } else {
+                    addResult('currentStateResult', '❌ No active session', 'info');
+                }
+                
+                // Check storage
+                const localCount = Object.keys(localStorage).length;
+                const sessionCount = Object.keys(sessionStorage).length;
+                addResult('currentStateResult', `📦 localStorage: ${localCount} items`, 'info');
+                addResult('currentStateResult', `📦 sessionStorage: ${sessionCount} items`, 'info');
+                
+                // Check for specific auth data
+                const authKeys = Object.keys(localStorage).filter(key => key.includes('auth') || key.includes('supabase'));
+                if (authKeys.length > 0) {
+                    addResult('currentStateResult', `🔑 Auth keys found: ${authKeys.join(', ')}`, 'info');
+                } else {
+                    addResult('currentStateResult', '🔑 No auth keys found', 'info');
+                }
+                
+                // Check impersonation
+                const impersonationData = localStorage.getItem('impersonationData');
+                if (impersonationData) {
+                    addResult('currentStateResult', '👥 Impersonation data present', 'info');
+                } else {
+                    addResult('currentStateResult', '👥 No impersonation data', 'info');
+                }
+                
+            } catch (error) {
+                addResult('currentStateResult', `❌ Error checking state: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLogout() {
+            showResult('logoutResult', 'Testing improved logout process...', 'info');
+            
+            try {
+                // Step 1: Supabase signOut FIRST
+                addResult('logoutResult', 'Step 1: Supabase signOut...', 'info');
+                if (supabase && supabase.auth) {
+                    const { error } = await supabase.auth.signOut();
+                    if (error) {
+                        addResult('logoutResult', `⚠️ Supabase signOut error: ${error.message}`, 'error');
+                    } else {
+                        addResult('logoutResult', '✅ Supabase signOut successful', 'success');
+                    }
+                } else {
+                    addResult('logoutResult', '⚠️ Supabase not available', 'error');
+                }
+                
+                // Step 2: Clear impersonation data
+                addResult('logoutResult', 'Step 2: Clear impersonation data...', 'info');
+                const hadImpersonation = localStorage.getItem('impersonationData') !== null;
+                localStorage.removeItem('impersonationData');
+                addResult('logoutResult', `✅ Impersonation data cleared (had data: ${hadImpersonation})`, 'success');
+                
+                // Step 3: Clear auth-related storage
+                addResult('logoutResult', 'Step 3: Clear auth-related storage...', 'info');
+                const authKeysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.includes('supabase') || key.includes('auth') || key.includes('token'))) {
+                        authKeysToRemove.push(key);
+                    }
+                }
+                authKeysToRemove.forEach(key => localStorage.removeItem(key));
+                addResult('logoutResult', `✅ Cleared ${authKeysToRemove.length} auth keys`, 'success');
+                
+                // Step 4: Clear all remaining storage
+                addResult('logoutResult', 'Step 4: Clear all remaining storage...', 'info');
+                const localCount = Object.keys(localStorage).length;
+                const sessionCount = Object.keys(sessionStorage).length;
+                localStorage.clear();
+                sessionStorage.clear();
+                addResult('logoutResult', `✅ Cleared ${localCount} local + ${sessionCount} session items`, 'success');
+                
+                // Step 5: Clear cookies
+                addResult('logoutResult', 'Step 5: Clear cookies...', 'info');
+                const cookiesBefore = document.cookie.split(";").length;
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                addResult('logoutResult', `✅ Cleared ${cookiesBefore} cookies`, 'success');
+                
+                // Step 6: Test redirect (without actually redirecting)
+                addResult('logoutResult', 'Step 6: Test redirect URL...', 'info');
+                const currentOrigin = window.location.origin;
+                const loginUrl = currentOrigin.includes('localhost:3000') || currentOrigin.includes('127.0.0.1:3000') 
+                    ? `${currentOrigin}/login.html`
+                    : 'login.html';
+                
+                // Test if login URL is accessible
+                const response = await fetch(loginUrl, { method: 'HEAD' });
+                if (response.ok) {
+                    addResult('logoutResult', `✅ Login URL accessible: ${loginUrl}`, 'success');
+                } else {
+                    addResult('logoutResult', `❌ Login URL not accessible: ${response.status}`, 'error');
+                }
+                
+                addResult('logoutResult', '✅ Logout process test completed successfully!', 'success');
+                
+            } catch (error) {
+                addResult('logoutResult', `❌ Logout test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testNavigation() {
+            showResult('navigationResult', 'Testing navigation...', 'info');
+            
+            const urls = [
+                '/login.html',
+                '/list.html',
+                '/index.html',
+                '/admin.html'
+            ];
+            
+            for (const url of urls) {
+                try {
+                    const response = await fetch(`${window.location.origin}${url}`, { method: 'HEAD' });
+                    if (response.ok) {
+                        addResult('navigationResult', `✅ ${url} - accessible`, 'success');
+                    } else {
+                        addResult('navigationResult', `❌ ${url} - status ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    addResult('navigationResult', `❌ ${url} - error: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        async function clearAllData() {
+            try {
+                // Clear Supabase session
+                if (supabase && supabase.auth) {
+                    await supabase.auth.signOut();
+                }
+                
+                // Clear all storage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Clear cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                alert('All data cleared successfully!');
+                
+            } catch (error) {
+                alert(`Error clearing data: ${error.message}`);
+            }
+        }
+        
+        function openLoginPage() {
+            window.open(`${window.location.origin}/login.html`, '_blank');
+        }
+        
+        function openListPage() {
+            window.open(`${window.location.origin}/list.html`, '_blank');
+        }
+        
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            testCurrentState();
+        });
+    </script>
+</body>
+</html>

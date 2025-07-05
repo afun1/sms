@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Navigation Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script src="static/global-nav-fixed.js"></script>
+</head>
+<body>
+    <h1>Navigation Test</h1>
+    <p>This page should show the navigation header if logged in.</p>
+    
+    <script>
+        // Add some debugging
+        console.log('Test page loaded');
+        console.log('Current pathname:', window.location.pathname);
+        console.log('Current href:', window.location.href);
+        console.log('Document title:', document.title);
+        
+        // Check if navigation script loaded
+        setTimeout(() => {
+            const nav = document.getElementById('global-nav');
+            if (nav) {
+                console.log('Navigation found:', nav);
+            } else {
+                console.log('Navigation NOT found');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

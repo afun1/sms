@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug List Loading</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+    <h1>Debug List Loading</h1>
+    <div id="debug-output"></div>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let supabase = null;
+        let debugOutput = '';
+        
+        function log(message) {
+            console.log(message);
+            debugOutput += message + '<br>';
+            document.getElementById('debug-output').innerHTML = debugOutput;
+        }
+        
+        async function debug() {
+            try {
+                log('=== DEBUGGING LIST LOADING ===');
+                
+                // Check if Supabase is available
+                log('window.supabase available: ' + (!!window.supabase));
+                log('window.supabase.createClient: ' + (typeof window.supabase.createClient));
+                
+                // Create client
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    log('Supabase client created successfully');
+                } else {
+                    log('ERROR: Cannot create Supabase client');
+                    return;
+                }
+                
+                // Test connection
+                log('Testing Supabase connection...');
+                const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+                if (sessionError) {
+                    log('Session error (expected): ' + sessionError.message);
+                } else {
+                    log('Session check OK');
+                }
+                
+                // Test contacts table
+                log('Testing contacts table query...');
+                const { data: contactsData, error: contactsError } = await supabase
+                    .from('contacts')
+                    .select('*')
+                    .limit(3);
+                
+                if (contactsError) {
+                    log('ERROR querying contacts: ' + contactsError.message);
+                } else {
+                    log('Contacts query SUCCESS! Found ' + (contactsData?.length || 0) + ' contacts');
+                    if (contactsData && contactsData.length > 0) {
+                        log('Sample contact columns: ' + Object.keys(contactsData[0]).join(', '));
+                        log('Sample assignee values: ' + contactsData.map(c => c.assignee || 'null').join(', '));
+                    }
+                }
+                
+                // Test profiles table
+                log('Testing profiles table query...');
+                const { data: profilesData, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .limit(3);
+                
+                if (profilesError) {
+                    log('ERROR querying profiles: ' + profilesError.message);
+                } else {
+                    log('Profiles query SUCCESS! Found ' + (profilesData?.length || 0) + ' profiles');
+                    if (profilesData && profilesData.length > 0) {
+                        log('Sample profile columns: ' + Object.keys(profilesData[0]).join(', '));
+                    }
+                }
+                
+                log('=== DEBUG COMPLETE ===');
+                
+            } catch (error) {
+                log('ERROR in debug: ' + error.message);
+                log('Error stack: ' + error.stack);
+            }
+        }
+        
+        // Run debug when page loads
+        window.onload = debug;
+    </script>
+</body>
+</html>

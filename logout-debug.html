@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .danger {
+            background: #dc3545;
+        }
+        .danger:hover {
+            background: #c82333;
+        }
+        pre {
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Logout Debug Tool</h1>
+        
+        <div class="debug-section">
+            <h3>Current Session Status</h3>
+            <div id="sessionStatus"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Storage Contents</h3>
+            <div id="storageContents"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Supabase Auth State</h3>
+            <div id="supabaseAuth"></div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Actions</h3>
+            <button onclick="checkCurrentState()">Check Current State</button>
+            <button onclick="testLogout()" class="danger">Test Logout</button>
+            <button onclick="clearAllData()" class="danger">Clear All Data</button>
+            <button onclick="testRedirect()">Test Redirect</button>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Debug Log</h3>
+            <div id="debugLog"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            log('✅ Supabase client initialized');
+        } catch (error) {
+            log('❌ Failed to initialize Supabase: ' + error.message);
+        }
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('debugLog');
+            logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log('[DEBUG]', message);
+        }
+        
+        function updateStatus(elementId, content, className = '') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = content;
+            element.className = className;
+        }
+        
+        async function checkCurrentState() {
+            log('🔍 Checking current state...');
+            
+            // Check Supabase session
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                    updateStatus('supabaseAuth', `❌ Error getting session: ${error.message}`, 'error');
+                } else if (session) {
+                    updateStatus('supabaseAuth', `✅ Active session: ${session.user.email}`, 'success');
+                } else {
+                    updateStatus('supabaseAuth', '❌ No active session', 'error');
+                }
+            } catch (e) {
+                updateStatus('supabaseAuth', `❌ Exception: ${e.message}`, 'error');
+            }
+            
+            // Check localStorage
+            const localStorageKeys = Object.keys(localStorage);
+            const sessionStorageKeys = Object.keys(sessionStorage);
+            
+            updateStatus('storageContents', `
+                <strong>localStorage:</strong> ${localStorageKeys.length} items<br>
+                <pre>${JSON.stringify(localStorageKeys, null, 2)}</pre>
+                <strong>sessionStorage:</strong> ${sessionStorageKeys.length} items<br>
+                <pre>${JSON.stringify(sessionStorageKeys, null, 2)}</pre>
+            `);
+            
+            // Check specific auth-related items
+            const authItems = [
+                'supabase.auth.token',
+                'sb-yggfiuqxfxsoyesqgpyt-auth-token',
+                'impersonationData'
+            ];
+            
+            let foundAuthData = false;
+            authItems.forEach(item => {
+                const value = localStorage.getItem(item);
+                if (value) {
+                    foundAuthData = true;
+                    log(`🔑 Found ${item}: ${value.substring(0, 50)}...`);
+                }
+            });
+            
+            if (!foundAuthData) {
+                log('🔑 No auth data found in localStorage');
+            }
+        }
+        
+        async function testLogout() {
+            log('🚪 Testing logout process...');
+            
+            try {
+                // Clear impersonation data
+                log('🧹 Clearing impersonation data...');
+                localStorage.removeItem('impersonationData');
+                
+                // Clear storage
+                log('🧹 Clearing local and session storage...');
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Supabase signOut
+                log('🔓 Attempting Supabase signOut...');
+                if (supabase && supabase.auth) {
+                    const { error } = await supabase.auth.signOut();
+                    if (error) {
+                        log(`❌ Supabase signOut error: ${error.message}`);
+                    } else {
+                        log('✅ Supabase signOut successful');
+                    }
+                } else {
+                    log('❌ Supabase auth not available');
+                }
+                
+                log('✅ Logout process complete');
+                
+                // Check state after logout
+                setTimeout(() => {
+                    log('🔍 Checking state after logout...');
+                    checkCurrentState();
+                }, 1000);
+                
+            } catch (error) {
+                log(`❌ Logout error: ${error.message}`);
+            }
+        }
+        
+        async function clearAllData() {
+            log('🧹 Clearing all data...');
+            
+            try {
+                // Clear all storage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Clear any cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                // Force clear Supabase session
+                if (supabase && supabase.auth) {
+                    await supabase.auth.signOut();
+                }
+                
+                log('✅ All data cleared');
+                
+                // Check state
+                setTimeout(() => {
+                    checkCurrentState();
+                }, 500);
+                
+            } catch (error) {
+                log(`❌ Clear error: ${error.message}`);
+            }
+        }
+        
+        function testRedirect() {
+            log('🔄 Testing redirect...');
+            
+            const loginUrl = `${window.location.origin}/login.html`;
+            log(`🔗 Redirecting to: ${loginUrl}`);
+            
+            // Test both replace and assign
+            setTimeout(() => {
+                window.location.replace(loginUrl);
+            }, 1000);
+        }
+        
+        // Auto-check state on load
+        window.addEventListener('load', () => {
+            log('🚀 Page loaded, checking initial state...');
+            checkCurrentState();
+        });
+    </script>
+</body>
+</html>

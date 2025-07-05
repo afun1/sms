@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug User Profile</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+        .warning { color: orange; }
+        button { margin: 5px; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Debug User Profile Issue</h1>
+    <p>Logged in user: john+15@tpnlife.com</p>
+    
+    <button onclick="checkCurrentUser()">Check Current User</button>
+    <button onclick="checkProfile()">Check Profile in Database</button>
+    <button onclick="createProfile()">Create Profile Manually</button>
+    <button onclick="listAllProfiles()">List All Profiles</button>
+    
+    <div id="debug-output"></div>
+    
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('debug-output');
+            const div = document.createElement('div');
+            div.className = `debug-section ${type}`;
+            div.innerHTML = `<pre>${message}</pre>`;
+            output.appendChild(div);
+            console.log(message);
+        }
+        
+        async function checkCurrentUser() {
+            try {
+                log('=== CHECKING CURRENT USER ===');
+                
+                const { data: session, error } = await supabase.auth.getSession();
+                if (error) {
+                    log('Session error: ' + error.message, 'error');
+                    return;
+                }
+                
+                if (!session.session) {
+                    log('No active session found', 'warning');
+                    return;
+                }
+                
+                const user = session.session.user;
+                log('User ID: ' + user.id, 'success');
+                log('User Email: ' + user.email, 'success');
+                log('User Metadata: ' + JSON.stringify(user.user_metadata, null, 2), 'success');
+                log('User App Metadata: ' + JSON.stringify(user.app_metadata, null, 2), 'success');
+                log('Email Confirmed At: ' + user.email_confirmed_at, 'success');
+                
+            } catch (error) {
+                log('Error checking user: ' + error.message, 'error');
+            }
+        }
+        
+        async function checkProfile() {
+            try {
+                log('=== CHECKING PROFILE IN DATABASE ===');
+                
+                const { data: session } = await supabase.auth.getSession();
+                if (!session.session?.user) {
+                    log('No user logged in', 'error');
+                    return;
+                }
+                
+                const userId = session.session.user.id;
+                log('Looking for profile with ID: ' + userId);
+                
+                const { data: profile, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .maybeSingle();
+                
+                if (error) {
+                    log('Database error: ' + error.message, 'error');
+                    log('Error details: ' + JSON.stringify(error, null, 2), 'error');
+                    return;
+                }
+                
+                if (profile) {
+                    log('Profile found: ' + JSON.stringify(profile, null, 2), 'success');
+                } else {
+                    log('No profile found in database', 'warning');
+                }
+                
+            } catch (error) {
+                log('Error checking profile: ' + error.message, 'error');
+            }
+        }
+        
+        async function createProfile() {
+            try {
+                log('=== CREATING PROFILE MANUALLY ===');
+                
+                const { data: session } = await supabase.auth.getSession();
+                if (!session.session?.user) {
+                    log('No user logged in', 'error');
+                    return;
+                }
+                
+                const user = session.session.user;
+                log('Creating profile for user: ' + user.email);
+                
+                const profileData = {
+                    id: user.id,
+                    email: user.email,
+                    first_name: user.user_metadata?.first_name || 'john',
+                    last_name: user.user_metadata?.last_name || 'u15',
+                    display_name: user.user_metadata?.display_name || 'john u15',
+                    phone: user.user_metadata?.phone || '',
+                    sparky_username: user.user_metadata?.sparky_username || '',
+                    role: 'user',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                
+                log('Profile data to insert: ' + JSON.stringify(profileData, null, 2));
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .insert([profileData])
+                    .select();
+                
+                if (error) {
+                    log('Insert error: ' + error.message, 'error');
+                    log('Error details: ' + JSON.stringify(error, null, 2), 'error');
+                } else {
+                    log('Profile created successfully: ' + JSON.stringify(data, null, 2), 'success');
+                }
+                
+            } catch (error) {
+                log('Error creating profile: ' + error.message, 'error');
+            }
+        }
+        
+        async function listAllProfiles() {
+            try {
+                log('=== LISTING ALL PROFILES ===');
+                
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('id, email, first_name, last_name, display_name, role')
+                    .limit(10);
+                
+                if (error) {
+                    log('Error listing profiles: ' + error.message, 'error');
+                    return;
+                }
+                
+                log('Found ' + profiles.length + ' profiles:');
+                profiles.forEach((profile, index) => {
+                    log(`${index + 1}. ${profile.email} (${profile.display_name}) - Role: ${profile.role}`);
+                });
+                
+            } catch (error) {
+                log('Error listing profiles: ' + error.message, 'error');
+            }
+        }
+        
+        // Auto-run basic checks on page load
+        window.onload = function() {
+            setTimeout(() => {
+                checkCurrentUser();
+                setTimeout(() => {
+                    checkProfile();
+                }, 1000);
+            }, 500);
+        };
+    </script>
+</body>
+</html>

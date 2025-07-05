@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile Debug</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .debug-section { background: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .debug-section h3 { margin-top: 0; }
+        .debug-info { background: #e8f4f8; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; white-space: pre-wrap; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        button { margin: 5px; padding: 8px 16px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #005a87; }
+    </style>
+</head>
+<body>
+    <div class="debug-section">
+        <h3>Profile Debug Tool</h3>
+        <p>This tool shows the actual user profile data and navigation logic.</p>
+        
+        <button onclick="checkProfile()">Check Current Profile</button>
+        <button onclick="testNavigation()">Test Navigation Logic</button>
+        <button onclick="clearData()">Clear All Data</button>
+        
+        <div id="profile-info" class="debug-info">Click "Check Current Profile" to see profile data...</div>
+        <div id="nav-info" class="debug-info">Click "Test Navigation Logic" to see navigation logic...</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let debugSupabase;
+        
+        if (window.supabase) {
+            debugSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+        
+        async function checkProfile() {
+            const info = document.getElementById('profile-info');
+            info.className = 'debug-info';
+            
+            try {
+                if (!debugSupabase) {
+                    info.textContent = 'Error: Supabase not available';
+                    info.className = 'debug-info error';
+                    return;
+                }
+                
+                // Get current session
+                const { data: { session }, error: sessionError } = await debugSupabase.auth.getSession();
+                if (sessionError) {
+                    info.textContent = `Session Error: ${sessionError.message}`;
+                    info.className = 'debug-info error';
+                    return;
+                }
+                
+                if (!session?.user) {
+                    info.textContent = 'No active session found. Please log in first.';
+                    info.className = 'debug-info error';
+                    return;
+                }
+                
+                // Get user profile
+                const { data: profileData, error: profileError } = await debugSupabase
+                    .from('profiles')
+                    .select('first_name, last_name, email, role, secondary_role')
+                    .eq('id', session.user.id)
+                    .single();
+                
+                if (profileError) {
+                    info.textContent = `Profile Error: ${profileError.message}`;
+                    info.className = 'debug-info error';
+                    return;
+                }
+                
+                const debugInfo = {
+                    userId: session.user.id,
+                    userEmail: session.user.email,
+                    profileData: profileData,
+                    currentURL: window.location.href,
+                    viewParam: new URLSearchParams(window.location.search).get('view'),
+                    localStorage: {
+                        userRole: localStorage.getItem('userRole'),
+                        username: localStorage.getItem('username'),
+                        userEmail: localStorage.getItem('userEmail')
+                    }
+                };
+                
+                info.textContent = JSON.stringify(debugInfo, null, 2);
+                info.className = 'debug-info success';
+                
+            } catch (error) {
+                info.textContent = `Error: ${error.message}`;
+                info.className = 'debug-info error';
+            }
+        }
+        
+        async function testNavigation() {
+            const info = document.getElementById('nav-info');
+            info.className = 'debug-info';
+            
+            try {
+                // Use the getDisplayName function from global-nav-v2.js
+                if (typeof getDisplayName === 'function') {
+                    const result = await getDisplayName();
+                    
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const currentView = urlParams.get('view');
+                    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+                    
+                    let navLogic = {
+                        displayName: result.displayName,
+                        userRole: result.userRole,
+                        secondaryRole: result.secondaryRole,
+                        currentView: currentView,
+                        currentPage: currentPage
+                    };
+                    
+                    // Apply the same logic as in renderNav
+                    let roleText = '';
+                    let roleDestination = '';
+                    
+                    if (result.secondaryRole && result.secondaryRole.toLowerCase() !== result.userRole.toLowerCase()) {
+                        if (currentView && currentView.toLowerCase() === result.secondaryRole.toLowerCase()) {
+                            roleText = result.userRole.charAt(0).toUpperCase() + result.userRole.slice(1);
+                            roleDestination = currentPage;
+                        } else {
+                            roleText = result.secondaryRole.charAt(0).toUpperCase() + result.secondaryRole.slice(1);
+                            roleDestination = `${currentPage}?view=${result.secondaryRole.toLowerCase()}`;
+                        }
+                    } else if (result.userRole && result.userRole.toLowerCase() === 'admin' && !result.secondaryRole) {
+                        roleText = 'Admin';
+                        roleDestination = 'admin.html';
+                    }
+                    
+                    navLogic.expectedButton = {
+                        text: roleText,
+                        destination: roleDestination,
+                        willShow: !!roleText
+                    };
+                    
+                    info.textContent = JSON.stringify(navLogic, null, 2);
+                    info.className = 'debug-info success';
+                    
+                } else {
+                    info.textContent = 'Error: getDisplayName function not available';
+                    info.className = 'debug-info error';
+                }
+                
+            } catch (error) {
+                info.textContent = `Error: ${error.message}`;
+                info.className = 'debug-info error';
+            }
+        }
+        
+        function clearData() {
+            localStorage.clear();
+            sessionStorage.clear();
+            location.reload();
+        }
+        
+        // Auto-check profile when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(checkProfile, 1000);
+        });
+    </script>
+</body>
+</html>

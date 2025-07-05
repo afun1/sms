@@ -1,16 +1,53 @@
 // This file should only contain JavaScript for the navigation bar.
 // All HTML and any reference to global-nav.js have been removed.
 
-console.log('[DEBUG] global-nav-v2.js script loaded');
+// NUCLEAR OPTION: Exit before ANY code runs if on login page
+(function() {
+    'use strict';
+    
+    // Multiple detection methods
+    const path = window.location.pathname.toLowerCase();
+    const href = window.location.href.toLowerCase();
+    const filename = path.split('/').pop() || '';
+    
+    // Check 1: Direct file/path detection
+    if (filename === 'login.html' || 
+        path.includes('login') || 
+        href.includes('login')) {
+        console.log('[NUCLEAR EXIT] Login page detected by path/file');
+        return; // Exit immediately
+    }
+    
+    // Check 2: Document title (if available)
+    if (document.title && document.title.toLowerCase().includes('login')) {
+        console.log('[NUCLEAR EXIT] Login page detected by title');
+        return;
+    }
+    
+    // Check 3: Look for login elements in DOM
+    const loginElements = ['#loginForm', '#loginFormPanel', '.login-container', 'input[type="password"]'];
+    for (const selector of loginElements) {
+        if (document.querySelector(selector)) {
+            console.log('[NUCLEAR EXIT] Login page detected by element:', selector);
+            return;
+        }
+    }
+    
+    // Check 4: Look for login-specific text content
+    if (document.body && document.body.innerHTML.toLowerCase().includes('login')) {
+        console.log('[NUCLEAR EXIT] Login page detected by body content');
+        return;
+    }
+    
+    console.log('[NUCLEAR EXIT] Passed all login checks, continuing with navigation');
+    
+    // Only continue if we're definitely NOT on a login page
+    loadNavigationScript();
+})();
 
-// --- DIAGNOSTIC BLOCK ---
-console.log('[DIAG] typeof window.supabase:', typeof window.supabase);
-if (window.supabase) {
-    console.log('[DIAG] window.supabase.createClient:', typeof window.supabase.createClient);
-}
-console.log('[DIAG] All script tags on page:');
-document.querySelectorAll('script').forEach(s => console.log(s.src));
-// --- END DIAGNOSTIC BLOCK ---
+function loadNavigationScript() {
+
+console.log('[DEBUG] global-nav-v2.js script loaded');
 
 // Set up global Supabase client if not already set
 if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
@@ -35,75 +72,60 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
     });
 
     async function getDisplayName() {
-        console.log('[DEBUG] getDisplayName called');
-        
-        // First check if we're in impersonation mode
-        const impersonationData = localStorage.getItem('impersonationData');
-        if (impersonationData) {
-            try {
-                const parsed = JSON.parse(impersonationData);
-                const impersonatedUser = parsed.impersonatedUser;
-                if (impersonatedUser) {
-                    console.log('[DEBUG] Using impersonated user data:', impersonatedUser);
-                    const displayName = impersonatedUser.display_name || 
-                                       impersonatedUser.displayName ||
-                                       `${impersonatedUser.first_name || ''} ${impersonatedUser.last_name || ''}`.trim() ||
-                                       impersonatedUser.email?.split('@')[0] || '';
-                    const userRole = impersonatedUser.role || 'user';
-                    const secondaryRole = impersonatedUser.secondary_role || null;
-                    return { displayName, userRole, secondaryRole };
-                }
-            } catch (e) {
-                console.error('[DEBUG] Error parsing impersonation data:', e);
-            }
-        }
-        
         const supabase = window.globalSupabase || window.supabase;
         if (!supabase || !supabase.auth) {
-            console.warn('[DEBUG] supabase or supabase.auth missing:', supabase, supabase && supabase.auth);
             return { displayName: '', userRole: null, secondaryRole: null };
         }
+        
         try {
-            const sessionResult = await supabase.auth.getSession();
+            // Set a timeout for the auth check
+            const sessionPromise = supabase.auth.getSession();
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Auth timeout')), 3000)
+            );
+            
+            const sessionResult = await Promise.race([sessionPromise, timeoutPromise]);
             const session = sessionResult.data.session;
-            console.log('[DEBUG] Supabase session:', session);
-            if (!session || !session.user) {
-                console.warn('[DEBUG] No Supabase session or user found');
+            
+            if (!session?.user) {
                 return { displayName: '', userRole: null, secondaryRole: null };
             }
+            
             const userId = session.user.id;
             const { data, error } = await supabase
                 .from('profiles')
                 .select('first_name, last_name, email, role, secondary_role')
                 .eq('id', userId)
                 .maybeSingle();
-            console.log('[DEBUG] Supabase profiles query:', { userId, data, error });
-            if (error) {
-                console.error('[DEBUG] Error fetching profile:', error);
-                return { displayName: '', userRole: null, secondaryRole: null };
-            }
-            if (!data) {
-                console.warn('[DEBUG] No profile row found for user:', userId);
+                
+            console.log('[DB DEBUG] Profile query result:', { data, error });
+            console.log('[DB DEBUG] Raw data.role:', data?.role, 'data.secondary_role:', data?.secondary_role);
+                
+            if (error || !data) {
                 return { displayName: '', userRole: null, secondaryRole: null };
             }
             
             let displayName = '';
-            // Try first_name + last_name combination
             if (data.first_name || data.last_name) {
                 displayName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
             }
-            // Fallback to email if no names available
             if (!displayName && data.email) {
                 displayName = data.email;
             }
             
-            const userRole = data.role || null;
-            const secondaryRole = data.secondary_role || null;
-            console.log('[DEBUG] User role:', userRole, 'Secondary role:', secondaryRole);
+            console.log('[DB DEBUG] Returning:', {
+                displayName,
+                userRole: data.role || null,
+                secondaryRole: data.secondary_role || null
+            });
             
-            return { displayName, userRole, secondaryRole };
+            return {
+                displayName,
+                userRole: data.role || null,
+                secondaryRole: data.secondary_role || null
+            };
         } catch (e) {
-            console.error('[DEBUG] Exception in getDisplayName:', e);
+            console.error('Auth error:', e);
             return { displayName: '', userRole: null, secondaryRole: null };
         }
     }
@@ -145,69 +167,48 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
         }
         
         // Build admin link - always visible regardless of role (hide during impersonation)
-        // Show "View as" with appropriate role name and destination
-        // Dynamic role switching based on current page and URL parameters
-        let roleText = 'Admin';
-        let roleDestination = 'admin.html';
+        // SIMPLE RULE: Always show "View as [secondary_role]" when logged in as primary role
+        // SPECIAL CASE: Primary admin users get "Admin" button to access admin panel
+        let roleText = '';
+        let roleDestination = '';
         
-        // Check current page to determine what to show
-        const currentPage = window.location.pathname.split('/').pop() || window.location.pathname;
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentView = urlParams.get('view');
-        
-        if (currentPage === 'admin.html') {
-            // If on admin page, show option to toggle view based on current view and user role
-            if (currentView === 'manager') {
-                // Currently viewing as manager, show option to go back to admin (only if secondary role is admin)
-                if (secondaryRole && secondaryRole.toLowerCase() === 'admin') {
-                    roleText = 'Admin';
-                    roleDestination = 'admin.html';
-                } else {
-                    // If no admin secondary role, keep showing manager
-                    roleText = 'Manager';
-                    roleDestination = 'admin.html?view=manager';
-                }
-            } else if (currentView === 'supervisor') {
-                // Currently viewing as supervisor, show option to go back to admin (only if secondary role is admin)
-                if (secondaryRole && secondaryRole.toLowerCase() === 'admin') {
-                    roleText = 'Admin';
-                    roleDestination = 'admin.html';
-                } else {
-                    // If no admin secondary role, keep showing supervisor
-                    roleText = 'Supervisor';
-                    roleDestination = 'admin.html?view=supervisor';
-                }
+        // Check if user has a secondary role AND it's different from primary role
+        if (secondaryRole && secondaryRole.toLowerCase() !== userRole.toLowerCase()) {
+            // Get current page for destination
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            
+            // Check if we're currently viewing as any specific role
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentView = urlParams.get('view');
+            
+            console.log('[ROLE DEBUG] userRole:', userRole, 'secondaryRole:', secondaryRole, 'currentView:', currentView);
+            console.log('[ROLE DEBUG] Comparison:', currentView?.toLowerCase(), '===', secondaryRole?.toLowerCase(), '=', currentView?.toLowerCase() === secondaryRole?.toLowerCase());
+            
+            // If we're viewing as the secondary role, show option to go back to primary
+            if (currentView && currentView.toLowerCase() === secondaryRole.toLowerCase()) {
+                // Currently viewing as secondary role, show option to go back to primary role
+                roleText = userRole.charAt(0).toUpperCase() + userRole.slice(1);
+                roleDestination = currentPage; // Remove view parameter to go back to primary
+                console.log('[ROLE DEBUG] Showing primary role button:', roleText);
             } else {
-                // Currently in admin view, show option to view as user's primary role
-                if (userRole && userRole.toLowerCase() === 'supervisor') {
-                    roleText = 'Supervisor';
-                    roleDestination = 'admin.html?view=supervisor';
-                } else if (userRole && userRole.toLowerCase() === 'manager') {
-                    roleText = 'Manager';
-                    roleDestination = 'admin.html?view=manager';
-                } else {
-                    // If user is actually admin, keep it as admin
-                    roleText = 'Admin';
-                    roleDestination = 'admin.html';
-                }
+                // Currently viewing as primary role (no view param or different view), show option to switch to secondary role
+                roleText = secondaryRole.charAt(0).toUpperCase() + secondaryRole.slice(1);
+                roleDestination = `${currentPage}?view=${secondaryRole.toLowerCase()}`;
+                console.log('[ROLE DEBUG] Showing secondary role button:', roleText);
             }
-        } else {
-            // Default behavior for other pages - show admin with appropriate view based on primary role
-            if (userRole && userRole.toLowerCase() === 'supervisor') {
-                roleText = 'Supervisor';
-                roleDestination = 'admin.html?view=supervisor';
-            } else if (userRole && userRole.toLowerCase() === 'manager') {
-                roleText = 'Manager';
-                roleDestination = 'admin.html?view=manager';
-            } else {
-                roleText = 'Admin';
-                roleDestination = 'admin.html';
-            }
+        } else if (userRole && userRole.toLowerCase() === 'admin' && !secondaryRole) {
+            // Special case: Primary admin with no secondary role gets "Admin" button to admin panel
+            roleText = 'Admin';
+            roleDestination = 'admin.html';
         }
         
-        const adminLink = (!isImpersonating) ? 
+        console.log('[LINK DEBUG] isImpersonating:', isImpersonating, 'roleText:', roleText, 'roleDestination:', roleDestination);
+        
+        const adminLink = (!isImpersonating && roleText) ? 
             `<a href="${roleDestination}" style="color:#e53935;text-decoration:none;font-weight:500;font-size:1.08em;border-left:1px solid #ddd;padding-left:22px;line-height:1.2;"><span style="font-size:10px;">View as</span><br>${roleText}</a>` : 
             '';
+            
+        console.log('[LINK DEBUG] adminLink created:', adminLink.length > 0 ? 'YES' : 'NO', 'length:', adminLink.length);
         
         // Build impersonation banner
         const impersonationBanner = isImpersonating ? `
@@ -248,7 +249,6 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
     }
 
     async function setupNav() {
-        console.log('[DEBUG] setupNav called');
         let nav = document.getElementById('global-nav');
         if (!nav) {
             nav = document.createElement('nav');
@@ -266,164 +266,63 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
         nav.style.padding = '0';
         nav.style.margin = '0';
         nav.style.borderBottom = '1px solid rgba(42,63,124,0.1)';
-        nav.style.backdropFilter = 'blur(10px)';
-        nav.style.webkitBackdropFilter = 'blur(10px)';
         
-        // Calculate the required padding based on whether impersonation banner is present
-        const impersonationData = localStorage.getItem('impersonationData');
-        const hasImpersonationBanner = impersonationData && (() => {
-            try {
-                const parsed = JSON.parse(impersonationData);
-                return !!(parsed.originalSession && parsed.impersonatedUser);
-            } catch (e) {
-                return false;
-            }
-        })();
+        document.body.style.paddingTop = '80px';
         
-        // Adjust body padding for fixed nav (60px nav + 40px banner if present)
-        const requiredPadding = hasImpersonationBanner ? '100px' : '80px';
-        document.body.style.paddingTop = requiredPadding;
         let displayName = '';
         let userRole = null;
         let secondaryRole = null;
+        
         try {
-            const supabase = window.globalSupabase || window.supabase;
-            console.log('[DEBUG] Using supabase client:', !!supabase);
-            console.log('[DEBUG] supabase.auth available:', !!(supabase && supabase.auth));
-            if (supabase && supabase.auth) {
-                const result = await getDisplayName();
-                displayName = result.displayName;
-                userRole = result.userRole;
-                secondaryRole = result.secondaryRole;
-                console.log('[DEBUG] getDisplayName returned:', { displayName, userRole, secondaryRole });
-            }
+            const result = await getDisplayName();
+            displayName = result.displayName;
+            userRole = result.userRole;
+            secondaryRole = result.secondaryRole;
         } catch (e) {
-            console.error('[DEBUG] Error in setupNav getDisplayName:', e);
+            console.error('Setup nav error:', e);
         }
+        
         nav.innerHTML = renderNav(displayName, userRole, secondaryRole);
         
-        // Handle logout button
-        var logoutBtn = nav.querySelector('#logoutBtn');
+        // Handle logout button with immediate redirect
+        const logoutBtn = nav.querySelector('#logoutBtn');
         if (logoutBtn) {
-            logoutBtn.onclick = function() {
-                console.log('[DEBUG] Logout button clicked');
+            // Remove all existing event listeners
+            const newLogoutBtn = logoutBtn.cloneNode(true);
+            logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+            
+            newLogoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
                 
-                // Show loading state
-                logoutBtn.textContent = 'Logging out...';
-                logoutBtn.disabled = true;
+                // Immediately disable all page functionality
+                window.onbeforeunload = null;
                 
-                // Set a maximum time for logout process
-                const logoutTimeout = setTimeout(() => {
-                    console.log('[DEBUG] Logout timeout reached, forcing redirect');
-                    window.location.href = 'login.html';
-                }, 2000); // 2 second timeout
-                
+                // Clear storage immediately and aggressively
                 try {
-                    // Clear any local storage immediately
                     localStorage.clear();
                     sessionStorage.clear();
-                    console.log('[DEBUG] Local storage cleared');
                     
-                    // Try Supabase signOut in background (don't wait for it)
-                    const supabase = window.globalSupabase || window.supabase;
-                    if (supabase && supabase.auth) {
-                        console.log('[DEBUG] Attempting Supabase signOut...');
-                        supabase.auth.signOut().catch(e => {
-                            console.warn('[DEBUG] Supabase signOut error (ignored):', e);
-                        });
-                    }
-                    
-                    // Clear timeout and redirect immediately
-                    clearTimeout(logoutTimeout);
-                    console.log('[DEBUG] Redirecting to login page...');
-                    window.location.href = 'login.html';
-                    
-                } catch (e) {
-                    console.error('[DEBUG] Error during logout:', e);
-                    clearTimeout(logoutTimeout);
-                    window.location.href = 'login.html';
-                }
-            };
-        } else {
-            console.warn('[DEBUG] Logout button not found in nav');
-        }
-        
-        // Handle switch back button (for impersonation)
-        var switchBackBtn = nav.querySelector('#switchBackBtn');
-        if (switchBackBtn) {
-            switchBackBtn.onclick = async function() {
-                console.log('[DEBUG] Switch back button clicked');
-                
-                try {
-                    // Check if we have the user impersonation system available
-                    if (window.userImpersonation && typeof window.userImpersonation.exitImpersonation === 'function') {
-                        console.log('[DEBUG] Using user impersonation system to exit');
-                        await window.userImpersonation.exitImpersonation();
-                        
-                        // Refresh the navigation to remove the banner
-                        await setupNav();
-                        
-                        // Redirect to admin panel
-                        window.location.href = 'admin.html';
-                        return;
-                    }
-                    
-                    // Fallback: manual session restoration
-                    const impersonationData = localStorage.getItem('impersonationData');
-                    if (!impersonationData) {
-                        console.error('[ERROR] No impersonation data found');
-                        alert('No impersonation session found');
-                        return;
-                    }
-                    
-                    const parsed = JSON.parse(impersonationData);
-                    const originalSession = parsed.originalSession;
-                    
-                    if (!originalSession) {
-                        console.error('[ERROR] No original session found in impersonation data');
-                        alert('No original admin session found');
-                        return;
-                    }
-                    
-                    console.log('[DEBUG] Restoring original session...', originalSession);
-                    
-                    const supabase = window.globalSupabase || window.supabase;
-                    if (!supabase) {
-                        console.error('[ERROR] Supabase not available');
-                        alert('Unable to access authentication system');
-                        return;
-                    }
-                    
-                    // Restore the original session
-                    const { error } = await supabase.auth.setSession({
-                        access_token: originalSession.access_token,
-                        refresh_token: originalSession.refresh_token
-                    });
-                    
-                    if (error) {
-                        console.error('[ERROR] Failed to restore session:', error);
-                        alert('Failed to restore admin session: ' + error.message);
-                        return;
-                    }
-                    
-                    // Clear impersonation data
+                    // Clear specific auth items
+                    localStorage.removeItem('supabase.auth.token');
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('userEmail');
                     localStorage.removeItem('impersonationData');
-                    console.log('[DEBUG] Impersonation ended, session restored');
-                    
-                    // Refresh the navigation to remove the banner
-                    await setupNav();
-                    
-                    // Redirect to admin panel
-                    window.location.href = 'admin.html';
-                    
-                } catch (e) {
-                    console.error('[ERROR] Exception during switch back:', e);
-                    alert('Error switching back to admin: ' + e.message);
+                } catch (ex) {
+                    // Ignore storage errors
                 }
-            };
+                
+                // Multiple immediate redirect attempts
+                setTimeout(() => {
+                    window.location.replace('login.html');
+                }, 0);
+                window.location.href = 'login.html';
+                
+                return false;
+            });
         }
-        
-        console.log('[DEBUG] Nav rendered, displayName:', displayName);
     }
 
     // Function to refresh navigation (can be called from other pages)
@@ -443,6 +342,30 @@ if (!window.globalSupabase && window.supabase && window.supabase.createClient) {
 
     // Ensure Supabase UMD is present
     onDOMReady(function() {
+        // TRIPLE CHECK: Don't load navigation on login or authentication pages
+        const currentPath = window.location.pathname.toLowerCase();
+        const currentFile = currentPath.split('/').pop() || '';
+        const currentURL = window.location.href.toLowerCase();
+        const pageTitle = document.title ? document.title.toLowerCase() : '';
+        
+        const isAuthPage = currentFile === 'login.html' || 
+                           currentFile === 'signup.html' || 
+                           currentFile === 'reset.html' ||
+                           currentFile === 'auth.html' ||
+                           currentPath.includes('login') ||
+                           currentPath.includes('signup') ||
+                           currentPath.includes('auth') ||
+                           currentURL.includes('login') ||
+                           pageTitle.includes('login') ||
+                           pageTitle.includes('sign in') ||
+                           pageTitle.includes('authentication');
+        
+        if (isAuthPage) {
+            console.log('[DEBUG] TRIPLE CHECK: Skipping navigation on authentication page:', currentPath);
+            console.log('[DEBUG] Detection details - file:', currentFile, 'path:', currentPath, 'title:', pageTitle);
+            return;
+        }
+        
         if (window.supabase && typeof window.supabase.createClient === 'function') {
             // Use the global client that was already created
             if (!window.globalSupabase) {
@@ -542,3 +465,7 @@ window.getAuthenticatedUserGlobal = async function() {
         return null;
     }
 };
+
+})(); // End of IIFE that wraps the entire navigation script
+
+} // End of loadNavigationScript function

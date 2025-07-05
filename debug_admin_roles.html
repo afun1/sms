@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role Debug - Admin Page</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 100px;
+        }
+        .debug-info {
+            background-color: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+        }
+        .warning {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+    </style>
+</head>
+<body>
+    <div id="global-nav"></div>
+    
+    <div class="container">
+        <h1>🔍 Role Debug - Admin Page</h1>
+        
+        <div class="debug-info">
+            <h3>Current URL Info:</h3>
+            <div id="url-info">Loading...</div>
+        </div>
+        
+        <div class="debug-info">
+            <h3>User Role Info:</h3>
+            <div id="role-info">Loading...</div>
+        </div>
+        
+        <div class="debug-info">
+            <h3>Navigation Logic:</h3>
+            <div id="nav-info">Loading...</div>
+        </div>
+        
+        <div class="debug-info">
+            <h3>Console Logs:</h3>
+            <div id="console-logs">Check browser console for detailed logs</div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button onclick="location.href='admin.html?view=admin'">Go to Admin View</button>
+            <button onclick="location.href='admin.html?view=supervisor'">Go to Supervisor View</button>
+            <button onclick="location.href='admin.html'">Go to Admin (no view)</button>
+        </div>
+    </div>
+
+    <script>
+        async function debugRoles() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentView = urlParams.get('view');
+            const currentPage = window.location.pathname.split('/').pop();
+            
+            document.getElementById('url-info').innerHTML = `
+                Current Page: ${currentPage}<br>
+                View Parameter: ${currentView || 'none'}<br>
+                Full URL: ${window.location.href}
+            `;
+            
+            // Try to get user profile
+            try {
+                const supabase = window.globalSupabase || window.supabase;
+                if (supabase) {
+                    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                    if (sessionError) {
+                        document.getElementById('role-info').innerHTML = `
+                            <div class="error">Session Error: ${sessionError.message}</div>
+                        `;
+                        return;
+                    }
+                    
+                    if (session && session.user) {
+                        const { data: userProfile, error: profileError } = await supabase
+                            .from('profiles')
+                            .select('id, role, secondary_role, display_name, email')
+                            .eq('id', session.user.id)
+                            .single();
+                        
+                        if (profileError) {
+                            document.getElementById('role-info').innerHTML = `
+                                <div class="error">Profile Error: ${profileError.message}</div>
+                            `;
+                            return;
+                        }
+                        
+                        document.getElementById('role-info').innerHTML = `
+                            <div class="success">
+                                User ID: ${userProfile.id}<br>
+                                Display Name: ${userProfile.display_name || 'N/A'}<br>
+                                Email: ${userProfile.email}<br>
+                                Primary Role: ${userProfile.role}<br>
+                                Secondary Role: ${userProfile.secondary_role || 'none'}<br>
+                            </div>
+                        `;
+                        
+                        // Analyze navigation logic
+                        analyzeNavigation(userProfile.role, userProfile.secondary_role, currentView, currentPage);
+                        
+                    } else {
+                        document.getElementById('role-info').innerHTML = `
+                            <div class="warning">No active session found</div>
+                        `;
+                    }
+                } else {
+                    document.getElementById('role-info').innerHTML = `
+                        <div class="error">Supabase not available</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('role-info').innerHTML = `
+                    <div class="error">Error: ${error.message}</div>
+                `;
+            }
+        }
+        
+        function analyzeNavigation(userRole, secondaryRole, currentView, currentPage) {
+            let analysis = '';
+            
+            if (currentPage === 'debug_admin_roles.html' || currentPage.includes('admin')) {
+                analysis += `<strong>Admin Page Navigation Logic:</strong><br>`;
+                
+                if (currentView === 'admin' && userRole === 'supervisor' && secondaryRole === 'admin') {
+                    analysis += `✅ Should show "View as Supervisor" button<br>`;
+                    analysis += `Logic: currentView=admin, userRole=supervisor, secondaryRole=admin<br>`;
+                } else if (currentView === 'supervisor' && secondaryRole === 'admin') {
+                    analysis += `✅ Should show "View as Admin" button<br>`;
+                    analysis += `Logic: currentView=supervisor, secondaryRole=admin<br>`;
+                } else if (!currentView && userRole === 'supervisor' && secondaryRole === 'admin') {
+                    analysis += `✅ Should show "View as Admin" button<br>`;
+                    analysis += `Logic: no view param, userRole=supervisor, secondaryRole=admin<br>`;
+                } else {
+                    analysis += `❌ No navigation button expected<br>`;
+                    analysis += `Logic: currentView=${currentView}, userRole=${userRole}, secondaryRole=${secondaryRole}<br>`;
+                }
+            }
+            
+            document.getElementById('nav-info').innerHTML = analysis;
+            
+            // Check actual navigation
+            setTimeout(() => {
+                const navLinks = document.querySelectorAll('#global-nav a');
+                const viewAsLink = Array.from(navLinks).find(link => 
+                    link.textContent.includes('View as') || 
+                    link.textContent.includes('Admin') || 
+                    link.textContent.includes('Supervisor') || 
+                    link.textContent.includes('Manager')
+                );
+                
+                if (viewAsLink) {
+                    analysis += `<br><strong>Actual Navigation Found:</strong><br>`;
+                    analysis += `Text: "${viewAsLink.textContent.trim()}"<br>`;
+                    analysis += `URL: ${viewAsLink.href}<br>`;
+                    analysis += `<div class="success">✅ Navigation button is present</div>`;
+                } else {
+                    analysis += `<br><strong>Actual Navigation:</strong><br>`;
+                    analysis += `<div class="error">❌ No navigation button found</div>`;
+                }
+                
+                document.getElementById('nav-info').innerHTML = analysis;
+            }, 1000);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(debugRoles, 1000);
+        });
+    </script>
+</body>
+</html>

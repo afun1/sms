@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Admin Button</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .debug-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .debug-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            background: #fafafa;
+        }
+        .debug-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .debug-output {
+            background: #f0f0f0;
+            padding: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            border-radius: 4px;
+        }
+        .login-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            background: #1976ff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background: #1565c0;
+        }
+        .error {
+            color: #e53935;
+            margin-top: 10px;
+        }
+        .success {
+            color: #2e7d32;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Admin Button Visibility</h1>
+    
+    <div class="debug-container">
+        <div class="login-form">
+            <h3>Login to Test Admin Button</h3>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" value="john+1@tpnlife.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" value="password123" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Quick Test Accounts:</label>
+                <button type="button" onclick="setTestAccount('john+1@tpnlife.com', 'password123')" style="margin: 2px; padding: 5px 10px; font-size: 12px;">Double Admin #1</button>
+                <button type="button" onclick="setTestAccount('admin@test.com', 'password123')" style="margin: 2px; padding: 5px 10px; font-size: 12px;">Double Admin #2</button>
+                <button type="button" onclick="setTestAccount('superadmin@test.com', 'password123')" style="margin: 2px; padding: 5px 10px; font-size: 12px;">Double Admin #3</button>
+            </div>
+            
+            <button class="btn" onclick="testLogin()">Login & Test</button>
+            <div id="loginResult"></div>
+        </div>
+    </div>
+
+    <div class="debug-container">
+        <div class="debug-section">
+            <div class="debug-title">Current User Data:</div>
+            <div id="userDebug" class="debug-output">Not logged in</div>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">Admin Button Logic Debug:</div>
+            <div id="adminLogicDebug" class="debug-output">Not calculated</div>
+        </div>
+        
+        <div class="debug-section">
+            <div class="debug-title">Current Page Context:</div>
+            <div id="pageDebug" class="debug-output">Loading...</div>
+        </div>
+    </div>
+
+    <div id="global-nav"></div>
+
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function updatePageDebug() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentView = urlParams.get('view');
+            const currentPage = window.location.pathname.split('/').pop() || window.location.pathname;
+            
+            document.getElementById('pageDebug').textContent = 
+                `Current Page: ${currentPage}
+Current View Parameter: ${currentView || 'none'}
+Full URL: ${window.location.href}
+Search Params: ${window.location.search}`;
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+            
+            try {
+                // First try to sign in
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="error">Login failed: ${error.message}</div>`;
+                    return;
+                }
+                
+                resultDiv.innerHTML = `<div class="success">Login successful!</div>`;
+                
+                // Now get user profile and debug admin button logic
+                await debugAdminButton();
+                
+            } catch (err) {
+                resultDiv.innerHTML = `<div class="error">Error: ${err.message}</div>`;
+            }
+        }
+
+        async function debugAdminButton() {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error || !session) {
+                    document.getElementById('userDebug').textContent = 'No session found';
+                    return;
+                }
+                
+                // Get user profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('first_name, last_name, email, role, secondary_role')
+                    .eq('id', session.user.id)
+                    .single();
+                
+                if (profileError) {
+                    document.getElementById('userDebug').textContent = `Profile error: ${profileError.message}`;
+                    return;
+                }
+                
+                // Display user data
+                document.getElementById('userDebug').textContent = 
+                    `User ID: ${session.user.id}
+Email: ${profile.email}
+Role: ${profile.role}
+Secondary Role: ${profile.secondary_role}
+First Name: ${profile.first_name}
+Last Name: ${profile.last_name}`;
+                
+                // Debug admin button logic
+                const userRole = profile.role;
+                const secondaryRole = profile.secondary_role;
+                
+                const isAdmin = userRole && ['admin', 'manager', 'supervisor'].includes(userRole.toLowerCase());
+                const isImpersonating = localStorage.getItem('impersonationData') !== null;
+                
+                // Check URL parameters from ANY page to determine current view mode
+                const urlParams = new URLSearchParams(window.location.search);
+                const currentView = urlParams.get('view');
+                const currentPage = window.location.pathname.split('/').pop() || window.location.pathname;
+                
+                // Check if user has admin in both primary and secondary roles
+                const isDoubleAdmin = userRole && userRole.toLowerCase() === 'admin' && secondaryRole && secondaryRole.toLowerCase() === 'admin';
+                
+                let roleText = '';
+                let roleDestination = '';
+                let debugReason = '';
+                
+                if (currentView === 'supervisor' || currentView === 'manager') {
+                    // Currently viewing as supervisor/manager, show option to go back to admin view
+                    if ((secondaryRole && secondaryRole.toLowerCase() === 'admin') || isDoubleAdmin) {
+                        roleText = 'Admin';
+                        roleDestination = 'admin.html';
+                        debugReason = 'Currently viewing as supervisor/manager, showing admin option';
+                    } else {
+                        debugReason = 'Currently viewing as supervisor/manager, but no admin secondary role';
+                    }
+                } else if (currentPage === 'admin.html' || window.location.pathname.includes('admin.html')) {
+                    // Currently on admin page, show option to go back to user's primary role
+                    if (isDoubleAdmin) {
+                        roleText = 'Supervisor';
+                        roleDestination = 'admin.html?view=supervisor';
+                        debugReason = 'Double admin on admin page, showing supervisor option';
+                    } else if (userRole && userRole.toLowerCase() === 'supervisor') {
+                        roleText = 'Supervisor';
+                        roleDestination = 'admin.html?view=supervisor';
+                        debugReason = 'Supervisor on admin page, showing supervisor option';
+                    } else if (userRole && userRole.toLowerCase() === 'manager') {
+                        roleText = 'Manager';
+                        roleDestination = 'admin.html?view=manager';
+                        debugReason = 'Manager on admin page, showing manager option';
+                    } else if (secondaryRole && secondaryRole.toLowerCase() === 'supervisor') {
+                        roleText = 'Supervisor';
+                        roleDestination = 'admin.html?view=supervisor';
+                        debugReason = 'Has supervisor secondary role on admin page';
+                    } else if (secondaryRole && secondaryRole.toLowerCase() === 'manager') {
+                        roleText = 'Manager';
+                        roleDestination = 'admin.html?view=manager';
+                        debugReason = 'Has manager secondary role on admin page';
+                    } else if (userRole && userRole.toLowerCase() === 'admin') {
+                        roleText = 'Supervisor';
+                        roleDestination = 'admin.html?view=supervisor';
+                        debugReason = 'Admin on admin page, showing supervisor option';
+                    } else {
+                        debugReason = 'On admin page but no valid role toggle available';
+                    }
+                } else {
+                    // Currently NOT on admin page - show admin view option if available
+                    if (isDoubleAdmin) {
+                        roleText = 'Admin';
+                        roleDestination = 'admin.html';
+                        debugReason = 'Double admin NOT on admin page, showing admin option';
+                    } else if (userRole && userRole.toLowerCase() === 'supervisor' && secondaryRole && secondaryRole.toLowerCase() === 'admin') {
+                        roleText = 'Admin';
+                        roleDestination = 'admin.html';
+                        debugReason = 'Supervisor with admin secondary role';
+                    } else if (userRole && userRole.toLowerCase() === 'manager' && secondaryRole && secondaryRole.toLowerCase() === 'admin') {
+                        roleText = 'Admin';
+                        roleDestination = 'admin.html';
+                        debugReason = 'Manager with admin secondary role';
+                    } else if (userRole && userRole.toLowerCase() === 'supervisor') {
+                        roleText = 'Supervisor';
+                        roleDestination = 'admin.html?view=supervisor';
+                        debugReason = 'Supervisor without admin secondary role';
+                    } else if (userRole && userRole.toLowerCase() === 'manager') {
+                        roleText = 'Manager';
+                        roleDestination = 'admin.html?view=manager';
+                        debugReason = 'Manager without admin secondary role';
+                    } else if (secondaryRole && secondaryRole.toLowerCase() === 'supervisor') {
+                        roleText = 'Supervisor';
+                        roleDestination = 'admin.html?view=supervisor';
+                        debugReason = 'Has supervisor secondary role';
+                    } else if (secondaryRole && secondaryRole.toLowerCase() === 'manager') {
+                        roleText = 'Manager';
+                        roleDestination = 'admin.html?view=manager';
+                        debugReason = 'Has manager secondary role';
+                    } else if (userRole && userRole.toLowerCase() === 'admin') {
+                        roleText = 'Supervisor';
+                        roleDestination = 'admin.html?view=supervisor';
+                        debugReason = 'Admin NOT on admin page, showing supervisor option';
+                    } else {
+                        debugReason = 'No valid role toggle available';
+                    }
+                }
+                
+                const adminButtonVisible = (!isImpersonating && isAdmin && roleText);
+                
+                document.getElementById('adminLogicDebug').textContent = 
+                    `isAdmin: ${isAdmin}
+isImpersonating: ${isImpersonating}
+isDoubleAdmin: ${isDoubleAdmin}
+currentView: ${currentView}
+currentPage: ${currentPage}
+roleText: '${roleText}'
+roleDestination: '${roleDestination}'
+debugReason: ${debugReason}
+
+Final Admin Button Visible: ${adminButtonVisible}
+
+Conditions:
+- !isImpersonating: ${!isImpersonating}
+- isAdmin: ${isAdmin}
+- roleText: ${!!roleText}`;
+                
+            } catch (err) {
+                document.getElementById('adminLogicDebug').textContent = `Error: ${err.message}`;
+            }
+        }
+        
+        // Update page debug on load
+        updatePageDebug();
+        
+        function setTestAccount(email, password) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = password;
+        }
+    </script>
+    
+    <script src="static/global-nav-v2.js"></script>
+</body>
+</html>

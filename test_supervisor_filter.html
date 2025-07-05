@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supervisor Filter</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-result {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Supervisor Filter Logic</h1>
+    
+    <div class="test-container">
+        <h3>Test Supervisor Relationships</h3>
+        <button class="btn" onclick="testSupervisorQuery()">Test Supervisor Query</button>
+        <button class="btn" onclick="testUserProfiles()">Test User Profiles</button>
+        <button class="btn" onclick="testContactAssignments()">Test Contact Assignments</button>
+        <div id="test-results" class="test-result"></div>
+    </div>
+
+    <script>
+        // Set up Supabase client
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function log(message) {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.textContent += message + '\n';
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('test-results').textContent = '';
+        }
+
+        async function testSupervisorQuery() {
+            clearLog();
+            log('=== Testing Supervisor Query ===');
+            
+            try {
+                // Get current session
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                if (sessionError) {
+                    log('❌ Session error: ' + sessionError.message);
+                    return;
+                }
+                
+                if (!session) {
+                    log('❌ No active session');
+                    return;
+                }
+                
+                log('✅ Session found for: ' + session.user.email);
+                
+                // Get user profile
+                const { data: userProfile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+                
+                if (profileError) {
+                    log('❌ Profile error: ' + profileError.message);
+                    return;
+                }
+                
+                log('✅ User profile loaded:');
+                log('  - Role: ' + userProfile.role);
+                log('  - Secondary Role: ' + userProfile.secondary_role);
+                log('  - Display Name: ' + userProfile.display_name);
+                log('  - Email: ' + userProfile.email);
+                
+                // Test directly supervised users query
+                const { data: directlySupervised, error: supervisedError } = await supabase
+                    .from('profiles')
+                    .select('id, display_name, email, role')
+                    .eq('supervisor_id', userProfile.id);
+                
+                if (supervisedError) {
+                    log('❌ Supervised users error: ' + supervisedError.message);
+                    return;
+                }
+                
+                log('✅ Directly supervised users query successful');
+                log('  - Count: ' + (directlySupervised ? directlySupervised.length : 0));
+                
+                if (directlySupervised && directlySupervised.length > 0) {
+                    log('  - Directly supervised users:');
+                    directlySupervised.forEach(user => {
+                        log('    * ' + user.display_name + ' (' + user.email + ') - Role: ' + user.role);
+                    });
+                    
+                    // Check for managers among supervised users
+                    const supervisedManagers = directlySupervised.filter(u => u.role === 'manager');
+                    if (supervisedManagers.length > 0) {
+                        log('  - Supervised managers found: ' + supervisedManagers.length);
+                        
+                        // Get users managed by these managers (hierarchical)
+                        const managerIds = supervisedManagers.map(m => m.id);
+                        const { data: managedBySupervised, error: managedError } = await supabase
+                            .from('profiles')
+                            .select('id, display_name, email, role')
+                            .in('manager_id', managerIds);
+                        
+                        if (managedError) {
+                            log('❌ Hierarchical users error: ' + managedError.message);
+                        } else if (managedBySupervised && managedBySupervised.length > 0) {
+                            log('  - Users managed by supervised managers:');
+                            managedBySupervised.forEach(user => {
+                                log('    * ' + user.display_name + ' (' + user.email + ') - Role: ' + user.role);
+                            });
+                        } else {
+                            log('  - No users managed by supervised managers');
+                        }
+                    } else {
+                        log('  - No managers among supervised users');
+                    }
+                } else {
+                    log('  - No directly supervised users found');
+                }
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        }
+
+        async function testUserProfiles() {
+            clearLog();
+            log('=== Testing User Profiles ===');
+            
+            try {
+                // Get all profiles with supervisor relationships
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('id, display_name, email, role, secondary_role, supervisor_id')
+                    .order('email');
+                
+                if (error) {
+                    log('❌ Error: ' + error.message);
+                    return;
+                }
+                
+                log('✅ Found ' + profiles.length + ' profiles');
+                
+                // Group by supervisor relationships
+                const supervisors = profiles.filter(p => p.role === 'supervisor' || p.secondary_role === 'supervisor');
+                const supervised = profiles.filter(p => p.supervisor_id);
+                
+                log('\n📊 SUPERVISOR ANALYSIS:');
+                log('  - Total Supervisors: ' + supervisors.length);
+                log('  - Total Supervised Users: ' + supervised.length);
+                
+                if (supervisors.length > 0) {
+                    log('\n👥 SUPERVISORS:');
+                    supervisors.forEach(supervisor => {
+                        log('  - ' + supervisor.display_name + ' (' + supervisor.email + ') - Role: ' + supervisor.role + '/' + supervisor.secondary_role);
+                        
+                        // Find who they supervise
+                        const supervising = profiles.filter(p => p.supervisor_id === supervisor.id);
+                        if (supervising.length > 0) {
+                            log('    Supervising:');
+                            supervising.forEach(user => {
+                                log('      * ' + user.display_name + ' (' + user.email + ')');
+                            });
+                        } else {
+                            log('    (No supervised users)');
+                        }
+                    });
+                }
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        }
+
+        async function testContactAssignments() {
+            clearLog();
+            log('=== Testing Contact Assignments ===');
+            
+            try {
+                // Get sample contacts with assignee information
+                const { data: contacts, error } = await supabase
+                    .from('contacts')
+                    .select('id, assignee, user_id, first_name, last_name, email')
+                    .limit(10);
+                
+                if (error) {
+                    log('❌ Error: ' + error.message);
+                    return;
+                }
+                
+                log('✅ Found ' + contacts.length + ' contacts (sample)');
+                
+                // Analyze assignee patterns
+                const assigneePatterns = {};
+                contacts.forEach(contact => {
+                    const assignee = contact.assignee || 'unassigned';
+                    assigneePatterns[assignee] = (assigneePatterns[assignee] || 0) + 1;
+                });
+                
+                log('\n📊 ASSIGNEE PATTERNS:');
+                Object.entries(assigneePatterns).forEach(([assignee, count]) => {
+                    log('  - "' + assignee + '": ' + count + ' contacts');
+                });
+                
+                log('\n📝 SAMPLE CONTACTS:');
+                contacts.slice(0, 5).forEach(contact => {
+                    log('  - ' + contact.first_name + ' ' + contact.last_name + ' → Assignee: "' + (contact.assignee || 'none') + '"');
+                });
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

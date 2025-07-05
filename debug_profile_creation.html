@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Profile Creation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .section h2 {
+            color: #555;
+            margin-bottom: 15px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn.danger {
+            background: #dc3545;
+        }
+        .btn.danger:hover {
+            background: #c82333;
+        }
+        .btn.success {
+            background: #28a745;
+        }
+        .btn.success:hover {
+            background: #218838;
+        }
+        .output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .info {
+            color: #007bff;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Profile Creation System</h1>
+        
+        <div class="section">
+            <h2>1. Check Auth Users vs Profiles</h2>
+            <button class="btn" onclick="checkAuthVsProfiles()">Check Auth Users vs Profiles</button>
+            <div id="authVsProfilesOutput" class="output"></div>
+        </div>
+        
+        <div class="section">
+            <h2>2. Test Profile Creation Directly</h2>
+            <div class="form-group">
+                <label for="testEmail">Test Email:</label>
+                <input type="email" id="testEmail" placeholder="john+test@tpnlife.com">
+            </div>
+            <button class="btn success" onclick="testDirectProfileCreation()">Test Direct Profile Creation</button>
+            <div id="directProfileOutput" class="output"></div>
+        </div>
+        
+        <div class="section">
+            <h2>3. Check RLS Policies</h2>
+            <button class="btn" onclick="checkRLSPolicies()">Check RLS Policies on Profiles Table</button>
+            <div id="rlsPoliciesOutput" class="output"></div>
+        </div>
+        
+        <div class="section">
+            <h2>4. Check Database Triggers</h2>
+            <button class="btn" onclick="checkDatabaseTriggers()">Check Database Triggers</button>
+            <div id="triggersOutput" class="output"></div>
+        </div>
+        
+        <div class="section">
+            <h2>5. Test Profile Creation with Admin Session</h2>
+            <button class="btn" onclick="testAdminProfileCreation()">Test with Admin Privileges</button>
+            <div id="adminProfileOutput" class="output"></div>
+        </div>
+        
+        <div class="section">
+            <h2>6. Raw SQL Test</h2>
+            <button class="btn" onclick="testRawSQL()">Test Raw SQL Insert</button>
+            <div id="rawSQLOutput" class="output"></div>
+        </div>
+        
+        <div class="section">
+            <h2>7. Check Profile Table Schema</h2>
+            <button class="btn" onclick="checkProfileSchema()">Check Profile Table Schema</button>
+            <div id="schemaOutput" class="output"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function log(elementId, message, type = 'info') {
+            const output = document.getElementById(elementId);
+            const timestamp = new Date().toISOString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearOutput(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+        
+        async function checkAuthVsProfiles() {
+            clearOutput('authVsProfilesOutput');
+            log('authVsProfilesOutput', 'Checking Auth Users vs Profiles...');
+            
+            try {
+                // First, check current session
+                const { data: session, error: sessionError } = await supabase.auth.getSession();
+                if (sessionError) {
+                    log('authVsProfilesOutput', `Session error: ${sessionError.message}`, 'error');
+                } else {
+                    log('authVsProfilesOutput', `Current session: ${session.session?.user?.email || 'None'}`);
+                }
+                
+                // Get all profiles
+                const { data: profiles, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (profilesError) {
+                    log('authVsProfilesOutput', `Profiles error: ${profilesError.message}`, 'error');
+                } else {
+                    log('authVsProfilesOutput', `Found ${profiles.length} profiles:`);
+                    profiles.forEach(profile => {
+                        log('authVsProfilesOutput', `  - ${profile.email} (${profile.role}) - ID: ${profile.id}`);
+                    });
+                }
+                
+                // Try to get auth.users (this might not work with RLS)
+                const { data: authUsers, error: authError } = await supabase
+                    .from('auth.users')
+                    .select('*');
+                
+                if (authError) {
+                    log('authVsProfilesOutput', `Auth users error: ${authError.message}`, 'warning');
+                    log('authVsProfilesOutput', 'Cannot access auth.users table directly (expected with RLS)');
+                } else {
+                    log('authVsProfilesOutput', `Found ${authUsers.length} auth users`);
+                }
+                
+                log('authVsProfilesOutput', 'Analysis complete.', 'success');
+                
+            } catch (error) {
+                log('authVsProfilesOutput', `Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDirectProfileCreation() {
+            clearOutput('directProfileOutput');
+            const testEmail = document.getElementById('testEmail').value || 'john+test@tpnlife.com';
+            
+            log('directProfileOutput', `Testing direct profile creation for: ${testEmail}`);
+            
+            try {
+                // Generate a test UUID
+                const testUserId = 'test-' + Math.random().toString(36).substr(2, 9);
+                
+                const profileData = {
+                    id: testUserId,
+                    email: testEmail,
+                    first_name: 'Test',
+                    last_name: 'User',
+                    display_name: 'Test User',
+                    phone: '555-0123',
+                    sparky_username: 'testuser',
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                };
+                
+                log('directProfileOutput', `Attempting to insert profile: ${JSON.stringify(profileData, null, 2)}`);
+                
+                const { data: insertData, error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([profileData])
+                    .select();
+                
+                if (insertError) {
+                    log('directProfileOutput', `Insert error: ${insertError.message}`, 'error');
+                    log('directProfileOutput', `Error details: ${JSON.stringify(insertError, null, 2)}`, 'error');
+                } else {
+                    log('directProfileOutput', `Profile created successfully: ${JSON.stringify(insertData, null, 2)}`, 'success');
+                    
+                    // Try to read it back
+                    const { data: readData, error: readError } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', testUserId);
+                    
+                    if (readError) {
+                        log('directProfileOutput', `Read-back error: ${readError.message}`, 'error');
+                    } else {
+                        log('directProfileOutput', `Read-back successful: ${JSON.stringify(readData, null, 2)}`, 'success');
+                    }
+                }
+                
+            } catch (error) {
+                log('directProfileOutput', `Exception: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkRLSPolicies() {
+            clearOutput('rlsPoliciesOutput');
+            log('rlsPoliciesOutput', 'Checking RLS policies on profiles table...');
+            
+            try {
+                // Try to query pg_policies for the profiles table
+                const { data, error } = await supabase
+                    .rpc('get_table_policies', { table_name: 'profiles' });
+                
+                if (error) {
+                    log('rlsPoliciesOutput', `RPC error: ${error.message}`, 'error');
+                    
+                    // Try alternative approach
+                    const { data: altData, error: altError } = await supabase
+                        .from('information_schema.table_constraints')
+                        .select('*')
+                        .eq('table_name', 'profiles');
+                    
+                    if (altError) {
+                        log('rlsPoliciesOutput', `Alternative query error: ${altError.message}`, 'error');
+                    } else {
+                        log('rlsPoliciesOutput', `Table constraints: ${JSON.stringify(altData, null, 2)}`);
+                    }
+                } else {
+                    log('rlsPoliciesOutput', `RLS policies: ${JSON.stringify(data, null, 2)}`);
+                }
+                
+            } catch (error) {
+                log('rlsPoliciesOutput', `Exception: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkDatabaseTriggers() {
+            clearOutput('triggersOutput');
+            log('triggersOutput', 'Checking database triggers...');
+            
+            try {
+                // Try to check for triggers on auth.users
+                const { data, error } = await supabase
+                    .rpc('get_triggers');
+                
+                if (error) {
+                    log('triggersOutput', `RPC error: ${error.message}`, 'error');
+                    log('triggersOutput', 'Cannot check triggers directly (expected with RLS)');
+                } else {
+                    log('triggersOutput', `Triggers: ${JSON.stringify(data, null, 2)}`);
+                }
+                
+            } catch (error) {
+                log('triggersOutput', `Exception: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAdminProfileCreation() {
+            clearOutput('adminProfileOutput');
+            log('adminProfileOutput', 'Testing profile creation with admin session...');
+            
+            try {
+                // First, let's try to sign in as admin
+                const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                    email: 'john@tpnlife.com',
+                    password: 'Tpn12345!'
+                });
+                
+                if (signInError) {
+                    log('adminProfileOutput', `Admin sign-in error: ${signInError.message}`, 'error');
+                    return;
+                }
+                
+                log('adminProfileOutput', `Signed in as admin: ${signInData.user.email}`);
+                
+                // Now try to create a profile
+                const testUserId = 'admin-test-' + Math.random().toString(36).substr(2, 9);
+                const profileData = {
+                    id: testUserId,
+                    email: 'admin-test@tpnlife.com',
+                    first_name: 'Admin',
+                    last_name: 'Test',
+                    display_name: 'Admin Test',
+                    phone: '555-0124',
+                    sparky_username: 'admintest',
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                };
+                
+                const { data: insertData, error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([profileData])
+                    .select();
+                
+                if (insertError) {
+                    log('adminProfileOutput', `Insert error: ${insertError.message}`, 'error');
+                } else {
+                    log('adminProfileOutput', `Profile created successfully as admin: ${JSON.stringify(insertData, null, 2)}`, 'success');
+                }
+                
+            } catch (error) {
+                log('adminProfileOutput', `Exception: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testRawSQL() {
+            clearOutput('rawSQLOutput');
+            log('rawSQLOutput', 'Testing raw SQL insert...');
+            
+            try {
+                const testUserId = 'sql-test-' + Math.random().toString(36).substr(2, 9);
+                
+                const { data, error } = await supabase.rpc('raw_sql_insert', {
+                    user_id: testUserId,
+                    user_email: 'sql-test@tpnlife.com',
+                    user_first_name: 'SQL',
+                    user_last_name: 'Test',
+                    user_display_name: 'SQL Test',
+                    user_phone: '555-0125',
+                    user_sparky_username: 'sqltest',
+                    user_role: 'user'
+                });
+                
+                if (error) {
+                    log('rawSQLOutput', `Raw SQL error: ${error.message}`, 'error');
+                    log('rawSQLOutput', 'RPC function may not exist (expected)');
+                } else {
+                    log('rawSQLOutput', `Raw SQL success: ${JSON.stringify(data, null, 2)}`, 'success');
+                }
+                
+            } catch (error) {
+                log('rawSQLOutput', `Exception: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkProfileSchema() {
+            clearOutput('schemaOutput');
+            log('schemaOutput', 'Checking profile table schema...');
+            
+            try {
+                // Try to get table structure
+                const { data, error } = await supabase
+                    .from('information_schema.columns')
+                    .select('column_name, data_type, is_nullable, column_default')
+                    .eq('table_name', 'profiles')
+                    .eq('table_schema', 'public');
+                
+                if (error) {
+                    log('schemaOutput', `Schema query error: ${error.message}`, 'error');
+                } else {
+                    log('schemaOutput', `Profile table schema:`);
+                    data.forEach(col => {
+                        log('schemaOutput', `  - ${col.column_name}: ${col.data_type} (nullable: ${col.is_nullable}, default: ${col.column_default || 'none'})`);
+                    });
+                }
+                
+                // Also try to get constraints
+                const { data: constraints, error: constraintsError } = await supabase
+                    .from('information_schema.table_constraints')
+                    .select('constraint_name, constraint_type')
+                    .eq('table_name', 'profiles');
+                
+                if (constraintsError) {
+                    log('schemaOutput', `Constraints query error: ${constraintsError.message}`, 'error');
+                } else {
+                    log('schemaOutput', `Table constraints:`);
+                    constraints.forEach(constraint => {
+                        log('schemaOutput', `  - ${constraint.constraint_name}: ${constraint.constraint_type}`);
+                    });
+                }
+                
+            } catch (error) {
+                log('schemaOutput', `Exception: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run the first check on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(checkAuthVsProfiles, 1000);
+        });
+    </script>
+</body>
+</html>

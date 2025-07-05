@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Creation Debug - Simple</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+        .section h2 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .test-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .success {
+            color: #28a745;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .warning {
+            color: #856404;
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .info {
+            color: #0c5460;
+            background: #d1ecf1;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .login-section {
+            background: #e8f4fd;
+            border-left: 4px solid #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Profile Creation Debug - Simple</h1>
+        
+        <div class="section login-section">
+            <h2>🔐 Login to Test Profile Creation</h2>
+            <p>Login with a test account to check if profile creation works:</p>
+            <div class="form-group">
+                <label for="testEmail">Email:</label>
+                <input type="email" id="testEmail" placeholder="john+15@tpnlife.com" value="john+15@tpnlife.com">
+            </div>
+            <div class="form-group">
+                <label for="testPassword">Password:</label>
+                <input type="password" id="testPassword" placeholder="Enter password">
+            </div>
+            <button class="test-btn" onclick="testLogin()">Login and Check Profile</button>
+            <button class="test-btn" onclick="logout()">Logout</button>
+            <div id="loginOutput" class="output" style="display:none;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>📊 Current User Status</h2>
+            <button class="test-btn" onclick="checkCurrentUser()">Check Current User</button>
+            <button class="test-btn" onclick="checkCurrentProfile()">Check Current Profile</button>
+            <div id="userOutput" class="output" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 List All Profiles</h2>
+            <button class="test-btn" onclick="listAllProfiles()">List All Profiles</button>
+            <div id="profilesOutput" class="output" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🧪 Test Profile Creation</h2>
+            <p>Create a profile for the current logged-in user:</p>
+            <button class="test-btn" onclick="createProfileForCurrentUser()">Create Profile for Current User</button>
+            <div id="createOutput" class="output" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Manual Profile Creation</h2>
+            <div class="form-group">
+                <label for="manualEmail">Email:</label>
+                <input type="email" id="manualEmail" placeholder="john+test@tpnlife.com">
+            </div>
+            <div class="form-group">
+                <label for="manualUserId">User ID (UUID):</label>
+                <input type="text" id="manualUserId" placeholder="Enter UUID from auth user">
+            </div>
+            <button class="test-btn" onclick="createManualProfile()">Create Manual Profile</button>
+            <div id="manualOutput" class="output" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Database Tests</h2>
+            <button class="test-btn" onclick="testDatabaseAccess()">Test Database Access</button>
+            <button class="test-btn" onclick="testProfileInsert()">Test Profile Insert</button>
+            <button class="test-btn" onclick="testRLSPolicies()">Test RLS Policies</button>
+            <div id="dbOutput" class="output" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            console.log(logEntry);
+            return logEntry;
+        }
+        
+        function showOutput(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent = content;
+            element.className = `output ${type}`;
+        }
+        
+        async function testLogin() {
+            let output = log('=== LOGIN TEST ===');
+            
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            if (!email || !password) {
+                output += log('❌ Please enter both email and password', 'error');
+                showOutput('loginOutput', output);
+                return;
+            }
+            
+            try {
+                output += log(`Attempting login for: ${email}`);
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    output += log(`❌ Login failed: ${error.message}`, 'error');
+                } else {
+                    output += log(`✅ Login successful!`);
+                    output += log(`User ID: ${data.user.id}`);
+                    output += log(`Email: ${data.user.email}`);
+                    output += log(`Email confirmed: ${data.user.email_confirmed_at ? 'Yes' : 'No'}`);
+                    output += log(`Created at: ${data.user.created_at}`);
+                    
+                    // Check if profile exists
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', data.user.id)
+                        .single();
+                    
+                    if (profileError && profileError.code !== 'PGRST116') {
+                        output += log(`❌ Profile check error: ${profileError.message}`, 'error');
+                    } else if (profile) {
+                        output += log(`✅ Profile EXISTS for this user!`);
+                        output += log(`Profile data: ${JSON.stringify(profile, null, 2)}`);
+                    } else {
+                        output += log(`❌ NO PROFILE found for this user!`);
+                        output += log(`This confirms the issue - user can login but has no profile`);
+                    }
+                }
+                
+            } catch (error) {
+                output += log(`❌ Login test error: ${error.message}`, 'error');
+            }
+            
+            showOutput('loginOutput', output);
+        }
+        
+        async function logout() {
+            let output = log('=== LOGOUT ===');
+            
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                    output += log(`❌ Logout error: ${error.message}`, 'error');
+                } else {
+                    output += log(`✅ Logged out successfully`);
+                }
+            } catch (error) {
+                output += log(`❌ Logout error: ${error.message}`, 'error');
+            }
+            
+            showOutput('loginOutput', output);
+        }
+        
+        async function checkCurrentUser() {
+            let output = log('=== CURRENT USER CHECK ===');
+            
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error) {
+                    output += log(`❌ User check error: ${error.message}`, 'error');
+                } else if (user) {
+                    output += log(`✅ Current user: ${user.email}`);
+                    output += log(`User ID: ${user.id}`);
+                    output += log(`Email confirmed: ${user.email_confirmed_at ? 'Yes' : 'No'}`);
+                    output += log(`Created at: ${user.created_at}`);
+                    output += log(`Last sign in: ${user.last_sign_in_at || 'Never'}`);
+                    output += log(`Metadata: ${JSON.stringify(user.user_metadata || {}, null, 2)}`);
+                } else {
+                    output += log(`❌ No user currently logged in`);
+                }
+                
+            } catch (error) {
+                output += log(`❌ Current user check error: ${error.message}`, 'error');
+            }
+            
+            showOutput('userOutput', output);
+        }
+        
+        async function checkCurrentProfile() {
+            let output = log('=== CURRENT PROFILE CHECK ===');
+            
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                
+                if (userError) {
+                    output += log(`❌ User check error: ${userError.message}`, 'error');
+                    showOutput('userOutput', output);
+                    return;
+                }
+                
+                if (!user) {
+                    output += log(`❌ No user currently logged in`);
+                    showOutput('userOutput', output);
+                    return;
+                }
+                
+                output += log(`Checking profile for user: ${user.email}`);
+                
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (profileError && profileError.code !== 'PGRST116') {
+                    output += log(`❌ Profile check error: ${profileError.message}`, 'error');
+                } else if (profile) {
+                    output += log(`✅ Profile found!`);
+                    output += log(`Profile data: ${JSON.stringify(profile, null, 2)}`);
+                } else {
+                    output += log(`❌ NO PROFILE found for current user!`);
+                    output += log(`User ID: ${user.id}`);
+                    output += log(`This is the core issue - authenticated user has no profile`);
+                }
+                
+            } catch (error) {
+                output += log(`❌ Profile check error: ${error.message}`, 'error');
+            }
+            
+            showOutput('userOutput', output);
+        }
+        
+        async function listAllProfiles() {
+            let output = log('=== ALL PROFILES ===');
+            
+            try {
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    output += log(`❌ Error listing profiles: ${error.message}`, 'error');
+                } else {
+                    output += log(`Found ${profiles.length} profiles:`);
+                    
+                    profiles.forEach((profile, index) => {
+                        output += log(`\n${index + 1}. ${profile.email}`);
+                        output += log(`   ID: ${profile.id}`);
+                        output += log(`   Name: ${profile.display_name || 'N/A'}`);
+                        output += log(`   Role: ${profile.role || 'N/A'}`);
+                        output += log(`   Created: ${profile.created_at}`);
+                    });
+                }
+                
+            } catch (error) {
+                output += log(`❌ List profiles error: ${error.message}`, 'error');
+            }
+            
+            showOutput('profilesOutput', output);
+        }
+        
+        async function createProfileForCurrentUser() {
+            let output = log('=== CREATE PROFILE FOR CURRENT USER ===');
+            
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                
+                if (userError) {
+                    output += log(`❌ User check error: ${userError.message}`, 'error');
+                    showOutput('createOutput', output);
+                    return;
+                }
+                
+                if (!user) {
+                    output += log(`❌ No user currently logged in`);
+                    showOutput('createOutput', output);
+                    return;
+                }
+                
+                output += log(`Creating profile for user: ${user.email}`);
+                
+                // Check if profile already exists
+                const { data: existingProfile, error: checkError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (checkError && checkError.code !== 'PGRST116') {
+                    output += log(`❌ Profile check error: ${checkError.message}`, 'error');
+                    showOutput('createOutput', output);
+                    return;
+                }
+                
+                if (existingProfile) {
+                    output += log(`⚠️ Profile already exists for this user!`, 'warning');
+                    output += log(`Existing profile: ${JSON.stringify(existingProfile, null, 2)}`);
+                    showOutput('createOutput', output);
+                    return;
+                }
+                
+                // Create profile
+                const userMetadata = user.user_metadata || {};
+                const profileData = {
+                    id: user.id,
+                    email: user.email,
+                    first_name: userMetadata.first_name || '',
+                    last_name: userMetadata.last_name || '',
+                    display_name: userMetadata.display_name || `${userMetadata.first_name || ''} ${userMetadata.last_name || ''}`.trim() || user.email.split('@')[0],
+                    phone: userMetadata.phone || '',
+                    sparky_username: userMetadata.sparky_username || '',
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                };
+                
+                output += log(`Profile data to create: ${JSON.stringify(profileData, null, 2)}`);
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .insert([profileData])
+                    .select();
+                
+                if (error) {
+                    output += log(`❌ Profile creation failed: ${error.message}`, 'error');
+                    output += log(`Error details: ${JSON.stringify(error, null, 2)}`);
+                } else {
+                    output += log(`✅ Profile created successfully!`, 'success');
+                    output += log(`Created profile: ${JSON.stringify(data, null, 2)}`);
+                }
+                
+            } catch (error) {
+                output += log(`❌ Create profile error: ${error.message}`, 'error');
+            }
+            
+            showOutput('createOutput', output);
+        }
+        
+        async function createManualProfile() {
+            let output = log('=== MANUAL PROFILE CREATION ===');
+            
+            const email = document.getElementById('manualEmail').value;
+            const userId = document.getElementById('manualUserId').value;
+            
+            if (!email || !userId) {
+                output += log('❌ Please enter both email and user ID', 'error');
+                showOutput('manualOutput', output);
+                return;
+            }
+            
+            try {
+                const profileData = {
+                    id: userId,
+                    email: email,
+                    first_name: 'Manual',
+                    last_name: 'Test',
+                    display_name: 'Manual Test',
+                    phone: '',
+                    sparky_username: '',
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                };
+                
+                output += log(`Creating manual profile: ${JSON.stringify(profileData, null, 2)}`);
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .insert([profileData])
+                    .select();
+                
+                if (error) {
+                    output += log(`❌ Manual profile creation failed: ${error.message}`, 'error');
+                    output += log(`Error details: ${JSON.stringify(error, null, 2)}`);
+                } else {
+                    output += log(`✅ Manual profile created successfully!`, 'success');
+                    output += log(`Created profile: ${JSON.stringify(data, null, 2)}`);
+                }
+                
+            } catch (error) {
+                output += log(`❌ Manual profile creation error: ${error.message}`, 'error');
+            }
+            
+            showOutput('manualOutput', output);
+        }
+        
+        async function testDatabaseAccess() {
+            let output = log('=== DATABASE ACCESS TEST ===');
+            
+            try {
+                // Test basic select
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    output += log(`❌ Database access error: ${error.message}`, 'error');
+                } else {
+                    output += log(`✅ Database access successful`);
+                    output += log(`Sample data: ${JSON.stringify(data, null, 2)}`);
+                }
+                
+            } catch (error) {
+                output += log(`❌ Database access test error: ${error.message}`, 'error');
+            }
+            
+            showOutput('dbOutput', output);
+        }
+        
+        async function testProfileInsert() {
+            let output = log('=== PROFILE INSERT TEST ===');
+            
+            try {
+                const testId = 'test-' + Date.now();
+                const testData = {
+                    id: testId,
+                    email: 'test@example.com',
+                    first_name: 'Test',
+                    last_name: 'User',
+                    display_name: 'Test User',
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                };
+                
+                output += log(`Testing insert with: ${JSON.stringify(testData, null, 2)}`);
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .insert([testData])
+                    .select();
+                
+                if (error) {
+                    output += log(`❌ Insert test failed: ${error.message}`, 'error');
+                    output += log(`Error details: ${JSON.stringify(error, null, 2)}`);
+                } else {
+                    output += log(`✅ Insert test successful!`, 'success');
+                    output += log(`Inserted data: ${JSON.stringify(data, null, 2)}`);
+                    
+                    // Clean up
+                    const { error: deleteError } = await supabase
+                        .from('profiles')
+                        .delete()
+                        .eq('id', testId);
+                    
+                    if (deleteError) {
+                        output += log(`⚠️ Cleanup failed: ${deleteError.message}`, 'warning');
+                    } else {
+                        output += log(`✅ Test data cleaned up`);
+                    }
+                }
+                
+            } catch (error) {
+                output += log(`❌ Profile insert test error: ${error.message}`, 'error');
+            }
+            
+            showOutput('dbOutput', output);
+        }
+        
+        async function testRLSPolicies() {
+            let output = log('=== RLS POLICIES TEST ===');
+            
+            try {
+                // Test without auth
+                output += log('Testing RLS policies...');
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    if (error.code === '42501') {
+                        output += log(`❌ RLS blocking SELECT operations`, 'error');
+                    } else {
+                        output += log(`❌ RLS test error: ${error.message}`, 'error');
+                    }
+                } else {
+                    output += log(`✅ RLS allows SELECT operations`);
+                }
+                
+                // Test insert
+                const testId = 'rls-test-' + Date.now();
+                const { error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([{
+                        id: testId,
+                        email: 'rlstest@example.com',
+                        role: 'user',
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (insertError) {
+                    if (insertError.code === '42501') {
+                        output += log(`❌ RLS blocking INSERT operations`, 'error');
+                    } else {
+                        output += log(`❌ RLS insert test error: ${insertError.message}`, 'error');
+                    }
+                } else {
+                    output += log(`✅ RLS allows INSERT operations`);
+                    
+                    // Clean up
+                    await supabase.from('profiles').delete().eq('id', testId);
+                    output += log(`✅ Test data cleaned up`);
+                }
+                
+            } catch (error) {
+                output += log(`❌ RLS test error: ${error.message}`, 'error');
+            }
+            
+            showOutput('dbOutput', output);
+        }
+        
+        // Auto-check on load
+        window.onload = function() {
+            checkCurrentUser();
+        };
+    </script>
+</body>
+</html>

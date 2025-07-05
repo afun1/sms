@@ -193,7 +193,9 @@ class ContactsAPI(BaseHTTPRequestHandler):
         if path.startswith('/static/'):
             self._serve_static_file(path[8:])  # Remove '/static/' prefix
         # Serve HTML files
-        elif path == '/' or path == '/contacts' or path == '/list':
+        elif path == '/':
+            self._serve_html_file('index.html')
+        elif path == '/contacts' or path == '/list':
             self._serve_html_file('list.html')
         elif path == '/list.html':
             self._serve_html_file('list.html')

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login System Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            padding: 40px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+        }
+        .test-section h2 {
+            color: #1976ff;
+            margin-top: 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #b8daff;
+        }
+        button {
+            background: #1976ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Login System Diagnostic Tool</h1>
+        
+        <div class="test-section">
+            <h2>1. Connection Test</h2>
+            <div id="connection-status">Testing connection...</div>
+            <button onclick="testConnection()">Retest Connection</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Authentication Status</h2>
+            <div id="auth-status">Checking authentication...</div>
+            <button onclick="checkAuth()">Check Authentication</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. Database Structure</h2>
+            <div id="db-status">Checking database...</div>
+            <button onclick="checkDatabase()">Check Database</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. Test Login</h2>
+            <div>
+                <input type="email" id="testEmail" placeholder="Email" style="padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="password" id="testPassword" placeholder="Password" style="padding: 10px; margin: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                <button onclick="testLogin()">Test Login</button>
+            </div>
+            <div id="login-status"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>5. Session Management</h2>
+            <div id="session-status">Checking session...</div>
+            <button onclick="checkSession()">Check Session</button>
+            <button onclick="clearSession()">Clear Session</button>
+        </div>
+        
+        <div class="actions">
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="clearAllData()">Clear All Data</button>
+            <button onclick="window.location.href='login.html'">Go to Login Page</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let supabase;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!window.supabase) {
+                addResult('❌ Supabase library not loaded', 'error');
+                return;
+            }
+            
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                addResult('✅ Supabase client initialized', 'success');
+            } catch (error) {
+                addResult('❌ Failed to initialize Supabase: ' + error.message, 'error');
+            }
+            
+            // Auto-run tests on load
+            setTimeout(runAllTests, 1000);
+        });
+        
+        // Helper functions
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `status ${type}`;
+            element.innerHTML = message;
+        }
+        
+        // Test functions
+        async function testConnection() {
+            updateStatus('connection-status', 'Testing connection...', 'info');
+            
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                if (error) {
+                    updateStatus('connection-status', `❌ Connection failed: ${error.message}`, 'error');
+                    addResult(`Connection test failed: ${error.message}`, 'error');
+                } else {
+                    updateStatus('connection-status', '✅ Connection successful', 'success');
+                    addResult('Connection test passed', 'success');
+                }
+            } catch (error) {
+                updateStatus('connection-status', `❌ Connection error: ${error.message}`, 'error');
+                addResult(`Connection error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkAuth() {
+            updateStatus('auth-status', 'Checking authentication...', 'info');
+            
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    updateStatus('auth-status', `❌ Auth error: ${error.message}`, 'error');
+                    addResult(`Auth check failed: ${error.message}`, 'error');
+                } else if (session) {
+                    updateStatus('auth-status', `✅ Authenticated as: ${session.user.email}`, 'success');
+                    addResult(`User authenticated: ${session.user.email}`, 'success');
+                } else {
+                    updateStatus('auth-status', '⚠️ No active session', 'warning');
+                    addResult('No active session found', 'warning');
+                }
+            } catch (error) {
+                updateStatus('auth-status', `❌ Auth check error: ${error.message}`, 'error');
+                addResult(`Auth check error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkDatabase() {
+            updateStatus('db-status', 'Checking database...', 'info');
+            
+            try {
+                // Test profiles table
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    updateStatus('db-status', `❌ Database error: ${error.message}`, 'error');
+                    addResult(`Database check failed: ${error.message}`, 'error');
+                } else {
+                    updateStatus('db-status', `✅ Database working - ${data} profiles`, 'success');
+                    addResult(`Database check passed - ${data} profiles found`, 'success');
+                    
+                    // Check for specific profiles
+                    const { data: profiles, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('email, role')
+                        .limit(5);
+                    
+                    if (!profileError && profiles) {
+                        addResult(`Sample profiles: ${profiles.map(p => `${p.email} (${p.role})`).join(', ')}`, 'info');
+                    }
+                }
+            } catch (error) {
+                updateStatus('db-status', `❌ Database check error: ${error.message}`, 'error');
+                addResult(`Database check error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            if (!email || !password) {
+                updateStatus('login-status', '❌ Please enter both email and password', 'error');
+                return;
+            }
+            
+            updateStatus('login-status', 'Testing login...', 'info');
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                
+                if (error) {
+                    updateStatus('login-status', `❌ Login failed: ${error.message}`, 'error');
+                    addResult(`Login test failed: ${error.message}`, 'error');
+                } else {
+                    updateStatus('login-status', `✅ Login successful: ${data.user.email}`, 'success');
+                    addResult(`Login test passed: ${data.user.email}`, 'success');
+                    
+                    // Check if profile exists
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', data.user.id)
+                        .single();
+                    
+                    if (profileError) {
+                        addResult(`Profile check failed: ${profileError.message}`, 'warning');
+                    } else {
+                        addResult(`Profile found: ${profile.display_name || profile.email} (${profile.role})`, 'success');
+                    }
+                }
+            } catch (error) {
+                updateStatus('login-status', `❌ Login error: ${error.message}`, 'error');
+                addResult(`Login error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkSession() {
+            updateStatus('session-status', 'Checking session...', 'info');
+            
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    updateStatus('session-status', `❌ Session error: ${error.message}`, 'error');
+                } else if (session) {
+                    const expiresAt = new Date(session.expires_at * 1000);
+                    updateStatus('session-status', `✅ Active session expires: ${expiresAt.toLocaleString()}`, 'success');
+                } else {
+                    updateStatus('session-status', '⚠️ No active session', 'warning');
+                }
+                
+                // Check storage
+                const storageCount = Object.keys(localStorage).length;
+                addResult(`LocalStorage items: ${storageCount}`, 'info');
+                
+                // Check for auth-related keys
+                const authKeys = Object.keys(localStorage).filter(key => key.includes('auth') || key.includes('supabase'));
+                if (authKeys.length > 0) {
+                    addResult(`Auth storage keys: ${authKeys.join(', ')}`, 'info');
+                }
+                
+            } catch (error) {
+                updateStatus('session-status', `❌ Session check error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function clearSession() {
+            updateStatus('session-status', 'Clearing session...', 'info');
+            
+            try {
+                await supabase.auth.signOut();
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                updateStatus('session-status', '✅ Session cleared', 'success');
+                addResult('Session cleared successfully', 'success');
+            } catch (error) {
+                updateStatus('session-status', `❌ Clear session error: ${error.message}`, 'error');
+                addResult(`Clear session error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function runAllTests() {
+            addResult('🚀 Running all tests...', 'info');
+            
+            await testConnection();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await checkAuth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await checkDatabase();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await checkSession();
+            
+            addResult('✅ All tests completed', 'success');
+        }
+        
+        async function clearAllData() {
+            if (confirm('This will clear all local data and sign out. Continue?')) {
+                try {
+                    await supabase.auth.signOut();
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    // Clear cookies
+                    document.cookie.split(";").forEach(function(c) { 
+                        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                    });
+                    
+                    addResult('✅ All data cleared', 'success');
+                    
+                    // Refresh page
+                    setTimeout(() => window.location.reload(), 1000);
+                } catch (error) {
+                    addResult(`❌ Clear data error: ${error.message}`, 'error');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

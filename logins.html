@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sparky Messaging</title>
-    <link rel="icon" type="image/png" href="static/supersparky.png">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -361,52 +360,27 @@
                 const phone = document.getElementById('signupPhone').value;
                 const sparkyUsername = document.getElementById('plainTextField').value;
 
-                // Get submit button for loading state
-                const submitBtn = signupForm.querySelector('button[type="submit"]');
-                const originalText = submitBtn ? submitBtn.textContent : '';
-                
-                try {
-                    // Show loading state
-                    if (submitBtn) {
-                        submitBtn.textContent = 'Signing up...';
-                        submitBtn.disabled = true;
-                    }
-
-                    // Sign up with Supabase Auth, store extra fields in user_metadata
-                    const { data, error } = await supabase.auth.signUp({
-                        email,
-                        password,
-                        options: {
-                            data: {
-                                first_name: firstName,
-                                last_name: lastName,
-                                display_name: `${firstName} ${lastName}`,
-                                phone,
-                                sparky_username: sparkyUsername
-                            }
+                // Sign up with Supabase Auth, store extra fields in user_metadata
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            display_name: `${firstName} ${lastName}`,
+                            phone,
+                            sparky_username: sparkyUsername
                         }
-                    });
-                    
-                    if (error) {
-                        alert('Sign up error: ' + error.message);
-                        return;
                     }
-                    
-                    alert('Sign up successful! Please check your email to confirm your account.');
-                    document.getElementById('signupFormPanel').style.display = 'none';
-                    document.getElementById('loginFormPanel').style.display = 'flex';
-                    
-                } catch (error) {
-                    console.error('Signup error:', error);
-                    alert('Sign up failed: ' + (error.message || 'Unknown error'));
-                    
-                } finally {
-                    // Reset button state
-                    if (submitBtn) {
-                        submitBtn.textContent = originalText;
-                        submitBtn.disabled = false;
-                    }
+                });
+                if (error) {
+                    alert('Sign up error: ' + error.message);
+                    return;
                 }
+                alert('Sign up successful! Please check your email to confirm your account.');
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('loginFormPanel').style.display = 'flex';
             });
         }
 
@@ -415,52 +389,14 @@
         if (loginForm) {
             loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
-                
-                // Get submit button for loading state
-                const submitBtn = loginForm.querySelector('button[type="submit"]');
-                const originalText = submitBtn ? submitBtn.textContent : '';
-                
-                // Helper function to reset button
-                const resetButton = () => {
-                    if (submitBtn) {
-                        submitBtn.textContent = originalText;
-                        submitBtn.disabled = false;
-                    }
-                };
-                
-                try {
-                    // Show loading state
-                    if (submitBtn) {
-                        submitBtn.textContent = 'Logging in...';
-                        submitBtn.disabled = true;
-                    }
-                    
-                    // Create timeout promise
-                    const timeoutPromise = new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Login timeout')), 5000)
-                    );
-                    
-                    // Race between login and timeout
-                    const loginPromise = supabase.auth.signInWithPassword({ email, password });
-                    const result = await Promise.race([loginPromise, timeoutPromise]);
-                    
-                    if (result.error) {
-                        resetButton();
-                        alert('Login error: ' + result.error.message);
-                        return;
-                    }
-                    
-                    // Success - redirect immediately (no need to reset button since we're leaving the page)
-                    window.location.replace('index.html');
-                    
-                } catch (error) {
-                    console.error('Login error:', error);
-                    resetButton();
-                    alert('Login failed: ' + (error.message || 'Unknown error'));
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) {
+                    alert('Login error: ' + error.message);
+                    return;
                 }
+                window.location.href = 'index.html';
             });
         }
 
@@ -553,55 +489,21 @@
         async function handlePasswordReset() {
             const accessToken = getSupabaseTokenParam('access_token');
             const type = getSupabaseTokenParam('type');
-            
-            // Wait for elements to be available
-            const loginPanel = document.getElementById('loginFormPanel');
-            const signupPanel = document.getElementById('signupFormPanel');
-            const resetPanel = document.getElementById('resetPasswordPanel');
-            
-            if (!loginPanel || !signupPanel) {
-                console.error('Required form panels not found');
-                return;
-            }
-            
             if (accessToken && type === 'recovery') {
-                loginPanel.style.display = 'none';
-                signupPanel.style.display = 'none';
-                if (resetPanel) resetPanel.style.display = 'flex';
-                
-                try {
-                    // Add aggressive timeout to prevent hanging
-                    const timeoutPromise = new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Session timeout')), 1000)
-                    );
-                    
-                    const sessionPromise = supabase.auth.setSession({
-                        access_token: accessToken,
-                        refresh_token: getSupabaseTokenParam('refresh_token')
-                    });
-                    
-                    await Promise.race([sessionPromise, timeoutPromise]);
-                } catch (error) {
-                    console.error('Session setup error:', error);
-                    // Continue anyway, show login form
-                    loginPanel.style.display = 'flex';
-                    signupPanel.style.display = 'none';
-                    if (resetPanel) resetPanel.style.display = 'none';
-                }
+                document.getElementById('loginFormPanel').style.display = 'none';
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('resetPasswordPanel').style.display = 'flex';
+                await supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: getSupabaseTokenParam('refresh_token')
+                });
             } else {
-                // Immediately show login form without any delays
-                loginPanel.style.display = 'flex';
-                signupPanel.style.display = 'none';
-                if (resetPanel) resetPanel.style.display = 'none';
+                document.getElementById('loginFormPanel').style.display = 'flex';
+                document.getElementById('signupFormPanel').style.display = 'none';
+                document.getElementById('resetPasswordPanel').style.display = 'none';
             }
         }
-        
-        // Only call handlePasswordReset if DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', handlePasswordReset);
-        } else {
-            handlePasswordReset();
-        }
+        handlePasswordReset();
     });
     </script>
 </body>

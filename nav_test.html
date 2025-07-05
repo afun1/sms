@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Navigation Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .test-info { background: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .test-info h3 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h3>Navigation Test Page</h3>
+        <p>This page is for testing the navigation logic when viewing as secondary role.</p>
+        <p id="current-url">Current URL: <span id="url-text"></span></p>
+        <p id="view-param">View parameter: <span id="view-text"></span></p>
+        <p id="expected-behavior">Expected behavior: The "View as" button should show the primary role when viewing as secondary.</p>
+    </div>
+
+    <h1>Test Page Content</h1>
+    <p>This is a test page to verify navigation works correctly.</p>
+
+    <script>
+        // Display current URL info
+        document.getElementById('url-text').textContent = window.location.href;
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewParam = urlParams.get('view');
+        document.getElementById('view-text').textContent = viewParam || 'none';
+        
+        // Set up navigation when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof setupNav === 'function') {
+                setupNav();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Hierarchical Loading</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+        .warning { color: orange; }
+    </style>
+</head>
+<body>
+    <h1>Debug Hierarchical Loading</h1>
+    <div id="debug-output"></div>
+    
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function debugHierarchy() {
+            const output = document.getElementById('debug-output');
+            let html = '';
+            
+            try {
+                // Mock current user (supervisor)
+                const currentUser = {
+                    id: 'supervisor-john+4-tpnlife-com',
+                    email: 'john+4@tpnlife.com',
+                    first_name: 'John',
+                    last_name: 'Supervisor',
+                    role: 'supervisor'
+                };
+                
+                html += `<div class="debug-section">
+                    <h3>Current User (Supervisor)</h3>
+                    <pre>${JSON.stringify(currentUser, null, 2)}</pre>
+                </div>`;
+                
+                // Check profiles table structure
+                html += `<div class="debug-section">
+                    <h3>Profiles Table Structure</h3>`;
+                
+                const { data: profiles, error: profilesError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .limit(5);
+                
+                if (profilesError) {
+                    html += `<div class="error">Error: ${profilesError.message}</div>`;
+                } else {
+                    html += `<div class="success">Found ${profiles.length} profiles</div>`;
+                    if (profiles.length > 0) {
+                        html += `<p><strong>Columns:</strong> ${Object.keys(profiles[0]).join(', ')}</p>`;
+                        html += `<pre>${JSON.stringify(profiles.slice(0, 2), null, 2)}</pre>`;
+                    }
+                }
+                html += `</div>`;
+                
+                // Check for managers assigned to supervisor
+                html += `<div class="debug-section">
+                    <h3>Managers Query</h3>`;
+                
+                const { data: managers, error: managersError } = await supabase
+                    .from('profiles')
+                    .select('id, first_name, last_name, email, role, manager_id, supervisor_id')
+                    .eq('role', 'manager')
+                    .eq('supervisor_id', currentUser.id);
+                
+                if (managersError) {
+                    html += `<div class="error">Error: ${managersError.message}</div>`;
+                } else {
+                    html += `<div class="success">Found ${managers.length} managers for supervisor</div>`;
+                    if (managers.length > 0) {
+                        html += `<pre>${JSON.stringify(managers, null, 2)}</pre>`;
+                    } else {
+                        html += `<div class="warning">No managers found with supervisor_id = '${currentUser.id}'</div>`;
+                        
+                        // Check all managers
+                        const { data: allManagers, error: allManagersError } = await supabase
+                            .from('profiles')
+                            .select('id, first_name, last_name, email, role, manager_id, supervisor_id')
+                            .eq('role', 'manager');
+                        
+                        if (!allManagersError) {
+                            html += `<p><strong>All managers in database:</strong></p>`;
+                            html += `<pre>${JSON.stringify(allManagers, null, 2)}</pre>`;
+                        }
+                    }
+                }
+                html += `</div>`;
+                
+                // Check contacts table
+                html += `<div class="debug-section">
+                    <h3>Contacts Table</h3>`;
+                
+                const { data: contacts, error: contactsError } = await supabase
+                    .from('contacts')
+                    .select('id, first_name, last_name, email, assignee')
+                    .limit(5);
+                
+                if (contactsError) {
+                    html += `<div class="error">Error: ${contactsError.message}</div>`;
+                } else {
+                    html += `<div class="success">Found ${contacts.length} contacts</div>`;
+                    if (contacts.length > 0) {
+                        html += `<pre>${JSON.stringify(contacts, null, 2)}</pre>`;
+                        
+                        // Check unique assignee values
+                        const { data: assignees, error: assigneesError } = await supabase
+                            .from('contacts')
+                            .select('assignee')
+                            .not('assignee', 'is', null);
+                        
+                        if (!assigneesError) {
+                            const uniqueAssignees = [...new Set(assignees.map(c => c.assignee))];
+                            html += `<p><strong>Unique assignee values:</strong> ${uniqueAssignees.join(', ')}</p>`;
+                        }
+                    }
+                }
+                html += `</div>`;
+                
+                // Test standard user loading
+                html += `<div class="debug-section">
+                    <h3>Standard User Loading Test</h3>`;
+                
+                const { data: standardContacts, error: standardError } = await supabase
+                    .from('contacts')
+                    .select('*')
+                    .limit(10);
+                
+                if (standardError) {
+                    html += `<div class="error">Error: ${standardError.message}</div>`;
+                } else {
+                    html += `<div class="success">Standard loading would show ${standardContacts.length} contacts</div>`;
+                }
+                html += `</div>`;
+                
+            } catch (error) {
+                html += `<div class="debug-section">
+                    <h3 class="error">Debug Error</h3>
+                    <pre>${error.message}</pre>
+                </div>`;
+            }
+            
+            output.innerHTML = html;
+        }
+        
+        // Run debug when page loads
+        window.onload = debugHierarchy;
+    </script>
+</body>
+</html>

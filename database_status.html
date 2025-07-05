@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Status Check</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Database Status Check</h1>
+        
+        <div class="debug-section">
+            <h3>Actions</h3>
+            <button onclick="checkAllAuth()">Check All Auth Users</button>
+            <button onclick="checkAllProfiles()">Check All Profiles</button>
+            <button onclick="checkSpecificUser()">Check john+15@tpnlife.com</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+        
+        <div class="grid">
+            <div>
+                <h3>Auth Users</h3>
+                <div id="authResults"></div>
+            </div>
+            <div>
+                <h3>Profiles</h3>
+                <div id="profileResults"></div>
+            </div>
+        </div>
+        
+        <div id="specificResults"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function log(message, containerId = 'results') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            container.appendChild(div);
+            console.log(message);
+        }
+        
+        function clearResults() {
+            document.getElementById('authResults').innerHTML = '';
+            document.getElementById('profileResults').innerHTML = '';
+            document.getElementById('specificResults').innerHTML = '';
+        }
+        
+        async function checkAllAuth() {
+            const container = document.getElementById('authResults');
+            container.innerHTML = '<div>Loading auth users...</div>';
+            
+            try {
+                // Note: This won't work with anon key, but we can try to see the error
+                const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+                
+                if (authError) {
+                    container.innerHTML = `<div class="error">Auth error: ${authError.message}</div>`;
+                    console.log('Auth error (expected with anon key):', authError);
+                } else {
+                    container.innerHTML = `<div class="success">Found ${authData.users.length} auth users</div>`;
+                    const pre = document.createElement('pre');
+                    pre.textContent = JSON.stringify(authData.users, null, 2);
+                    container.appendChild(pre);
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function checkAllProfiles() {
+            const container = document.getElementById('profileResults');
+            container.innerHTML = '<div>Loading profiles...</div>';
+            
+            try {
+                const { data: profiles, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (profileError) {
+                    container.innerHTML = `<div class="error">Profile error: ${profileError.message}</div>`;
+                } else {
+                    container.innerHTML = `<div class="success">Found ${profiles.length} profiles</div>`;
+                    const pre = document.createElement('pre');
+                    pre.textContent = JSON.stringify(profiles, null, 2);
+                    container.appendChild(pre);
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function checkSpecificUser() {
+            const container = document.getElementById('specificResults');
+            container.innerHTML = '<div>Checking john+15@tpnlife.com...</div>';
+            
+            try {
+                // Check if profile exists
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('email', 'john+15@tpnlife.com')
+                    .single();
+                
+                if (profileError) {
+                    if (profileError.code === 'PGRST116') {
+                        container.innerHTML = `<div class="error">No profile found for john+15@tpnlife.com</div>`;
+                    } else {
+                        container.innerHTML = `<div class="error">Profile check error: ${profileError.message}</div>`;
+                    }
+                } else {
+                    container.innerHTML = `<div class="success">Profile found for john+15@tpnlife.com</div>`;
+                    const pre = document.createElement('pre');
+                    pre.textContent = JSON.stringify(profile, null, 2);
+                    container.appendChild(pre);
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Auto-run on page load
+        window.addEventListener('load', function() {
+            checkAllProfiles();
+        });
+    </script>
+</body>
+</html>

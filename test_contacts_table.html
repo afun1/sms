@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Contacts Table</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+    <h1>Test Contacts Table</h1>
+    <div id="results"></div>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function testContacts() {
+            try {
+                console.log('Testing contacts table...');
+                
+                // Get a few sample contacts
+                const { data, error } = await supabase
+                    .from('contacts')
+                    .select('*')
+                    .limit(5);
+                
+                if (error) {
+                    console.error('Error:', error);
+                    document.getElementById('results').innerHTML = `<div style="color: red;">Error: ${error.message}</div>`;
+                    return;
+                }
+                
+                console.log('Sample contacts:', data);
+                
+                if (data && data.length > 0) {
+                    let html = `<h2>Found ${data.length} sample contacts:</h2>`;
+                    html += '<table border="1" style="border-collapse: collapse; width: 100%;">';
+                    html += '<tr>';
+                    
+                    // Add headers
+                    Object.keys(data[0]).forEach(key => {
+                        html += `<th style="padding: 8px; background-color: #f0f0f0;">${key}</th>`;
+                    });
+                    html += '</tr>';
+                    
+                    // Add rows
+                    data.forEach(contact => {
+                        html += '<tr>';
+                        Object.values(contact).forEach(value => {
+                            html += `<td style="padding: 8px; border: 1px solid #ccc;">${value || ''}</td>`;
+                        });
+                        html += '</tr>';
+                    });
+                    
+                    html += '</table>';
+                    document.getElementById('results').innerHTML = html;
+                } else {
+                    document.getElementById('results').innerHTML = '<div>No contacts found in table</div>';
+                }
+                
+            } catch (error) {
+                console.error('Test error:', error);
+                document.getElementById('results').innerHTML = `<div style="color: red;">Test error: ${error.message}</div>`;
+            }
+        }
+        
+        // Run test when page loads
+        window.onload = testContacts;
+    </script>
+</body>
+</html>

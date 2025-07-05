@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Sparky Messaging</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1976ff;
+            text-align: center;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sparky Messaging - Test Page</h1>
+        
+        <div class="status">
+            <strong>Status:</strong> Page loaded successfully
+        </div>
+        
+        <p>This is a minimal test page to verify the server is working correctly.</p>
+        
+        <h2>Navigation Links:</h2>
+        <ul>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="ai_editor.html">AI Editor</a></li>
+            <li><a href="sms_editor.html">SMS Editor</a></li>
+            <li><a href="assets.html">Assets</a></li>
+            <li><a href="admin.html">Admin</a></li>
+        </ul>
+        
+        <h2>Debug Information:</h2>
+        <div id="debug-info">
+            <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+            <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+            <p><strong>Timestamp:</strong> <span id="timestamp"></span></p>
+        </div>
+    </div>
+    
+    <script>
+        // Simple debug information
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        
+        console.log('Test page loaded successfully');
+    </script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comprehensive Navigation Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { background: #f9f9f9; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #007cba; }
+        .test-section h3 { margin-top: 0; color: #007cba; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; font-weight: bold; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        .info { background: #e3f2fd; color: #1976d2; }
+        .warning { background: #fff3e0; color: #f57c00; }
+        .code { background: #f5f5f5; padding: 10px; border-radius: 3px; font-family: monospace; white-space: pre-wrap; margin: 10px 0; }
+        .nav-test { display: flex; gap: 10px; margin: 10px 0; }
+        .nav-test button { padding: 8px 16px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .nav-test button:hover { background: #005a87; }
+        .nav-test button.active { background: #4caf50; }
+        .current-state { background: #e8f4f8; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Navigation Role Switching Test</h1>
+        <p>This page tests the role switching functionality across different scenarios.</p>
+        
+        <div class="test-section">
+            <h3>Current State</h3>
+            <div id="current-state" class="current-state">
+                <div>URL: <span id="url-display"></span></div>
+                <div>View Parameter: <span id="view-display"></span></div>
+                <div>Navigation Button Should Show: <span id="expected-button"></span></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Scenarios</h3>
+            <p>Click these buttons to test different scenarios:</p>
+            <div class="nav-test">
+                <button onclick="testScenario('no-param')">No View Parameter</button>
+                <button onclick="testScenario('view-user')">View as User</button>
+                <button onclick="testScenario('view-manager')">View as Manager</button>
+                <button onclick="testScenario('view-admin')">View as Admin</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Results</h3>
+            <div id="test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Expected Behavior</h3>
+            <div class="info">
+                <strong>For a user with Primary Role = "Admin" and Secondary Role = "User":</strong>
+                <ul>
+                    <li>When viewing normally (no ?view parameter): Should show "View as User" button</li>
+                    <li>When viewing as secondary (?view=user): Should show "View as Admin" button</li>
+                    <li>The button should appear consistently on ALL pages</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Navigation Debug Info</h3>
+            <button onclick="showDebugInfo()">Show Debug Info</button>
+            <div id="debug-info"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentTest = null;
+        
+        function updateCurrentState() {
+            const url = window.location.href;
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewParam = urlParams.get('view');
+            
+            document.getElementById('url-display').textContent = url;
+            document.getElementById('view-display').textContent = viewParam || 'none';
+            
+            // Simulate the expected behavior for testing
+            // In reality, this would come from the actual user profile
+            const testUserRole = 'admin';
+            const testSecondaryRole = 'user';
+            
+            let expectedButton = '';
+            if (testSecondaryRole && testSecondaryRole.toLowerCase() !== testUserRole.toLowerCase()) {
+                if (viewParam && viewParam.toLowerCase() === testSecondaryRole.toLowerCase()) {
+                    expectedButton = `View as ${testUserRole}`;
+                } else {
+                    expectedButton = `View as ${testSecondaryRole}`;
+                }
+            } else if (testUserRole.toLowerCase() === 'admin' && !testSecondaryRole) {
+                expectedButton = 'Admin';
+            }
+            
+            document.getElementById('expected-button').textContent = expectedButton || 'None';
+            
+            // Check if the actual navigation button matches
+            setTimeout(() => {
+                const actualNav = document.querySelector('#global-nav a[href*="view"], #global-nav a[href="admin.html"]');
+                const actualButtonText = actualNav ? actualNav.textContent.trim() : 'None';
+                
+                let status = 'success';
+                let message = `✓ Navigation button is correctly showing: "${actualButtonText}"`;
+                
+                if (actualButtonText === 'None' && expectedButton !== 'None') {
+                    status = 'error';
+                    message = `✗ Expected "${expectedButton}" but no button is showing`;
+                } else if (actualButtonText !== 'None' && !actualButtonText.includes(expectedButton.split(' ')[2] || expectedButton)) {
+                    status = 'warning';
+                    message = `⚠ Expected "${expectedButton}" but showing "${actualButtonText}"`;
+                }
+                
+                const resultsDiv = document.getElementById('test-results');
+                resultsDiv.innerHTML = `<div class="${status}">${message}</div>`;
+            }, 500);
+        }
+        
+        function testScenario(scenario) {
+            currentTest = scenario;
+            
+            // Clear any active button states
+            document.querySelectorAll('.nav-test button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const currentPage = window.location.pathname.split('/').pop() || 'comprehensive_nav_test.html';
+            
+            switch(scenario) {
+                case 'no-param':
+                    window.location.href = currentPage;
+                    break;
+                case 'view-user':
+                    window.location.href = currentPage + '?view=user';
+                    break;
+                case 'view-manager':
+                    window.location.href = currentPage + '?view=manager';
+                    break;
+                case 'view-admin':
+                    window.location.href = currentPage + '?view=admin';
+                    break;
+            }
+        }
+        
+        function showDebugInfo() {
+            const debugDiv = document.getElementById('debug-info');
+            debugDiv.innerHTML = '<div class="code">Loading debug info...</div>';
+            
+            // Get navigation state
+            setTimeout(async () => {
+                try {
+                    let debugInfo = {
+                        currentURL: window.location.href,
+                        viewParam: new URLSearchParams(window.location.search).get('view'),
+                        navigationPresent: !!document.getElementById('global-nav'),
+                        navigationHTML: document.getElementById('global-nav')?.innerHTML.substring(0, 200) + '...',
+                        roleButton: null
+                    };
+                    
+                    // Check for role switching button
+                    const roleButton = document.querySelector('#global-nav a[href*="view"], #global-nav a[href="admin.html"]');
+                    if (roleButton) {
+                        debugInfo.roleButton = {
+                            text: roleButton.textContent.trim(),
+                            href: roleButton.href
+                        };
+                    }
+                    
+                    debugDiv.innerHTML = `<div class="code">${JSON.stringify(debugInfo, null, 2)}</div>`;
+                } catch (error) {
+                    debugDiv.innerHTML = `<div class="error">Error getting debug info: ${error.message}</div>`;
+                }
+            }, 100);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentState();
+            
+            // Update state when URL changes
+            window.addEventListener('popstate', updateCurrentState);
+            
+            // Highlight current test button
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewParam = urlParams.get('view');
+            
+            if (!viewParam) {
+                document.querySelector('button[onclick="testScenario(\'no-param\')"]').classList.add('active');
+            } else if (viewParam === 'user') {
+                document.querySelector('button[onclick="testScenario(\'view-user\')"]').classList.add('active');
+            } else if (viewParam === 'manager') {
+                document.querySelector('button[onclick="testScenario(\'view-manager\')"]').classList.add('active');
+            } else if (viewParam === 'admin') {
+                document.querySelector('button[onclick="testScenario(\'view-admin\')"]').classList.add('active');
+            }
+        });
+        
+        // Re-check navigation after it's loaded
+        setTimeout(() => {
+            updateCurrentState();
+        }, 1000);
+    </script>
+</body>
+</html>

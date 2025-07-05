@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Debug - Sparky Messaging</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .debug-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .login-form {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>Login Debug Page</h1>
+        <div class="status info">
+            Debug page loaded successfully! Time: <span id="loadTime"></span>
+        </div>
+        
+        <div class="debug-info" id="debugInfo">
+            Loading debug information...
+        </div>
+        
+        <div class="login-form">
+            <h3>Quick Login Test</h3>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" id="loginBtn">Login</button>
+            </form>
+        </div>
+        
+        <div id="statusMsg" class="status" style="display: none;"></div>
+        
+        <div style="margin-top: 20px;">
+            <button onclick="clearCacheAndReload()">Clear Cache & Reload</button>
+            <button onclick="goToMainLogin()">Go to Main Login</button>
+            <button onclick="goToIndex()">Go to Index</button>
+        </div>
+    </div>
+
+    <script>
+        // Set load time
+        document.getElementById('loadTime').textContent = new Date().toLocaleString();
+        
+        // Debug info
+        const debugInfo = document.getElementById('debugInfo');
+        let debug = '';
+        
+        debug += 'Page URL: ' + window.location.href + '\n';
+        debug += 'User Agent: ' + navigator.userAgent + '\n';
+        debug += 'Document Ready State: ' + document.readyState + '\n';
+        debug += 'Current Time: ' + new Date().toISOString() + '\n';
+        debug += 'Local Storage Items: ' + Object.keys(localStorage).length + '\n';
+        debug += 'Session Storage Items: ' + Object.keys(sessionStorage).length + '\n';
+        
+        // Check if Supabase is available
+        if (typeof window.supabase !== 'undefined') {
+            debug += 'Supabase: Available\n';
+        } else {
+            debug += 'Supabase: NOT Available\n';
+        }
+        
+        debugInfo.textContent = debug;
+        
+        // Show status
+        function showStatus(message, type = 'info') {
+            const statusMsg = document.getElementById('statusMsg');
+            statusMsg.textContent = message;
+            statusMsg.className = 'status ' + type;
+            statusMsg.style.display = 'block';
+        }
+        
+        // Clear cache and reload
+        function clearCacheAndReload() {
+            // Clear all storage
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Clear cache (if supported)
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name));
+                });
+            }
+            
+            // Hard refresh
+            window.location.reload(true);
+        }
+        
+        // Navigation functions
+        function goToMainLogin() {
+            window.location.href = 'login.html?t=' + Date.now();
+        }
+        
+        function goToIndex() {
+            window.location.href = 'index.html?t=' + Date.now();
+        }
+        
+        // Simple login test (no actual authentication)
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showStatus('Login form submitted successfully!', 'success');
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (email && password) {
+                showStatus('Form data captured: ' + email + ' / ' + password.length + ' chars', 'info');
+                
+                // Simulate redirect after 2 seconds
+                setTimeout(() => {
+                    showStatus('Redirecting to index...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                }, 2000);
+            }
+        });
+        
+        console.log('Debug login page fully loaded');
+    </script>
+</body>
+</html>

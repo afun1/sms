@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script src="static/global-nav-v3.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        .content {
+            padding: 20px;
+            margin-top: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Navigation Test Page</h1>
+        <p>This page is for testing the navigation functionality.</p>
+        <p>Open the browser console to see debug messages.</p>
+        
+        <h2>Test Actions:</h2>
+        <button onclick="testSupabase()">Test Supabase</button>
+        <button onclick="testNavigation()">Test Navigation</button>
+        <button onclick="testUserData()">Test User Data</button>
+        
+        <div id="test-results" style="margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+            <h3>Test Results:</h3>
+            <div id="results-content">Click buttons above to run tests</div>
+        </div>
+    </div>
+    
+    <script>
+        function log(message) {
+            console.log(message);
+            const results = document.getElementById('results-content');
+            results.innerHTML += '<div>' + message + '</div>';
+        }
+        
+        function testSupabase() {
+            log('Testing Supabase...');
+            if (window.supabase) {
+                log('✅ Supabase library loaded');
+                if (window.globalSupabase) {
+                    log('✅ Global Supabase client created');
+                } else {
+                    log('❌ Global Supabase client NOT created');
+                }
+            } else {
+                log('❌ Supabase library NOT loaded');
+            }
+        }
+        
+        function testNavigation() {
+            log('Testing Navigation...');
+            const nav = document.getElementById('global-nav');
+            if (nav) {
+                log('✅ Navigation element found');
+                log('Navigation innerHTML length: ' + nav.innerHTML.length);
+            } else {
+                log('❌ Navigation element NOT found');
+            }
+        }
+        
+        async function testUserData() {
+            log('Testing User Data...');
+            try {
+                const supabase = window.globalSupabase || window.supabase;
+                if (!supabase) {
+                    log('❌ No Supabase client available');
+                    return;
+                }
+                
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    log('✅ User session found: ' + session.user.email);
+                } else {
+                    log('❌ No user session found');
+                }
+            } catch (error) {
+                log('❌ Error testing user data: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

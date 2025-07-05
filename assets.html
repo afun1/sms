@@ -259,7 +259,8 @@
       margin-bottom: 32px;
     }
   </style>
-  <script src="static/global-nav-v2.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="static/global-nav-fixed.js"></script>
   <script src="static/user_impersonation.js"></script>
 </head>
 <body>
@@ -540,7 +541,6 @@
     </div>
   </div>
   
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
   <script>
     // --- CONFIGURE YOUR SUPABASE INFO ---
     const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
@@ -574,13 +574,13 @@
           if (item) {
             try {
               const parsed = JSON.parse(item);
-              // Check if token looks malformed or expired
-              if (!parsed.access_token || !parsed.refresh_token) {
-                console.log(`[AUTH] Removing corrupted session data for key: ${key}`);
+              // Only remove if token is clearly corrupted (not just missing fields)
+              if (parsed && typeof parsed !== 'object') {
+                console.log(`[AUTH] Removing clearly corrupted session data for key: ${key}`);
                 localStorage.removeItem(key);
               }
             } catch (e) {
-              console.log(`[AUTH] Removing invalid session data for key: ${key}`);
+              console.log(`[AUTH] Removing invalid JSON session data for key: ${key}`);
               localStorage.removeItem(key);
             }
           }
@@ -590,8 +590,8 @@
       }
     }
 
-    // Clear corrupted session on page load
-    clearCorruptedSession();
+    // Comment out aggressive session clearing to prevent navigation issues
+    // clearCorruptedSession();
 
     // Check authentication on page load
     async function checkAuthentication() {
@@ -1818,8 +1818,15 @@ Created: ${new Date(asset.created_at).toLocaleString()}`);
       }
       
       // Refresh the global navigation with the authenticated user's display name
-      if (window.refreshGlobalNav) {
-        await window.refreshGlobalNav();
+      if (typeof window.refreshGlobalNav === 'function') {
+        console.log('[ASSETS] Refreshing global navigation');
+        try {
+          await window.refreshGlobalNav();
+        } catch (error) {
+          console.error('[ASSETS] Error refreshing navigation:', error);
+        }
+      } else {
+        console.log('[ASSETS] refreshGlobalNav function not available yet, navigation may load automatically');
       }
       
       // Listen for authentication state changes

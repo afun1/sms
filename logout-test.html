@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Logout Test - Sparky Messaging</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .test-item {
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+        }
+        .test-success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .test-error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        pre {
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Logout Functionality Test</h1>
+        <p>This page helps diagnose logout issues and test different logout scenarios.</p>
+        
+        <div class="test-item">
+            <h3>🔍 Current Session Status</h3>
+            <p id="session-status">Checking...</p>
+            <pre id="session-details"></pre>
+        </div>
+        
+        <div class="test-item">
+            <h3>💾 Storage Status</h3>
+            <p id="storage-status">Checking...</p>
+            <pre id="storage-details"></pre>
+        </div>
+        
+        <div class="test-item">
+            <h3>🎯 Test Actions</h3>
+            <button class="btn-primary" onclick="testSupabaseLogout()">Test Supabase Logout</button>
+            <button class="btn-warning" onclick="clearAllStorage()">Clear All Storage</button>
+            <button class="btn-danger" onclick="forceLogout()">Force Complete Logout</button>
+            <button class="btn-success" onclick="refreshStatus()">Refresh Status</button>
+        </div>
+        
+        <div class="test-item">
+            <h3>🚀 Navigation Tests</h3>
+            <button class="btn-primary" onclick="testRedirect('login.html')">Test Redirect to Login</button>
+            <button class="btn-primary" onclick="testRedirect('/login')">Test Redirect to /login</button>
+            <button class="btn-primary" onclick="window.location.href='http://localhost:3000/login'">Go to API Server Login</button>
+        </div>
+        
+        <div class="test-item">
+            <h3>📋 Test Results</h3>
+            <div id="test-results"></div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('Supabase initialized for testing');
+        } catch (error) {
+            console.error('Failed to initialize Supabase:', error);
+        }
+        
+        function logResult(message, isError = false) {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.style.margin = '5px 0';
+            div.style.padding = '8px';
+            div.style.borderRadius = '3px';
+            div.style.fontSize = '14px';
+            
+            if (isError) {
+                div.style.background = '#f8d7da';
+                div.style.color = '#721c24';
+                div.innerHTML = `❌ ${message}`;
+            } else {
+                div.style.background = '#d4edda';
+                div.style.color = '#155724';
+                div.innerHTML = `✅ ${message}`;
+            }
+            
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        async function checkSessionStatus() {
+            try {
+                if (!supabase) {
+                    document.getElementById('session-status').textContent = 'Supabase not available';
+                    return;
+                }
+                
+                const { data: sessionData, error } = await supabase.auth.getSession();
+                const session = sessionData.session;
+                
+                if (session) {
+                    document.getElementById('session-status').innerHTML = '🟢 <strong>User is logged in</strong>';
+                    document.getElementById('session-details').textContent = JSON.stringify({
+                        user_id: session.user.id,
+                        email: session.user.email,
+                        expires_at: session.expires_at
+                    }, null, 2);
+                } else {
+                    document.getElementById('session-status').innerHTML = '🔴 <strong>No active session</strong>';
+                    document.getElementById('session-details').textContent = 'No session data available';
+                }
+            } catch (error) {
+                document.getElementById('session-status').innerHTML = '⚠️ <strong>Error checking session</strong>';
+                document.getElementById('session-details').textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        function checkStorageStatus() {
+            const localStorage_count = Object.keys(localStorage).length;
+            const sessionStorage_count = Object.keys(sessionStorage).length;
+            
+            document.getElementById('storage-status').innerHTML = 
+                `📦 LocalStorage: ${localStorage_count} items | SessionStorage: ${sessionStorage_count} items`;
+            
+            const storageData = {
+                localStorage: Object.keys(localStorage).reduce((acc, key) => {
+                    acc[key] = localStorage.getItem(key);
+                    return acc;
+                }, {}),
+                sessionStorage: Object.keys(sessionStorage).reduce((acc, key) => {
+                    acc[key] = sessionStorage.getItem(key);
+                    return acc;
+                }, {})
+            };
+            
+            document.getElementById('storage-details').textContent = JSON.stringify(storageData, null, 2);
+        }
+        
+        async function testSupabaseLogout() {
+            logResult('Testing Supabase logout...');
+            try {
+                if (!supabase) {
+                    throw new Error('Supabase not available');
+                }
+                
+                const { error } = await supabase.auth.signOut();
+                if (error) {
+                    throw error;
+                }
+                
+                logResult('Supabase logout successful');
+                setTimeout(refreshStatus, 500);
+            } catch (error) {
+                logResult(`Supabase logout failed: ${error.message}`, true);
+            }
+        }
+        
+        function clearAllStorage() {
+            logResult('Clearing all storage...');
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+                logResult('All storage cleared successfully');
+                setTimeout(refreshStatus, 500);
+            } catch (error) {
+                logResult(`Failed to clear storage: ${error.message}`, true);
+            }
+        }
+        
+        async function forceLogout() {
+            logResult('Performing force logout...');
+            try {
+                // Clear storage
+                localStorage.clear();
+                sessionStorage.clear();
+                logResult('Storage cleared');
+                
+                // Clear Supabase session
+                if (supabase) {
+                    await supabase.auth.signOut();
+                    logResult('Supabase session cleared');
+                }
+                
+                // Clear any window state
+                if (window.globalSupabase) {
+                    try {
+                        await window.globalSupabase.auth.signOut();
+                        logResult('Global Supabase session cleared');
+                    } catch (e) {
+                        logResult('Global Supabase session not available');
+                    }
+                }
+                
+                logResult('Force logout complete - ready to redirect');
+                setTimeout(refreshStatus, 500);
+                
+            } catch (error) {
+                logResult(`Force logout error: ${error.message}`, true);
+            }
+        }
+        
+        function testRedirect(url) {
+            logResult(`Testing redirect to: ${url}`);
+            try {
+                window.location.href = url;
+            } catch (error) {
+                logResult(`Redirect failed: ${error.message}`, true);
+            }
+        }
+        
+        function refreshStatus() {
+            checkSessionStatus();
+            checkStorageStatus();
+            logResult('Status refreshed');
+        }
+        
+        // Initial status check
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStatus();
+        });
+        
+        // Auto-refresh every 5 seconds
+        setInterval(refreshStatus, 5000);
+    </script>
+</body>
+</html>

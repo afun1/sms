@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Specific Users</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .warning {
+            color: #856404;
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .user-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        pre {
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Debug Signup Issues</h1>
+        <p>Investigating john+7@tpnlife.com and john+20@tpnlife.com</p>
+        
+        <div class="debug-section">
+            <h3>Quick Actions</h3>
+            <button onclick="checkAllUsers()">Check All Test Users</button>
+            <button onclick="listAllProfiles()">List All Profiles</button>
+            <button onclick="testSignup()">Test New Signup</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+        
+        <div class="user-grid">
+            <div>
+                <h3>john+7@tpnlife.com</h3>
+                <button onclick="checkUser('john+7@tpnlife.com')">Check john+7</button>
+                <button onclick="createProfileFor('john+7@tpnlife.com')">Create Profile</button>
+                <div id="john7-results"></div>
+            </div>
+            
+            <div>
+                <h3>john+20@tpnlife.com</h3>
+                <button onclick="checkUser('john+20@tpnlife.com')">Check john+20</button>
+                <button onclick="createProfileFor('john+20@tpnlife.com')">Create Profile</button>
+                <div id="john20-results"></div>
+            </div>
+        </div>
+        
+        <div id="general-results"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function log(message, containerId = 'general-results', type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `debug-section ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            container.appendChild(div);
+            console.log(message);
+        }
+        
+        function clearResults() {
+            document.getElementById('john7-results').innerHTML = '';
+            document.getElementById('john20-results').innerHTML = '';
+            document.getElementById('general-results').innerHTML = '';
+        }
+        
+        async function checkUser(email) {
+            const containerId = email.includes('john+7') ? 'john7-results' : 'john20-results';
+            
+            log(`Checking user: ${email}`, containerId);
+            
+            try {
+                // Check if profile exists
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('email', email)
+                    .single();
+                
+                if (profileError) {
+                    if (profileError.code === 'PGRST116') {
+                        log('❌ No profile found in profiles table', containerId, 'error');
+                    } else {
+                        log(`❌ Profile check error: ${profileError.message}`, containerId, 'error');
+                    }
+                } else {
+                    log('✅ Profile found in profiles table', containerId, 'success');
+                    log(`<pre>${JSON.stringify(profile, null, 2)}</pre>`, containerId);
+                }
+                
+                // Try to check auth users (this might fail with anon key)
+                try {
+                    const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+                    
+                    if (!authError) {
+                        const user = authData.users.find(u => u.email === email);
+                        if (user) {
+                            log('✅ User found in auth', containerId, 'success');
+                            log(`User ID: ${user.id}`, containerId);
+                            log(`Email confirmed: ${user.email_confirmed_at ? 'Yes' : 'No'}`, containerId);
+                            log(`User metadata: <pre>${JSON.stringify(user.user_metadata, null, 2)}</pre>`, containerId);
+                        } else {
+                            log('❌ User not found in auth', containerId, 'error');
+                        }
+                    }
+                } catch (authErr) {
+                    log('⚠️ Cannot check auth users (anon key limitation)', containerId, 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, containerId, 'error');
+            }
+        }
+        
+        async function createProfileFor(email) {
+            const containerId = email.includes('john+7') ? 'john7-results' : 'john20-results';
+            
+            log(`Creating profile for: ${email}`, containerId);
+            
+            try {
+                // Try to sign in first to get user data
+                const password = 'TpnLife123!'; // Assuming you used this password
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    log(`❌ Cannot login to get user data: ${error.message}`, containerId, 'error');
+                    return;
+                }
+                
+                if (!data.user) {
+                    log('❌ No user data returned', containerId, 'error');
+                    return;
+                }
+                
+                log('✅ Login successful, creating profile...', containerId, 'success');
+                
+                // Extract metadata
+                const userMetadata = data.user.user_metadata || {};
+                const firstName = userMetadata.first_name || 'John';
+                const lastName = userMetadata.last_name || email.includes('john+7') ? 'Seven' : 'Twenty';
+                
+                const profileData = {
+                    id: data.user.id,
+                    email: data.user.email,
+                    first_name: firstName,
+                    last_name: lastName,
+                    display_name: `${firstName} ${lastName}`,
+                    phone: userMetadata.phone || '',
+                    sparky_username: userMetadata.sparky_username || '',
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                };
+                
+                const { data: insertData, error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([profileData])
+                    .select();
+                
+                if (insertError) {
+                    log(`❌ Profile creation failed: ${insertError.message}`, containerId, 'error');
+                } else {
+                    log('✅ Profile created successfully!', containerId, 'success');
+                    log(`<pre>${JSON.stringify(insertData, null, 2)}</pre>`, containerId);
+                }
+                
+                // Sign out after
+                await supabase.auth.signOut();
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, containerId, 'error');
+            }
+        }
+        
+        async function checkAllUsers() {
+            log('Checking all test users...', 'general-results');
+            
+            const testEmails = [
+                'john+7@tpnlife.com',
+                'john+15@tpnlife.com',
+                'john+20@tpnlife.com'
+            ];
+            
+            for (const email of testEmails) {
+                await checkUser(email);
+            }
+        }
+        
+        async function listAllProfiles() {
+            log('Listing all profiles...', 'general-results');
+            
+            try {
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('email, display_name, role, created_at')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    log(`❌ Error: ${error.message}`, 'general-results', 'error');
+                } else {
+                    log(`Found ${profiles.length} profiles:`, 'general-results', 'success');
+                    profiles.forEach((profile, index) => {
+                        log(`${index + 1}. ${profile.email} (${profile.display_name}) - ${profile.role}`, 'general-results');
+                    });
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'general-results', 'error');
+            }
+        }
+        
+        async function testSignup() {
+            log('Testing signup process...', 'general-results');
+            
+            const testEmail = `test${Date.now()}@tpnlife.com`;
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: testEmail,
+                    password: 'TpnLife123!',
+                    options: {
+                        data: {
+                            first_name: 'Test',
+                            last_name: 'User',
+                            display_name: 'Test User',
+                            phone: '555-1234',
+                            sparky_username: 'testuser'
+                        }
+                    }
+                });
+                
+                if (error) {
+                    log(`❌ Signup failed: ${error.message}`, 'general-results', 'error');
+                } else {
+                    log(`✅ Signup successful for: ${testEmail}`, 'general-results', 'success');
+                    log(`User ID: ${data.user?.id}`, 'general-results');
+                    log(`Email confirmed: ${data.user?.email_confirmed_at ? 'Yes' : 'No'}`, 'general-results');
+                    log(`Confirmation sent: ${data.user && !data.user.email_confirmed_at ? 'Yes' : 'N/A'}`, 'general-results');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'general-results', 'error');
+            }
+        }
+        
+        // Auto-run on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                listAllProfiles();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

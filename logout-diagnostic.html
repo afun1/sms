@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Targeted Logout Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .error { background: #ffebee; border-color: #e57373; }
+        .success { background: #e8f5e8; border-color: #81c784; }
+        .warning { background: #fff3e0; border-color: #ffb74d; }
+        .info { background: #e3f2fd; border-color: #64b5f6; }
+        
+        button {
+            padding: 12px 24px;
+            margin: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .btn-primary { background: #2196f3; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+        .btn-success { background: #4caf50; color: white; }
+        .btn-warning { background: #ff9800; color: white; }
+        
+        .log-area {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-error { color: #d32f2f; }
+        .log-success { color: #388e3c; }
+        .log-warning { color: #f57c00; }
+        .log-info { color: #1976d2; }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .status-item {
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        .status-item h4 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+        .status-item .value {
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Targeted Logout Issue Diagnostic</h1>
+        
+        <div class="section info">
+            <h2>Test Purpose</h2>
+            <p>This tool will help identify specific logout issues by testing each step of the logout process individually.</p>
+        </div>
+        
+        <div class="section">
+            <h2>Current Authentication State</h2>
+            <div class="status-grid" id="authStatusGrid">
+                <!-- Status items will be populated here -->
+            </div>
+            <button class="btn-primary" onclick="checkAuthState()">🔍 Check Auth State</button>
+        </div>
+        
+        <div class="section">
+            <h2>Logout Process Test</h2>
+            <div id="logoutTestButtons">
+                <button class="btn-warning" onclick="testStep1()">Step 1: Clear Impersonation</button>
+                <button class="btn-warning" onclick="testStep2()">Step 2: Clear Storage</button>
+                <button class="btn-warning" onclick="testStep3()">Step 3: Supabase SignOut</button>
+                <button class="btn-warning" onclick="testStep4()">Step 4: Test Redirect</button>
+                <button class="btn-danger" onclick="testCompleteLogout()">🚪 Complete Logout Test</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>Navigation Test</h2>
+            <button class="btn-primary" onclick="testLoginAccess()">Test Login Page Access</button>
+            <button class="btn-primary" onclick="testListAccess()">Test List Page Access</button>
+            <button class="btn-primary" onclick="testSessionPersistence()">Test Session Persistence</button>
+        </div>
+        
+        <div class="section">
+            <h2>Real-time Log</h2>
+            <div id="logArea" class="log-area"></div>
+            <button class="btn-success" onclick="clearLog()">Clear Log</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            log('✅ Supabase initialized successfully', 'success');
+        } catch (error) {
+            log(`❌ Supabase initialization failed: ${error.message}`, 'error');
+        }
+        
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+            
+            // Also log to console
+            console.log(`[LOGOUT-TEST] ${message}`);
+        }
+        
+        function clearLog() {
+            document.getElementById('logArea').innerHTML = '';
+        }
+        
+        function updateStatusItem(id, title, value, status = 'info') {
+            const grid = document.getElementById('authStatusGrid');
+            let item = document.getElementById(id);
+            
+            if (!item) {
+                item = document.createElement('div');
+                item.id = id;
+                item.className = 'status-item';
+                grid.appendChild(item);
+            }
+            
+            item.className = `status-item ${status}`;
+            item.innerHTML = `
+                <h4>${title}</h4>
+                <div class="value">${value}</div>
+            `;
+        }
+        
+        async function checkAuthState() {
+            log('🔍 Checking current authentication state...', 'info');
+            
+            try {
+                // Check Supabase session
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                    updateStatusItem('supabase-session', 'Supabase Session', `Error: ${error.message}`, 'error');
+                    log(`❌ Supabase session error: ${error.message}`, 'error');
+                } else if (session) {
+                    updateStatusItem('supabase-session', 'Supabase Session', `✅ Active - User: ${session.user.email}`, 'success');
+                    log(`✅ Active Supabase session for: ${session.user.email}`, 'success');
+                } else {
+                    updateStatusItem('supabase-session', 'Supabase Session', '❌ No active session', 'warning');
+                    log('⚠️ No active Supabase session', 'warning');
+                }
+                
+                // Check localStorage
+                const localStorageCount = Object.keys(localStorage).length;
+                const localStorageItems = Object.keys(localStorage).join(', ');
+                updateStatusItem('localStorage', 'localStorage', `${localStorageCount} items: ${localStorageItems}`, localStorageCount > 0 ? 'warning' : 'success');
+                log(`📦 localStorage has ${localStorageCount} items: ${localStorageItems}`, 'info');
+                
+                // Check sessionStorage
+                const sessionStorageCount = Object.keys(sessionStorage).length;
+                const sessionStorageItems = Object.keys(sessionStorage).join(', ');
+                updateStatusItem('sessionStorage', 'sessionStorage', `${sessionStorageCount} items: ${sessionStorageItems}`, sessionStorageCount > 0 ? 'warning' : 'success');
+                log(`📦 sessionStorage has ${sessionStorageCount} items: ${sessionStorageItems}`, 'info');
+                
+                // Check for impersonation data
+                const impersonationData = localStorage.getItem('impersonationData');
+                if (impersonationData) {
+                    updateStatusItem('impersonation', 'Impersonation Data', '⚠️ Present', 'warning');
+                    log('⚠️ Impersonation data found in localStorage', 'warning');
+                } else {
+                    updateStatusItem('impersonation', 'Impersonation Data', '✅ Not present', 'success');
+                    log('✅ No impersonation data found', 'success');
+                }
+                
+                // Check for Supabase auth tokens
+                const authTokens = Object.keys(localStorage).filter(key => key.includes('auth') || key.includes('supabase'));
+                if (authTokens.length > 0) {
+                    updateStatusItem('auth-tokens', 'Auth Tokens', `⚠️ Found: ${authTokens.join(', ')}`, 'warning');
+                    log(`⚠️ Auth tokens found: ${authTokens.join(', ')}`, 'warning');
+                } else {
+                    updateStatusItem('auth-tokens', 'Auth Tokens', '✅ No auth tokens found', 'success');
+                    log('✅ No auth tokens found in localStorage', 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ Error checking auth state: ${error.message}`, 'error');
+                updateStatusItem('error', 'Check Error', error.message, 'error');
+            }
+        }
+        
+        function testStep1() {
+            log('🧹 Testing Step 1: Clear impersonation data...', 'info');
+            try {
+                const hadData = localStorage.getItem('impersonationData') !== null;
+                localStorage.removeItem('impersonationData');
+                log(`✅ Step 1 complete. Had impersonation data: ${hadData}`, 'success');
+                checkAuthState();
+            } catch (error) {
+                log(`❌ Step 1 failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testStep2() {
+            log('🧹 Testing Step 2: Clear storage...', 'info');
+            try {
+                const localCount = Object.keys(localStorage).length;
+                const sessionCount = Object.keys(sessionStorage).length;
+                
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                log(`✅ Step 2 complete. Cleared ${localCount} localStorage items and ${sessionCount} sessionStorage items`, 'success');
+                checkAuthState();
+            } catch (error) {
+                log(`❌ Step 2 failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testStep3() {
+            log('🔓 Testing Step 3: Supabase signOut...', 'info');
+            try {
+                if (supabase && supabase.auth) {
+                    const { error } = await supabase.auth.signOut();
+                    if (error) {
+                        log(`❌ Step 3 Supabase signOut error: ${error.message}`, 'error');
+                    } else {
+                        log('✅ Step 3 complete: Supabase signOut successful', 'success');
+                    }
+                } else {
+                    log('❌ Step 3 failed: Supabase auth not available', 'error');
+                }
+                checkAuthState();
+            } catch (error) {
+                log(`❌ Step 3 failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testStep4() {
+            log('🔄 Testing Step 4: Test redirect...', 'info');
+            try {
+                const loginUrl = `${window.location.origin}/login.html`;
+                log(`🔗 Would redirect to: ${loginUrl}`, 'info');
+                
+                // Test if the URL is accessible
+                fetch(loginUrl, { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            log('✅ Step 4 complete: Login page is accessible', 'success');
+                        } else {
+                            log(`❌ Step 4 failed: Login page returned ${response.status}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        log(`❌ Step 4 failed: Cannot access login page - ${error.message}`, 'error');
+                    });
+            } catch (error) {
+                log(`❌ Step 4 failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCompleteLogout() {
+            log('🚪 Testing complete logout process...', 'info');
+            
+            try {
+                // Step 1: Clear impersonation
+                localStorage.removeItem('impersonationData');
+                log('✅ Cleared impersonation data', 'success');
+                
+                // Step 2: Clear storage
+                localStorage.clear();
+                sessionStorage.clear();
+                log('✅ Cleared all storage', 'success');
+                
+                // Step 3: Supabase signOut
+                if (supabase && supabase.auth) {
+                    const { error } = await supabase.auth.signOut();
+                    if (error) {
+                        log(`⚠️ Supabase signOut error (continuing): ${error.message}`, 'warning');
+                    } else {
+                        log('✅ Supabase signOut successful', 'success');
+                    }
+                } else {
+                    log('⚠️ Supabase auth not available', 'warning');
+                }
+                
+                log('✅ Complete logout process finished', 'success');
+                
+                // Wait and check final state
+                setTimeout(() => {
+                    log('🔍 Checking final auth state...', 'info');
+                    checkAuthState();
+                }, 1000);
+                
+            } catch (error) {
+                log(`❌ Complete logout failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testLoginAccess() {
+            log('🔗 Testing login page access...', 'info');
+            const loginUrl = `${window.location.origin}/login.html`;
+            
+            fetch(loginUrl, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        log('✅ Login page is accessible', 'success');
+                    } else {
+                        log(`❌ Login page error: ${response.status}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    log(`❌ Login page access failed: ${error.message}`, 'error');
+                });
+        }
+        
+        function testListAccess() {
+            log('🔗 Testing list page access...', 'info');
+            const listUrl = `${window.location.origin}/list.html`;
+            
+            fetch(listUrl, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        log('✅ List page is accessible', 'success');
+                    } else {
+                        log(`❌ List page error: ${response.status}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    log(`❌ List page access failed: ${error.message}`, 'error');
+                });
+        }
+        
+        async function testSessionPersistence() {
+            log('🔄 Testing session persistence...', 'info');
+            
+            try {
+                // Check if session persists after page reload simulation
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    log(`❌ Session check error: ${error.message}`, 'error');
+                } else if (session) {
+                    log(`⚠️ Session persists: ${session.user.email}`, 'warning');
+                } else {
+                    log('✅ No session found - logout was effective', 'success');
+                }
+                
+                // Check if protected pages are accessible
+                const protectedUrls = ['/list.html', '/admin.html'];
+                for (const url of protectedUrls) {
+                    try {
+                        const response = await fetch(`${window.location.origin}${url}`, { method: 'HEAD' });
+                        log(`📄 ${url} - Status: ${response.status}`, 'info');
+                    } catch (error) {
+                        log(`❌ Error accessing ${url}: ${error.message}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Session persistence test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-check auth state on page load
+        window.addEventListener('load', () => {
+            log('🚀 Logout diagnostic tool loaded', 'info');
+            checkAuthState();
+        });
+    </script>
+</body>
+</html>

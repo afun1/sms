@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Contacts List</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .loading { color: blue; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Simple Contacts List</h1>
+    <div id="status" class="loading">Loading contacts...</div>
+    <div id="contacts-container"></div>
+    
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let supabase = null;
+        
+        async function loadContacts() {
+            try {
+                const statusEl = document.getElementById('status');
+                const containerEl = document.getElementById('contacts-container');
+                
+                // Initialize Supabase
+                if (!window.supabase) {
+                    statusEl.innerHTML = '<div class="error">Supabase library not loaded</div>';
+                    return;
+                }
+                
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('Supabase client initialized');
+                
+                // Load contacts from Supabase
+                statusEl.innerHTML = '<div class="loading">Querying contacts table...</div>';
+                
+                const { data: contactsData, error } = await supabase
+                    .from('contacts')
+                    .select('*')
+                    .order('first_name', { ascending: true });
+                
+                if (error) {
+                    console.error('Error loading contacts:', error);
+                    statusEl.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                    return;
+                }
+                
+                console.log('Contacts loaded:', contactsData?.length || 0);
+                
+                if (!contactsData || contactsData.length === 0) {
+                    statusEl.innerHTML = '<div class="error">No contacts found in table</div>';
+                    return;
+                }
+                
+                // Display contacts
+                statusEl.innerHTML = `<div class="success">Successfully loaded ${contactsData.length} contacts</div>`;
+                
+                let html = '<table>';
+                html += '<tr>';
+                html += '<th>ID</th>';
+                html += '<th>First Name</th>';
+                html += '<th>Last Name</th>';
+                html += '<th>Email</th>';
+                html += '<th>Phone</th>';
+                html += '<th>Assignee</th>';
+                html += '<th>City</th>';
+                html += '<th>State</th>';
+                html += '</tr>';
+                
+                contactsData.forEach(contact => {
+                    html += '<tr>';
+                    html += `<td>${contact.id || ''}</td>`;
+                    html += `<td>${contact.first_name || ''}</td>`;
+                    html += `<td>${contact.last_name || ''}</td>`;
+                    html += `<td>${contact.email || ''}</td>`;
+                    html += `<td>${contact.phone || ''}</td>`;
+                    html += `<td>${contact.assignee || ''}</td>`;
+                    html += `<td>${contact.city || ''}</td>`;
+                    html += `<td>${contact.state || ''}</td>`;
+                    html += '</tr>';
+                });
+                
+                html += '</table>';
+                containerEl.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error in loadContacts:', error);
+                document.getElementById('status').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Load contacts when page loads
+        window.onload = loadContacts;
+    </script>
+</body>
+</html>

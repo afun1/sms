@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Role Switch Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="static/global-nav-v2.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .test-info { background: #f0f0f0; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .test-info h3 { margin-top: 0; }
+        .debug-info { background: #e8f4f8; padding: 10px; margin: 10px 0; border-radius: 3px; font-family: monospace; }
+        .test-buttons { margin: 20px 0; }
+        .test-buttons button { margin: 5px; padding: 8px 16px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .test-buttons button:hover { background: #005a87; }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h3>Role Switch Test Page</h3>
+        <p>This page tests the role switching functionality.</p>
+        <div class="debug-info">
+            <div>Current URL: <span id="current-url"></span></div>
+            <div>View Parameter: <span id="view-param"></span></div>
+            <div>User Role: <span id="user-role"></span></div>
+            <div>Secondary Role: <span id="secondary-role"></span></div>
+            <div>Expected Button: <span id="expected-button"></span></div>
+        </div>
+        
+        <div class="test-buttons">
+            <button onclick="testWithoutView()">Test Without View Parameter</button>
+            <button onclick="testWithUser()">Test With ?view=user</button>
+            <button onclick="testWithManager()">Test With ?view=manager</button>
+            <button onclick="testWithAdmin()">Test With ?view=admin</button>
+        </div>
+    </div>
+
+    <h1>Test Page Content</h1>
+    <p>The navigation should show different "View as" buttons based on the current role and view parameter.</p>
+
+    <script>
+        function updateDebugInfo() {
+            document.getElementById('current-url').textContent = window.location.href;
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewParam = urlParams.get('view');
+            document.getElementById('view-param').textContent = viewParam || 'none';
+            
+            // This would normally come from the actual user profile
+            // For testing, we'll simulate different scenarios
+            const userRole = 'admin';
+            const secondaryRole = 'user';
+            
+            document.getElementById('user-role').textContent = userRole;
+            document.getElementById('secondary-role').textContent = secondaryRole;
+            
+            // Logic to determine expected button
+            let expectedButton = '';
+            if (secondaryRole && secondaryRole.toLowerCase() !== userRole.toLowerCase()) {
+                if (viewParam && viewParam.toLowerCase() === secondaryRole.toLowerCase()) {
+                    expectedButton = `View as ${userRole}`;
+                } else {
+                    expectedButton = `View as ${secondaryRole}`;
+                }
+            } else if (userRole.toLowerCase() === 'admin' && !secondaryRole) {
+                expectedButton = 'Admin';
+            }
+            
+            document.getElementById('expected-button').textContent = expectedButton || 'None';
+        }
+        
+        function testWithoutView() {
+            window.location.href = window.location.pathname;
+        }
+        
+        function testWithUser() {
+            window.location.href = window.location.pathname + '?view=user';
+        }
+        
+        function testWithManager() {
+            window.location.href = window.location.pathname + '?view=manager';
+        }
+        
+        function testWithAdmin() {
+            window.location.href = window.location.pathname + '?view=admin';
+        }
+        
+        // Update debug info on page load and when URL changes
+        updateDebugInfo();
+        
+        window.addEventListener('popstate', updateDebugInfo);
+        
+        // Set up navigation when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDebugInfo();
+            // Navigation is automatically set up by global-nav-v2.js
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Signup & Confirmation Flow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border-color: #28a745;
+        }
+        .warning {
+            color: #856404;
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+            width: 250px;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Complete Signup Flow</h1>
+        <p>This will test the entire signup → confirmation → profile creation flow</p>
+        
+        <div class="debug-section">
+            <h3>Step 1: Create Test Account</h3>
+            <div class="form-group">
+                <input type="email" id="testEmail" placeholder="test@tpnlife.com">
+                <input type="password" id="testPassword" placeholder="TpnLife123!" value="TpnLife123!">
+            </div>
+            <div class="form-group">
+                <input type="text" id="firstName" placeholder="First Name" value="Test">
+                <input type="text" id="lastName" placeholder="Last Name" value="User">
+            </div>
+            <button onclick="testSignup()">Create Test Account</button>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Step 2: Check Auth State</h3>
+            <button onclick="checkAuthState()">Check Current Auth State</button>
+            <button onclick="checkSession()">Check Session</button>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Step 3: Manual Profile Creation</h3>
+            <button onclick="createProfileManually()">Create Profile for Current User</button>
+            <button onclick="testLogin()">Test Login</button>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Cleanup</h3>
+            <button onclick="signOut()">Sign Out</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Set up auth state listener
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            log(`🔄 Auth state changed: ${event}`, event === 'SIGNED_OUT' ? 'warning' : 'info');
+            if (session?.user) {
+                log(`User: ${session.user.email} (${session.user.id})`);
+                log(`Email confirmed: ${session.user.email_confirmed_at ? 'Yes' : 'No'}`);
+                if (event === 'SIGNED_IN') {
+                    log('Attempting to create profile...');
+                    await ensureUserProfile(session.user);
+                }
+            }
+        });
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `debug-section ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+            console.log(message);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testSignup() {
+            const email = document.getElementById('testEmail').value || `test${Date.now()}@tpnlife.com`;
+            const password = document.getElementById('testPassword').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            
+            log(`🚀 Starting signup for: ${email}`);
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            first_name: firstName,
+                            last_name: lastName,
+                            display_name: `${firstName} ${lastName}`,
+                            phone: '555-1234',
+                            sparky_username: 'testuser'
+                        }
+                    }
+                });
+                
+                if (error) {
+                    log(`❌ Signup failed: ${error.message}`, 'error');
+                } else {
+                    log(`✅ Signup response received`, 'success');
+                    
+                    if (data.user) {
+                        log(`User created: ${data.user.email} (ID: ${data.user.id})`);
+                        log(`Email confirmed: ${data.user.email_confirmed_at ? 'Yes' : 'No'}`);
+                        log(`User metadata: ${JSON.stringify(data.user.user_metadata, null, 2)}`);
+                        
+                        if (!data.user.email_confirmed_at) {
+                            log('📧 Confirmation email should be sent. Check your email and click the confirmation link.', 'warning');
+                            log('💡 After clicking confirmation, you should be redirected back and automatically signed in.', 'info');
+                        }
+                    }
+                    
+                    if (data.session) {
+                        log('✅ Session created immediately (email confirmation not required)', 'success');
+                    } else {
+                        log('⏳ No session created - email confirmation required', 'warning');
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Signup error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkAuthState() {
+            log('🔍 Checking current auth state...');
+            
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    log(`❌ Session error: ${error.message}`, 'error');
+                } else if (session) {
+                    log('✅ Active session found', 'success');
+                    log(`User: ${session.user.email}`);
+                    log(`Email confirmed: ${session.user.email_confirmed_at ? 'Yes' : 'No'}`);
+                    log(`Access token: ${session.access_token.substring(0, 20)}...`);
+                } else {
+                    log('ℹ️ No active session', 'info');
+                }
+                
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                
+                if (userError) {
+                    log(`❌ User error: ${userError.message}`, 'error');
+                } else if (user) {
+                    log('✅ User data available', 'success');
+                    log(`User: ${user.email} (${user.id})`);
+                } else {
+                    log('ℹ️ No user data', 'info');
+                }
+                
+            } catch (error) {
+                log(`❌ Auth check error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkSession() {
+            log('🔍 Checking session details...');
+            
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    log(`❌ Error: ${error.message}`, 'error');
+                } else if (session) {
+                    log('✅ Session details:', 'success');
+                    log(`<pre>${JSON.stringify(session, null, 2)}</pre>`);
+                } else {
+                    log('ℹ️ No session available', 'info');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createProfileManually() {
+            log('🔧 Creating profile manually...');
+            
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error || !user) {
+                    log('❌ No authenticated user found', 'error');
+                    return;
+                }
+                
+                await ensureUserProfile(user);
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function ensureUserProfile(user) {
+            try {
+                log(`🔧 Creating profile for: ${user.email}`);
+                
+                // Check if profile exists
+                const { data: existingProfile, error: checkError } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (checkError && checkError.code !== 'PGRST116') {
+                    log(`❌ Profile check error: ${checkError.message}`, 'error');
+                    return;
+                }
+                
+                if (existingProfile) {
+                    log('✅ Profile already exists', 'success');
+                    return;
+                }
+                
+                const userMetadata = user.user_metadata || {};
+                const displayName = userMetadata.display_name || 
+                                   `${userMetadata.first_name || ''} ${userMetadata.last_name || ''}`.trim() ||
+                                   user.email.split('@')[0];
+                
+                const profileData = {
+                    id: user.id,
+                    email: user.email,
+                    first_name: userMetadata.first_name || '',
+                    last_name: userMetadata.last_name || '',
+                    display_name: displayName,
+                    phone: userMetadata.phone || '',
+                    sparky_username: userMetadata.sparky_username || '',
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                };
+                
+                log(`Creating profile: ${JSON.stringify(profileData, null, 2)}`);
+                
+                const { data: insertData, error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([profileData])
+                    .select();
+                
+                if (insertError) {
+                    log(`❌ Profile creation failed: ${insertError.message}`, 'error');
+                } else {
+                    log('✅ Profile created successfully!', 'success');
+                    log(`Profile: ${JSON.stringify(insertData, null, 2)}`);
+                }
+                
+            } catch (error) {
+                log(`❌ Profile creation error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            if (!email || !password) {
+                log('❌ Please enter email and password', 'error');
+                return;
+            }
+            
+            log(`🔑 Testing login for: ${email}`);
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    log(`❌ Login failed: ${error.message}`, 'error');
+                } else {
+                    log('✅ Login successful!', 'success');
+                    log(`User: ${data.user.email}`);
+                    log(`Session: ${data.session ? 'Yes' : 'No'}`);
+                }
+                
+            } catch (error) {
+                log(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function signOut() {
+            log('🚪 Signing out...');
+            
+            try {
+                const { error } = await supabase.auth.signOut();
+                
+                if (error) {
+                    log(`❌ Sign out error: ${error.message}`, 'error');
+                } else {
+                    log('✅ Signed out successfully', 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ Sign out error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-generate test email
+        window.addEventListener('load', function() {
+            document.getElementById('testEmail').value = `test${Date.now()}@tpnlife.com`;
+        });
+    </script>
+</body>
+</html>

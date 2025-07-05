@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Creation Debug V2</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+        .section h2 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .test-btn:hover {
+            background: #0056b3;
+        }
+        .test-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .success {
+            color: #28a745;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .warning {
+            color: #856404;
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .info {
+            color: #0c5460;
+            background: #d1ecf1;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .data-table th,
+        .data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+        .data-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .data-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Profile Creation Debug Tool V2</h1>
+        
+        <div class="section">
+            <h2>📊 Current Status Check</h2>
+            <button class="test-btn" onclick="checkCurrentStatus()">Check Current Status</button>
+            <button class="test-btn" onclick="listAllAuthUsers()">List All Auth Users</button>
+            <button class="test-btn" onclick="listAllProfiles()">List All Profiles</button>
+            <button class="test-btn" onclick="findMissingProfiles()">Find Missing Profiles</button>
+            <div id="statusOutput" class="output" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🧪 Test Profile Creation</h2>
+            <div class="form-group">
+                <label for="testEmail">Test Email:</label>
+                <input type="email" id="testEmail" placeholder="john+test@tpnlife.com">
+            </div>
+            <div class="form-group">
+                <label for="testUserId">Test User ID:</label>
+                <input type="text" id="testUserId" placeholder="Enter user ID from auth.users">
+            </div>
+            <button class="test-btn" onclick="testDirectProfileCreation()">Test Direct Profile Creation</button>
+            <button class="test-btn" onclick="testProfileCreationWithAllData()">Test Profile Creation with Full Data</button>
+            <div id="testOutput" class="output" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔧 Database Schema Check</h2>
+            <button class="test-btn" onclick="checkProfilesSchema()">Check Profiles Table Schema</button>
+            <button class="test-btn" onclick="checkRLSPolicies()">Check RLS Policies</button>
+            <button class="test-btn" onclick="checkTriggers()">Check Triggers</button>
+            <div id="schemaOutput" class="output" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Manual Profile Creation</h2>
+            <div class="form-group">
+                <label for="manualEmail">Email:</label>
+                <input type="email" id="manualEmail" placeholder="john+manual@tpnlife.com">
+            </div>
+            <div class="form-group">
+                <label for="manualUserId">User ID:</label>
+                <input type="text" id="manualUserId" placeholder="UUID from auth.users">
+            </div>
+            <div class="form-group">
+                <label for="manualFirstName">First Name:</label>
+                <input type="text" id="manualFirstName" placeholder="John">
+            </div>
+            <div class="form-group">
+                <label for="manualLastName">Last Name:</label>
+                <input type="text" id="manualLastName" placeholder="Doe">
+            </div>
+            <button class="test-btn" onclick="createManualProfile()">Create Manual Profile</button>
+            <div id="manualOutput" class="output" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>🔍 Recent Account Analysis</h2>
+            <button class="test-btn" onclick="analyzeRecentAccounts()">Analyze Recent Test Accounts</button>
+            <button class="test-btn" onclick="checkSpecificAccount()">Check Specific Account</button>
+            <div class="form-group">
+                <label for="specificEmail">Specific Email to Check:</label>
+                <input type="email" id="specificEmail" placeholder="john+15@tpnlife.com">
+            </div>
+            <div id="recentOutput" class="output" style="display:none;"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Raw Data View</h2>
+            <div class="grid">
+                <div>
+                    <h3>Auth Users</h3>
+                    <div id="authUsersTable"></div>
+                </div>
+                <div>
+                    <h3>Profiles</h3>
+                    <div id="profilesTable"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toISOString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            console.log(logEntry);
+            return logEntry;
+        }
+        
+        function showOutput(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent = content;
+            element.className = `output ${type}`;
+        }
+        
+        async function checkCurrentStatus() {
+            let output = log('=== CURRENT STATUS CHECK ===');
+            
+            try {
+                // Check auth session
+                const { data: session } = await supabase.auth.getSession();
+                output += log(`Current session: ${session.session ? 'Logged in as ' + session.session.user.email : 'Not logged in'}`);
+                
+                // Count auth users
+                const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+                if (authError) {
+                    output += log(`❌ Auth users error: ${authError.message}`, 'error');
+                } else {
+                    output += log(`✅ Auth users count: ${authUsers.users.length}`);
+                }
+                
+                // Count profiles
+                const { data: profiles, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*');
+                
+                if (profileError) {
+                    output += log(`❌ Profiles error: ${profileError.message}`, 'error');
+                } else {
+                    output += log(`✅ Profiles count: ${profiles.length}`);
+                }
+                
+                // Check for missing profiles
+                if (authUsers && profiles) {
+                    const missingCount = authUsers.users.length - profiles.length;
+                    if (missingCount > 0) {
+                        output += log(`⚠️ MISSING PROFILES: ${missingCount} auth users have no profile`, 'warning');
+                    } else {
+                        output += log(`✅ All auth users have profiles`);
+                    }
+                }
+                
+            } catch (error) {
+                output += log(`❌ Status check error: ${error.message}`, 'error');
+            }
+            
+            showOutput('statusOutput', output);
+        }
+        
+        async function listAllAuthUsers() {
+            let output = log('=== ALL AUTH USERS ===');
+            
+            try {
+                const { data: authUsers, error } = await supabase.auth.admin.listUsers();
+                
+                if (error) {
+                    output += log(`❌ Error: ${error.message}`, 'error');
+                } else {
+                    output += log(`Found ${authUsers.users.length} auth users:`);
+                    authUsers.users.forEach((user, index) => {
+                        output += log(`${index + 1}. ${user.email} (ID: ${user.id})`);
+                        output += log(`   Created: ${user.created_at}`);
+                        output += log(`   Confirmed: ${user.email_confirmed_at ? 'Yes' : 'No'}`);
+                        output += log(`   Last Sign In: ${user.last_sign_in_at || 'Never'}`);
+                    });
+                }
+                
+            } catch (error) {
+                output += log(`❌ List auth users error: ${error.message}`, 'error');
+            }
+            
+            showOutput('statusOutput', output);
+        }
+        
+        async function listAllProfiles() {
+            let output = log('=== ALL PROFILES ===');
+            
+            try {
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    output += log(`❌ Error: ${error.message}`, 'error');
+                } else {
+                    output += log(`Found ${profiles.length} profiles:`);
+                    profiles.forEach((profile, index) => {
+                        output += log(`${index + 1}. ${profile.email} (ID: ${profile.id})`);
+                        output += log(`   Name: ${profile.display_name || 'N/A'}`);
+                        output += log(`   Role: ${profile.role || 'N/A'}`);
+                        output += log(`   Created: ${profile.created_at}`);
+                    });
+                }
+                
+            } catch (error) {
+                output += log(`❌ List profiles error: ${error.message}`, 'error');
+            }
+            
+            showOutput('statusOutput', output);
+        }
+        
+        async function findMissingProfiles() {
+            let output = log('=== MISSING PROFILES ANALYSIS ===');
+            
+            try {
+                // Get all auth users
+                const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+                if (authError) {
+                    output += log(`❌ Auth users error: ${authError.message}`, 'error');
+                    showOutput('statusOutput', output);
+                    return;
+                }
+                
+                // Get all profiles
+                const { data: profiles, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*');
+                
+                if (profileError) {
+                    output += log(`❌ Profiles error: ${profileError.message}`, 'error');
+                    showOutput('statusOutput', output);
+                    return;
+                }
+                
+                // Find missing profiles
+                const profileIds = new Set(profiles.map(p => p.id));
+                const missingProfiles = authUsers.users.filter(user => !profileIds.has(user.id));
+                
+                output += log(`Auth users: ${authUsers.users.length}`);
+                output += log(`Profiles: ${profiles.length}`);
+                output += log(`Missing profiles: ${missingProfiles.length}`);
+                
+                if (missingProfiles.length > 0) {
+                    output += log('\n❌ USERS WITHOUT PROFILES:');
+                    missingProfiles.forEach((user, index) => {
+                        output += log(`${index + 1}. ${user.email} (ID: ${user.id})`);
+                        output += log(`   Created: ${user.created_at}`);
+                        output += log(`   Confirmed: ${user.email_confirmed_at ? 'Yes' : 'No'}`);
+                        output += log(`   Last Sign In: ${user.last_sign_in_at || 'Never'}`);
+                        output += log(`   Metadata: ${JSON.stringify(user.user_metadata || {})}`);
+                    });
+                } else {
+                    output += log('\n✅ All auth users have profiles');
+                }
+                
+            } catch (error) {
+                output += log(`❌ Missing profiles analysis error: ${error.message}`, 'error');
+            }
+            
+            showOutput('statusOutput', output);
+        }
+        
+        async function testDirectProfileCreation() {
+            let output = log('=== DIRECT PROFILE CREATION TEST ===');
+            
+            const testEmail = document.getElementById('testEmail').value;
+            const testUserId = document.getElementById('testUserId').value;
+            
+            if (!testEmail || !testUserId) {
+                output += log('❌ Please enter both test email and user ID', 'error');
+                showOutput('testOutput', output);
+                return;
+            }
+            
+            try {
+                const profileData = {
+                    id: testUserId,
+                    email: testEmail,
+                    first_name: 'Test',
+                    last_name: 'User',
+                    display_name: 'Test User',
+                    phone: '+1234567890',
+                    sparky_username: 'testuser',
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                };
+                
+                output += log('Attempting to create profile with data:');
+                output += log(JSON.stringify(profileData, null, 2));
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .insert([profileData])
+                    .select();
+                
+                if (error) {
+                    output += log(`❌ Profile creation failed: ${error.message}`, 'error');
+                    output += log(`Error details: ${JSON.stringify(error, null, 2)}`);
+                } else {
+                    output += log(`✅ Profile created successfully:`, 'success');
+                    output += log(JSON.stringify(data, null, 2));
+                }
+                
+            } catch (error) {
+                output += log(`❌ Direct profile creation error: ${error.message}`, 'error');
+            }
+            
+            showOutput('testOutput', output);
+        }
+        
+        async function testProfileCreationWithAllData() {
+            let output = log('=== PROFILE CREATION WITH ALL DATA TEST ===');
+            
+            const testEmail = document.getElementById('testEmail').value;
+            const testUserId = document.getElementById('testUserId').value;
+            
+            if (!testEmail || !testUserId) {
+                output += log('❌ Please enter both test email and user ID', 'error');
+                showOutput('testOutput', output);
+                return;
+            }
+            
+            try {
+                // First check if profile already exists
+                const { data: existingProfile, error: checkError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', testUserId)
+                    .single();
+                
+                if (checkError && checkError.code !== 'PGRST116') {
+                    output += log(`❌ Profile check error: ${checkError.message}`, 'error');
+                    showOutput('testOutput', output);
+                    return;
+                }
+                
+                if (existingProfile) {
+                    output += log('⚠️ Profile already exists for this user ID', 'warning');
+                    output += log(JSON.stringify(existingProfile, null, 2));
+                    showOutput('testOutput', output);
+                    return;
+                }
+                
+                // Create comprehensive profile data
+                const profileData = {
+                    id: testUserId,
+                    email: testEmail,
+                    first_name: 'Test',
+                    last_name: 'User',
+                    display_name: 'Test User',
+                    phone: '+1234567890',
+                    sparky_username: 'testuser',
+                    role: 'user',
+                    created_at: new Date().toISOString(),
+                    avatar_url: null,
+                    bio: null,
+                    website: null,
+                    location: null,
+                    company: null,
+                    job_title: null,
+                    timezone: null,
+                    language: 'en',
+                    theme: 'light',
+                    notifications_enabled: true,
+                    email_notifications: true,
+                    sms_notifications: false,
+                    push_notifications: true,
+                    two_factor_enabled: false,
+                    last_active: new Date().toISOString(),
+                    is_active: true,
+                    verification_status: 'pending',
+                    onboarding_completed: false,
+                    profile_completed: false,
+                    tags: null,
+                    metadata: {},
+                    preferences: {},
+                    settings: {}
+                };
+                
+                output += log('Creating profile with comprehensive data:');
+                output += log(JSON.stringify(profileData, null, 2));
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .insert([profileData])
+                    .select();
+                
+                if (error) {
+                    output += log(`❌ Profile creation failed: ${error.message}`, 'error');
+                    output += log(`Error details: ${JSON.stringify(error, null, 2)}`);
+                } else {
+                    output += log(`✅ Profile created successfully:`, 'success');
+                    output += log(JSON.stringify(data, null, 2));
+                }
+                
+            } catch (error) {
+                output += log(`❌ Comprehensive profile creation error: ${error.message}`, 'error');
+            }
+            
+            showOutput('testOutput', output);
+        }
+        
+        async function checkProfilesSchema() {
+            let output = log('=== PROFILES TABLE SCHEMA CHECK ===');
+            
+            try {
+                // Try to get schema information
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    output += log(`❌ Schema check error: ${error.message}`, 'error');
+                } else {
+                    output += log('✅ Profiles table accessible');
+                    if (data.length > 0) {
+                        output += log('Sample record structure:');
+                        output += log(JSON.stringify(data[0], null, 2));
+                    }
+                }
+                
+                // Check specific columns
+                const testColumns = [
+                    'id', 'email', 'first_name', 'last_name', 'display_name',
+                    'phone', 'sparky_username', 'role', 'created_at'
+                ];
+                
+                output += log('\nChecking required columns:');
+                for (const column of testColumns) {
+                    try {
+                        const { error: colError } = await supabase
+                            .from('profiles')
+                            .select(column)
+                            .limit(1);
+                        
+                        if (colError) {
+                            output += log(`❌ Column '${column}': ${colError.message}`, 'error');
+                        } else {
+                            output += log(`✅ Column '${column}': OK`);
+                        }
+                    } catch (e) {
+                        output += log(`❌ Column '${column}': ${e.message}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                output += log(`❌ Schema check error: ${error.message}`, 'error');
+            }
+            
+            showOutput('schemaOutput', output);
+        }
+        
+        async function checkRLSPolicies() {
+            let output = log('=== RLS POLICIES CHECK ===');
+            
+            try {
+                // Test different operations
+                const operations = [
+                    { name: 'SELECT', query: () => supabase.from('profiles').select('*').limit(1) },
+                    { name: 'INSERT', query: () => supabase.from('profiles').insert([{
+                        id: 'test-id-rls',
+                        email: 'test@example.com',
+                        role: 'user',
+                        created_at: new Date().toISOString()
+                    }]) },
+                    { name: 'UPDATE', query: () => supabase.from('profiles').update({
+                        display_name: 'Test Update'
+                    }).eq('id', 'non-existent-id') },
+                    { name: 'DELETE', query: () => supabase.from('profiles').delete().eq('id', 'non-existent-id') }
+                ];
+                
+                for (const operation of operations) {
+                    try {
+                        const { error } = await operation.query();
+                        if (error) {
+                            if (error.code === '42501') {
+                                output += log(`❌ ${operation.name}: RLS policy blocking operation`, 'error');
+                            } else {
+                                output += log(`⚠️ ${operation.name}: ${error.message}`, 'warning');
+                            }
+                        } else {
+                            output += log(`✅ ${operation.name}: Allowed`);
+                        }
+                    } catch (e) {
+                        output += log(`❌ ${operation.name}: ${e.message}`, 'error');
+                    }
+                }
+                
+            } catch (error) {
+                output += log(`❌ RLS policies check error: ${error.message}`, 'error');
+            }
+            
+            showOutput('schemaOutput', output);
+        }
+        
+        async function checkTriggers() {
+            let output = log('=== TRIGGERS CHECK ===');
+            
+            try {
+                // This is a basic check - we can't directly query triggers with the client
+                // but we can test if automatic operations work
+                
+                output += log('Testing trigger functionality...');
+                
+                // Try to create a test profile to see if triggers fire
+                const testId = 'trigger-test-' + Date.now();
+                const { error: insertError } = await supabase
+                    .from('profiles')
+                    .insert([{
+                        id: testId,
+                        email: 'trigger-test@example.com',
+                        role: 'user',
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (insertError) {
+                    output += log(`❌ Test insert failed: ${insertError.message}`, 'error');
+                } else {
+                    output += log('✅ Test insert succeeded');
+                    
+                    // Clean up the test record
+                    const { error: deleteError } = await supabase
+                        .from('profiles')
+                        .delete()
+                        .eq('id', testId);
+                    
+                    if (deleteError) {
+                        output += log(`⚠️ Test cleanup failed: ${deleteError.message}`, 'warning');
+                    } else {
+                        output += log('✅ Test cleanup succeeded');
+                    }
+                }
+                
+            } catch (error) {
+                output += log(`❌ Triggers check error: ${error.message}`, 'error');
+            }
+            
+            showOutput('schemaOutput', output);
+        }
+        
+        async function createManualProfile() {
+            let output = log('=== MANUAL PROFILE CREATION ===');
+            
+            const email = document.getElementById('manualEmail').value;
+            const userId = document.getElementById('manualUserId').value;
+            const firstName = document.getElementById('manualFirstName').value;
+            const lastName = document.getElementById('manualLastName').value;
+            
+            if (!email || !userId) {
+                output += log('❌ Please enter at least email and user ID', 'error');
+                showOutput('manualOutput', output);
+                return;
+            }
+            
+            try {
+                const profileData = {
+                    id: userId,
+                    email: email,
+                    first_name: firstName || '',
+                    last_name: lastName || '',
+                    display_name: firstName && lastName ? `${firstName} ${lastName}` : email.split('@')[0],
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                };
+                
+                output += log('Creating manual profile:');
+                output += log(JSON.stringify(profileData, null, 2));
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .insert([profileData])
+                    .select();
+                
+                if (error) {
+                    output += log(`❌ Manual profile creation failed: ${error.message}`, 'error');
+                    output += log(`Error details: ${JSON.stringify(error, null, 2)}`);
+                } else {
+                    output += log(`✅ Manual profile created successfully:`, 'success');
+                    output += log(JSON.stringify(data, null, 2));
+                }
+                
+            } catch (error) {
+                output += log(`❌ Manual profile creation error: ${error.message}`, 'error');
+            }
+            
+            showOutput('manualOutput', output);
+        }
+        
+        async function analyzeRecentAccounts() {
+            let output = log('=== RECENT ACCOUNTS ANALYSIS ===');
+            
+            try {
+                // Get all auth users
+                const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+                if (authError) {
+                    output += log(`❌ Auth users error: ${authError.message}`, 'error');
+                    showOutput('recentOutput', output);
+                    return;
+                }
+                
+                // Filter for recent test accounts
+                const recentUsers = authUsers.users.filter(user => 
+                    user.email.includes('john+') || 
+                    user.created_at > '2024-01-01'
+                ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                
+                output += log(`Found ${recentUsers.length} recent test accounts:`);
+                
+                for (const user of recentUsers) {
+                    output += log(`\n📧 ${user.email} (ID: ${user.id})`);
+                    output += log(`   Created: ${user.created_at}`);
+                    output += log(`   Confirmed: ${user.email_confirmed_at ? 'Yes' : 'No'}`);
+                    output += log(`   Last Sign In: ${user.last_sign_in_at || 'Never'}`);
+                    
+                    // Check if profile exists
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single();
+                    
+                    if (profileError && profileError.code !== 'PGRST116') {
+                        output += log(`   Profile Check: Error - ${profileError.message}`, 'error');
+                    } else if (profile) {
+                        output += log(`   Profile: ✅ EXISTS (Role: ${profile.role})`);
+                    } else {
+                        output += log(`   Profile: ❌ MISSING`);
+                    }
+                }
+                
+            } catch (error) {
+                output += log(`❌ Recent accounts analysis error: ${error.message}`, 'error');
+            }
+            
+            showOutput('recentOutput', output);
+        }
+        
+        async function checkSpecificAccount() {
+            let output = log('=== SPECIFIC ACCOUNT CHECK ===');
+            
+            const email = document.getElementById('specificEmail').value;
+            
+            if (!email) {
+                output += log('❌ Please enter an email address', 'error');
+                showOutput('recentOutput', output);
+                return;
+            }
+            
+            try {
+                // Find user in auth
+                const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+                if (authError) {
+                    output += log(`❌ Auth users error: ${authError.message}`, 'error');
+                    showOutput('recentOutput', output);
+                    return;
+                }
+                
+                const user = authUsers.users.find(u => u.email === email);
+                
+                if (!user) {
+                    output += log(`❌ No auth user found with email: ${email}`, 'error');
+                    showOutput('recentOutput', output);
+                    return;
+                }
+                
+                output += log(`✅ Found auth user: ${user.email}`);
+                output += log(`   ID: ${user.id}`);
+                output += log(`   Created: ${user.created_at}`);
+                output += log(`   Confirmed: ${user.email_confirmed_at ? 'Yes' : 'No'}`);
+                output += log(`   Last Sign In: ${user.last_sign_in_at || 'Never'}`);
+                output += log(`   Metadata: ${JSON.stringify(user.user_metadata || {}, null, 2)}`);
+                
+                // Check profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+                
+                if (profileError && profileError.code !== 'PGRST116') {
+                    output += log(`❌ Profile check error: ${profileError.message}`, 'error');
+                } else if (profile) {
+                    output += log(`✅ Profile exists:`);
+                    output += log(JSON.stringify(profile, null, 2));
+                } else {
+                    output += log(`❌ No profile found for this user`);
+                }
+                
+            } catch (error) {
+                output += log(`❌ Specific account check error: ${error.message}`, 'error');
+            }
+            
+            showOutput('recentOutput', output);
+        }
+        
+        // Auto-load status on page load
+        window.onload = function() {
+            checkCurrentStatus();
+        };
+    </script>
+</body>
+</html>

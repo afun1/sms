@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Hierarchy Fields</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-result {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Hierarchy Fields</h1>
+    
+    <div class="test-container">
+        <h3>Test Hierarchy Logic</h3>
+        <button class="btn" onclick="testHierarchyLogic()">Test Hierarchy Logic</button>
+        <button class="btn" onclick="testContactHierarchy()">Test Contact Hierarchy</button>
+        <div id="test-results" class="test-result"></div>
+    </div>
+
+    <script>
+        // Set up Supabase client
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function log(message) {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.textContent += message + '\n';
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('test-results').textContent = '';
+        }
+
+        async function testHierarchyLogic() {
+            clearLog();
+            log('=== Testing Hierarchy Logic ===');
+            
+            try {
+                // Get all profiles with their hierarchy relationships
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('id, display_name, email, role, manager_id, supervisor_id')
+                    .order('display_name');
+                
+                if (error) {
+                    log('❌ Error loading profiles: ' + error.message);
+                    return;
+                }
+                
+                log('✅ Loaded ' + profiles.length + ' profiles');
+                
+                // Create lookup maps
+                const profileByName = {};
+                const profileById = {};
+                
+                profiles.forEach(profile => {
+                    const displayName = profile.display_name || profile.email;
+                    profileByName[displayName] = profile;
+                    profileById[profile.id] = profile;
+                });
+                
+                log('\n📊 HIERARCHY ANALYSIS:');
+                
+                profiles.forEach(profile => {
+                    const displayName = profile.display_name || profile.email;
+                    let managerName = '';
+                    let supervisorName = '';
+                    
+                    // Manager logic
+                    if (profile.manager_id) {
+                        const managerProfile = profileById[profile.manager_id];
+                        managerName = managerProfile ? (managerProfile.display_name || managerProfile.email) : 'Unknown';
+                    } else if (profile.role === 'manager') {
+                        managerName = displayName; // Manager is their own manager
+                    }
+                    
+                    // Supervisor logic
+                    if (profile.supervisor_id) {
+                        const supervisorProfile = profileById[profile.supervisor_id];
+                        supervisorName = supervisorProfile ? (supervisorProfile.display_name || supervisorProfile.email) : 'Unknown';
+                    } else if (profile.role === 'supervisor') {
+                        supervisorName = displayName; // Supervisor is their own supervisor
+                    }
+                    
+                    log(`${displayName} (${profile.role})`);
+                    log(`  → Manager: ${managerName || 'None'}`);
+                    log(`  → Supervisor: ${supervisorName || 'None'}`);
+                    log('');
+                });
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        }
+
+        async function testContactHierarchy() {
+            clearLog();
+            log('=== Testing Contact Hierarchy ===');
+            
+            try {
+                // Get sample contacts
+                const { data: contacts, error: contactError } = await supabase
+                    .from('contacts')
+                    .select('id, assignee, first_name, last_name')
+                    .limit(10);
+                
+                if (contactError) {
+                    log('❌ Error loading contacts: ' + contactError.message);
+                    return;
+                }
+                
+                log('✅ Loaded ' + contacts.length + ' contacts');
+                
+                // Get all profiles for hierarchy lookup
+                const { data: profiles, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('id, display_name, email, role, manager_id, supervisor_id')
+                    .order('display_name');
+                
+                if (profileError) {
+                    log('❌ Error loading profiles: ' + profileError.message);
+                    return;
+                }
+                
+                // Create lookup maps
+                const profileByName = {};
+                const profileById = {};
+                
+                profiles.forEach(profile => {
+                    const displayName = profile.display_name || profile.email;
+                    profileByName[displayName] = profile;
+                    profileById[profile.id] = profile;
+                });
+                
+                // Test hierarchy population
+                log('\n📝 CONTACT HIERARCHY RESULTS:');
+                
+                contacts.forEach(contact => {
+                    const contactName = `${contact.first_name} ${contact.last_name}`.trim();
+                    let manager = '';
+                    let supervisor = '';
+                    
+                    if (contact.assignee) {
+                        const assignedProfile = profileByName[contact.assignee];
+                        if (assignedProfile) {
+                            // Manager field
+                            if (assignedProfile.manager_id) {
+                                const managerProfile = profileById[assignedProfile.manager_id];
+                                manager = managerProfile ? (managerProfile.display_name || managerProfile.email) : '';
+                            } else if (assignedProfile.role === 'manager') {
+                                manager = contact.assignee; // Manager is their own manager
+                            }
+                            
+                            // Supervisor field
+                            if (assignedProfile.supervisor_id) {
+                                const supervisorProfile = profileById[assignedProfile.supervisor_id];
+                                supervisor = supervisorProfile ? (supervisorProfile.display_name || supervisorProfile.email) : '';
+                            } else if (assignedProfile.role === 'supervisor') {
+                                supervisor = contact.assignee; // Supervisor is their own supervisor
+                            }
+                        }
+                    }
+                    
+                    log(`${contactName || 'Unnamed'} (ID: ${contact.id})`);
+                    log(`  → Assignee: ${contact.assignee || 'None'}`);
+                    log(`  → Manager: ${manager || 'None'}`);
+                    log(`  → Supervisor: ${supervisor || 'None'}`);
+                    log('');
+                });
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
