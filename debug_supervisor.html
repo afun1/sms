@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Supervisor View</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; white-space: pre-wrap; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Debug Supervisor View - Admin Panel</h1>
+    
+    <div class="test-section">
+        <h2>Test Configuration</h2>
+        <button onclick="setTestConfig()">Set Test Configuration</button>
+        <div id="configResult" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Filtering Logic</h2>
+        <button onclick="testFilteringLogic()">Test Filtering Logic</button>
+        <div id="filteringResult" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Table Population</h2>
+        <button onclick="testTablePopulation()">Test Table Population</button>
+        <div id="tableResult" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Go to Admin Panel</h2>
+        <a href="admin.html?view=supervisor" target="_blank">Open Admin Panel in Supervisor View</a><br>
+        <a href="admin.html?view=admin" target="_blank">Open Admin Panel in Admin View</a>
+    </div>
+
+    <script>
+        function setTestConfig() {
+            // Set localStorage values for testing
+            localStorage.setItem('userRole', 'supervisor');
+            localStorage.setItem('userId', 'supervisor1');
+            localStorage.setItem('currentView', 'supervisor');
+            localStorage.setItem('username', 'TestSupervisor');
+            localStorage.setItem('userEmail', 'supervisor1@test.com');
+            
+            document.getElementById('configResult').innerHTML = `
+Test configuration set:
+- userRole: supervisor
+- userId: supervisor1
+- currentView: supervisor
+- username: TestSupervisor
+- userEmail: supervisor1@test.com
+            `;
+        }
+        
+        function getCurrentViewMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewMode = urlParams.get('view');
+            const storedView = localStorage.getItem('currentView');
+            
+            if (viewMode && ['admin', 'supervisor', 'manager', 'user'].includes(viewMode)) {
+                return viewMode;
+            }
+            
+            if (storedView && ['admin', 'supervisor', 'manager', 'user'].includes(storedView)) {
+                return storedView;
+            }
+            
+            return 'admin';
+        }
+        
+        function getCurrentUserId() {
+            return localStorage.getItem('userId') || 'supervisor1';
+        }
+        
+        function filterUsersForSupervisor(allUsers, currentUserId) {
+            console.log('🎯 Filtering users for supervisor view');
+            console.log('🔍 Current supervisor ID:', currentUserId);
+            console.log('🔍 Total users available:', allUsers.length);
+            
+            const visibleUsers = [];
+            
+            // Add ALL admins first (for escalation)
+            const admins = allUsers.filter(user =>
+                (user.role && user.role.toLowerCase() === 'admin') ||
+                (user.secondary_role && user.secondary_role.toLowerCase() === 'admin')
+            );
+            visibleUsers.push(...admins);
+            console.log('👑 Added admins to supervisor view:', admins.length, admins.map(a => a.email));
+            
+            // Add ONLY the current supervisor themselves (not other supervisors)
+            const currentSupervisor = allUsers.find(user => user.id === currentUserId);
+            if (currentSupervisor) {
+                visibleUsers.push(currentSupervisor);
+                console.log('👤 Added current supervisor themselves:', currentSupervisor.email, 'ID:', currentSupervisor.id);
+            } else {
+                console.warn('⚠️ Current supervisor not found in user list! Looking for ID:', currentUserId);
+                console.log('📋 Available user IDs:', allUsers.map(u => ({ id: u.id, email: u.email, role: u.role })));
+            }
+            
+            // Add all users assigned directly to this supervisor
+            const usersUnderSupervisor = allUsers.filter(user =>
+                user.role && user.role.toLowerCase() === 'user' &&
+                user.supervisor_id === currentUserId
+            );
+            visibleUsers.push(...usersUnderSupervisor);
+            console.log('👥 Added users directly assigned to supervisor:', usersUnderSupervisor.length);
+            
+            // Find managers assigned to this supervisor
+            const managersUnderSupervisor = allUsers.filter(user => 
+                user.role && user.role.toLowerCase() === 'manager' && 
+                user.supervisor_id === currentUserId
+            );
+            visibleUsers.push(...managersUnderSupervisor);
+            console.log('👔 Added managers assigned to supervisor:', managersUnderSupervisor.length);
+            
+            // Find users under those managers
+            const managerIds = managersUnderSupervisor.map(m => m.id);
+            const usersUnderManagers = allUsers.filter(user =>
+                user.role && user.role.toLowerCase() === 'user' &&
+                managerIds.includes(user.manager_id)
+            );
+            visibleUsers.push(...usersUnderManagers);
+            console.log('👤 Added users under assigned managers:', usersUnderManagers.length);
+            
+            // Remove duplicates by creating a Set based on user IDs
+            const uniqueVisibleUsers = visibleUsers.filter((user, index, self) => 
+                index === self.findIndex(u => u.id === user.id)
+            );
+            
+            console.log('🔍 Supervisor can see:', uniqueVisibleUsers.length, 'users total');
+            return uniqueVisibleUsers;
+        }
+        
+        function testFilteringLogic() {
+            // Create mock data
+            const mockUsers = [
+                { id: 'admin1', email: 'admin@test.com', role: 'admin', first_name: 'Admin', last_name: 'User' },
+                { id: 'supervisor1', email: 'supervisor1@test.com', role: 'supervisor', first_name: 'Current', last_name: 'Supervisor' },
+                { id: 'supervisor2', email: 'supervisor2@test.com', role: 'supervisor', first_name: 'Other', last_name: 'Supervisor' },
+                { id: 'supervisor3', email: 'supervisor3@test.com', role: 'supervisor', first_name: 'Third', last_name: 'Supervisor' },
+                { id: 'manager1', email: 'manager1@test.com', role: 'manager', supervisor_id: 'supervisor1', first_name: 'Manager', last_name: 'One' },
+                { id: 'manager2', email: 'manager2@test.com', role: 'manager', supervisor_id: 'supervisor2', first_name: 'Manager', last_name: 'Two' },
+                { id: 'user1', email: 'user1@test.com', role: 'user', supervisor_id: 'supervisor1', first_name: 'User', last_name: 'One' },
+                { id: 'user2', email: 'user2@test.com', role: 'user', manager_id: 'manager1', first_name: 'User', last_name: 'Two' },
+                { id: 'user3', email: 'user3@test.com', role: 'user', supervisor_id: 'supervisor2', first_name: 'User', last_name: 'Three' }
+            ];
+            
+            const currentUserId = getCurrentUserId();
+            const currentViewMode = getCurrentViewMode();
+            
+            let filteredUsers = mockUsers;
+            
+            if (currentViewMode === 'supervisor') {
+                filteredUsers = filterUsersForSupervisor(mockUsers, currentUserId);
+            }
+            
+            // Group by role for display
+            const byRole = {
+                admin: filteredUsers.filter(u => u.role === 'admin'),
+                supervisor: filteredUsers.filter(u => u.role === 'supervisor'),
+                manager: filteredUsers.filter(u => u.role === 'manager'),
+                user: filteredUsers.filter(u => u.role === 'user')
+            };
+            
+            document.getElementById('filteringResult').innerHTML = `
+View Mode: ${currentViewMode}
+Current User ID: ${currentUserId}
+Total Available Users: ${mockUsers.length}
+Filtered Users: ${filteredUsers.length}
+
+Users by Role:
+- Admins: ${byRole.admin.length} (${byRole.admin.map(u => u.email).join(', ')})
+- Supervisors: ${byRole.supervisor.length} (${byRole.supervisor.map(u => u.email).join(', ')})
+- Managers: ${byRole.manager.length} (${byRole.manager.map(u => u.email).join(', ')})
+- Users: ${byRole.user.length} (${byRole.user.map(u => u.email).join(', ')})
+
+Expected in Supervisor View:
+- Should show: admin@test.com, supervisor1@test.com, manager1@test.com, user1@test.com, user2@test.com
+- Should NOT show: supervisor2@test.com, supervisor3@test.com, manager2@test.com, user3@test.com
+            `;
+        }
+        
+        function testTablePopulation() {
+            const mockUsers = [
+                { id: 'admin1', email: 'admin@test.com', role: 'admin', first_name: 'Admin', last_name: 'User' },
+                { id: 'supervisor1', email: 'supervisor1@test.com', role: 'supervisor', first_name: 'Current', last_name: 'Supervisor' },
+                { id: 'supervisor2', email: 'supervisor2@test.com', role: 'supervisor', first_name: 'Other', last_name: 'Supervisor' },
+                { id: 'manager1', email: 'manager1@test.com', role: 'manager', supervisor_id: 'supervisor1', first_name: 'Manager', last_name: 'One' }
+            ];
+            
+            const currentUserId = getCurrentUserId();
+            const currentViewMode = getCurrentViewMode();
+            
+            // Filter users first
+            const filteredUsers = currentViewMode === 'supervisor' ? 
+                filterUsersForSupervisor(mockUsers, currentUserId) : mockUsers;
+            
+            // Test table population logic
+            const tableAssignments = [];
+            
+            for (const user of filteredUsers) {
+                let tableId;
+                let shouldSkip = false;
+                
+                if (user.role === 'admin') {
+                    tableId = 'admin-table-body';
+                } else if (user.role === 'supervisor') {
+                    // In supervisor view, only show the current supervisor in the supervisor table
+                    if (currentViewMode === 'supervisor' && user.id !== currentUserId) {
+                        shouldSkip = true;
+                        tableId = 'SKIPPED - not current supervisor';
+                    } else {
+                        tableId = 'supervisor-table-body';
+                    }
+                } else if (user.role === 'manager') {
+                    tableId = 'manager-table-body';
+                } else {
+                    tableId = 'user-table-body';
+                }
+                
+                tableAssignments.push({
+                    user: user.email,
+                    role: user.role,
+                    tableId: tableId,
+                    skipped: shouldSkip
+                });
+            }
+            
+            document.getElementById('tableResult').innerHTML = `
+View Mode: ${currentViewMode}
+Current User ID: ${currentUserId}
+Filtered Users: ${filteredUsers.length}
+
+Table Assignments:
+${tableAssignments.map(t => `- ${t.user} (${t.role}) -> ${t.tableId}${t.skipped ? ' [SKIPPED]' : ''}`).join('\n')}
+
+Expected Result:
+- supervisor-table-body should only contain: supervisor1@test.com
+- manager-table-body should only contain: manager1@test.com
+- admin-table-body should contain: admin@test.com
+            `;
+        }
+        
+        // Auto-run on page load
+        window.onload = function() {
+            setTestConfig();
+            testFilteringLogic();
+            testTablePopulation();
+        };
+    </script>
+</body>
+</html>

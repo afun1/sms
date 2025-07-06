@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="global-nav-v2.js"></script>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            padding: 30px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation will be injected by global-nav-v2.js -->
+    <div id="global-nav"></div>
+
+    <div class="container">
+        <div class="header">
+            <div style="text-align: center; position: relative;">
+                <h1>⚙️ Admin Panel</h1>
+                <p>System administration and management</p>
+                
+                <!-- Switch User Button -->
+                <div style="position: absolute; top: 10px; right: 20px;">
+                    <button id="switch-user-btn" onclick="showSwitchUserModal()" 
+                            style="background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%); 
+                                   color: white; 
+                                   border: none; 
+                                   padding: 12px 20px; 
+                                   border-radius: 25px; 
+                                   cursor: pointer; 
+                                   font-size: 14px; 
+                                   font-weight: 600; 
+                                   transition: all 0.3s ease; 
+                                   box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+                                   display: block;">
+                        🔄 Switch User
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Users Table -->
+        <div style="background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 30px;">
+            <h2>👥 All Users</h2>
+            <table id="users-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody">
+                    <!-- Users will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Switch User Modal -->
+    <div id="switch-user-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSwitchUserModal()">&times;</span>
+            <h3>🔄 Switch User (Impersonate)</h3>
+            
+            <div style="margin: 20px 0;">
+                <input type="text" id="switch-user-search" placeholder="Search by name or email..." 
+                       style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;"
+                       onkeyup="filterSwitchUsers()">
+            </div>
+            
+            <div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px;">
+                <table id="switch-users-table" style="margin: 0;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="switch-users-tbody">
+                        <!-- Users will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="closeSwitchUserModal()" class="btn-primary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple configuration
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        
+        let supabase = null;
+        let allUsers = [];
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Admin page initializing...');
+            initializeSupabase();
+            loadUsers();
+        });
+
+        function initializeSupabase() {
+            try {
+                if (typeof window.supabase !== 'undefined') {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('✅ Supabase initialized');
+                } else {
+                    console.log('⚠️ Supabase library not loaded');
+                }
+            } catch (error) {
+                console.error('❌ Error initializing Supabase:', error);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                console.log('📊 Loading users...');
+                
+                // Show loading state
+                const tbody = document.getElementById('users-tbody');
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading users...</td></tr>';
+                
+                if (!supabase) {
+                    // Fallback to demo data if no database connection
+                    console.log('📋 Using demo data');
+                    allUsers = [
+                        { id: '1', first_name: 'John', last_name: 'Doe', email: 'john@example.com', role: 'admin' },
+                        { id: '2', first_name: 'Jane', last_name: 'Smith', email: 'jane@example.com', role: 'manager' },
+                        { id: '3', first_name: 'Bob', last_name: 'Johnson', email: 'bob@example.com', role: 'user' }
+                    ];
+                    displayUsers(allUsers);
+                    return;
+                }
+
+                // Try to fetch from database
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('id, first_name, last_name, email, role')
+                    .order('first_name');
+
+                if (error) {
+                    console.error('❌ Database error:', error);
+                    // Fall back to demo data
+                    allUsers = [
+                        { id: '1', first_name: 'John', last_name: 'Doe', email: 'john@example.com', role: 'admin' },
+                        { id: '2', first_name: 'Jane', last_name: 'Smith', email: 'jane@example.com', role: 'manager' },
+                        { id: '3', first_name: 'Bob', last_name: 'Johnson', email: 'bob@example.com', role: 'user' }
+                    ];
+                    displayUsers(allUsers);
+                } else {
+                    console.log('✅ Loaded', profiles.length, 'users from database');
+                    allUsers = profiles || [];
+                    displayUsers(allUsers);
+                }
+
+            } catch (error) {
+                console.error('💥 Error loading users:', error);
+                const tbody = document.getElementById('users-tbody');
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: red;">Error loading users</td></tr>';
+            }
+        }
+
+        function displayUsers(users) {
+            const tbody = document.getElementById('users-tbody');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No users found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.first_name || ''} ${user.last_name || ''}</td>
+                    <td>${user.email || ''}</td>
+                    <td>${user.role || 'user'}</td>
+                    <td>
+                        <button onclick="editUser('${user.id}')" class="btn-primary" style="margin-right: 5px;">Edit</button>
+                        <button onclick="impersonateUser('${user.id}')" class="btn-danger">Impersonate</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Switch User Modal Functions
+        function showSwitchUserModal() {
+            console.log('🔄 Opening switch user modal');
+            const modal = document.getElementById('switch-user-modal');
+            modal.style.display = 'block';
+            loadSwitchUsers();
+        }
+
+        function closeSwitchUserModal() {
+            const modal = document.getElementById('switch-user-modal');
+            modal.style.display = 'none';
+        }
+
+        function loadSwitchUsers() {
+            const tbody = document.getElementById('switch-users-tbody');
+            const currentUser = localStorage.getItem('username') || 'current_user';
+            
+            tbody.innerHTML = allUsers.map(user => {
+                const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                const isCurrentUser = user.email === currentUser;
+                
+                return `
+                    <tr>
+                        <td>${fullName || 'N/A'}</td>
+                        <td>${user.email || 'N/A'}</td>
+                        <td>${user.role || 'user'}</td>
+                        <td>
+                            <button onclick="switchToUser('${user.id}', '${fullName}', '${user.role}')" 
+                                    class="${isCurrentUser ? 'btn-primary' : 'btn-success'}"
+                                    ${isCurrentUser ? 'disabled' : ''}>
+                                ${isCurrentUser ? 'Current' : 'Switch'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterSwitchUsers() {
+            const searchInput = document.getElementById('switch-user-search');
+            const tbody = document.getElementById('switch-users-tbody');
+            const searchTerm = searchInput.value.toLowerCase();
+            const rows = tbody.getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                
+                if (cells.length >= 3) {
+                    const name = cells[0].textContent.toLowerCase();
+                    const email = cells[1].textContent.toLowerCase();
+                    const role = cells[2].textContent.toLowerCase();
+                    
+                    if (name.includes(searchTerm) || email.includes(searchTerm) || role.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        function switchToUser(userId, fullName, role) {
+            console.log('🔄 Switching to user:', fullName, 'Role:', role);
+            
+            // Store original user if not already impersonating
+            if (!localStorage.getItem('originalUser')) {
+                localStorage.setItem('originalUser', localStorage.getItem('username') || 'admin');
+                localStorage.setItem('originalRole', localStorage.getItem('userRole') || 'admin');
+            }
+            
+            // Switch to selected user
+            localStorage.setItem('username', fullName);
+            localStorage.setItem('userRole', role);
+            localStorage.setItem('userEmail', allUsers.find(u => u.id === userId)?.email || '');
+            
+            // Show impersonation banner
+            showImpersonationBanner(fullName, role);
+            
+            // Close modal
+            closeSwitchUserModal();
+            
+            alert(`✅ Now impersonating: ${fullName} (${role})`);
+        }
+
+        function showImpersonationBanner(userName, userRole) {
+            // Remove existing banner
+            const existingBanner = document.getElementById('impersonation-banner');
+            if (existingBanner) {
+                existingBanner.remove();
+            }
+
+            // Create new banner
+            const banner = document.createElement('div');
+            banner.id = 'impersonation-banner';
+            banner.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+                color: white;
+                padding: 10px;
+                text-align: center;
+                z-index: 999;
+                font-weight: 600;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            `;
+            banner.innerHTML = `
+                ⚠️ IMPERSONATION MODE: Viewing as ${userName} (${userRole})
+                <button onclick="exitImpersonation()" 
+                        style="background:rgba(255,255,255,0.2);color:white;border:1px solid white;padding:5px 10px;margin-left:20px;border-radius:4px;cursor:pointer;">
+                    Exit Impersonation
+                </button>
+            `;
+            
+            document.body.insertBefore(banner, document.body.firstChild);
+            document.body.style.paddingTop = '60px';
+        }
+
+        function exitImpersonation() {
+            if (confirm('Exit impersonation mode and return to your original account?')) {
+                // Restore original user
+                const originalUser = localStorage.getItem('originalUser');
+                const originalRole = localStorage.getItem('originalRole');
+                
+                if (originalUser) {
+                    localStorage.setItem('username', originalUser);
+                    localStorage.setItem('userRole', originalRole);
+                    localStorage.removeItem('originalUser');
+                    localStorage.removeItem('originalRole');
+                }
+                
+                // Remove banner
+                const banner = document.getElementById('impersonation-banner');
+                if (banner) {
+                    banner.remove();
+                }
+                document.body.style.paddingTop = '20px';
+                
+                alert('✅ Exited impersonation mode');
+                location.reload();
+            }
+        }
+
+        // Simple user functions
+        function editUser(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (user) {
+                alert(`Edit User: ${user.first_name} ${user.last_name}\nEmail: ${user.email}\nRole: ${user.role}\n\n(Edit functionality to be implemented)`);
+            }
+        }
+
+        function impersonateUser(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (user) {
+                const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                switchToUser(userId, fullName, user.role);
+            }
+        }
+
+        // Check for existing impersonation on page load
+        window.addEventListener('load', function() {
+            const originalUser = localStorage.getItem('originalUser');
+            if (originalUser) {
+                const currentUser = localStorage.getItem('username');
+                const currentRole = localStorage.getItem('userRole');
+                if (currentUser && currentRole) {
+                    showImpersonationBanner(currentUser, currentRole);
+                }
+            }
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('switch-user-modal');
+            if (event.target === modal) {
+                closeSwitchUserModal();
+            }
+        }
+    </script>
+</body>
+</html>

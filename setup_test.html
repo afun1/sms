@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Setup Test Environment</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .setup-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 10px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .success { color: green; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Setup Test Environment for Admin Panel</h1>
+    
+    <div class="setup-section">
+        <h2>Setup Test Data</h2>
+        <button onclick="setupSupervisorTest()">Setup Supervisor Test</button>
+        <button onclick="setupAdminTest()">Setup Admin Test</button>
+        <button onclick="clearTestData()">Clear Test Data</button>
+        <div id="setupResult" class="log"></div>
+    </div>
+    
+    <div class="setup-section">
+        <h2>Test Links</h2>
+        <a href="admin.html?view=supervisor" target="_blank">
+            <button>Open Admin Panel - Supervisor View</button>
+        </a>
+        <a href="admin.html?view=admin" target="_blank">
+            <button>Open Admin Panel - Admin View</button>
+        </a>
+        <a href="admin.html" target="_blank">
+            <button>Open Admin Panel - Default View</button>
+        </a>
+    </div>
+    
+    <div class="setup-section">
+        <h2>Current Configuration</h2>
+        <button onclick="showCurrentConfig()">Show Current Config</button>
+        <div id="configResult" class="log"></div>
+    </div>
+
+    <script>
+        function setupSupervisorTest() {
+            // Set up supervisor test environment
+            localStorage.setItem('userRole', 'supervisor');
+            localStorage.setItem('userId', 'test-supervisor-1');
+            localStorage.setItem('currentView', 'supervisor');
+            localStorage.setItem('username', 'TestSupervisor');
+            localStorage.setItem('userEmail', 'supervisor1@test.com');
+            localStorage.setItem('displayName', 'Test Supervisor');
+            
+            document.getElementById('setupResult').innerHTML = `
+                <div class="success">✅ Supervisor test environment set up:</div>
+                <ul>
+                    <li>User Role: supervisor</li>
+                    <li>User ID: test-supervisor-1</li>
+                    <li>Current View: supervisor</li>
+                    <li>Username: TestSupervisor</li>
+                    <li>Email: supervisor1@test.com</li>
+                    <li>Display Name: Test Supervisor</li>
+                </ul>
+            `;
+        }
+        
+        function setupAdminTest() {
+            // Set up admin test environment
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('userId', 'test-admin-1');
+            localStorage.setItem('currentView', 'admin');
+            localStorage.setItem('username', 'TestAdmin');
+            localStorage.setItem('userEmail', 'admin@test.com');
+            localStorage.setItem('displayName', 'Test Admin');
+            
+            document.getElementById('setupResult').innerHTML = `
+                <div class="success">✅ Admin test environment set up:</div>
+                <ul>
+                    <li>User Role: admin</li>
+                    <li>User ID: test-admin-1</li>
+                    <li>Current View: admin</li>
+                    <li>Username: TestAdmin</li>
+                    <li>Email: admin@test.com</li>
+                    <li>Display Name: Test Admin</li>
+                </ul>
+            `;
+        }
+        
+        function clearTestData() {
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('currentView');
+            localStorage.removeItem('username');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('displayName');
+            localStorage.removeItem('impersonationData');
+            
+            document.getElementById('setupResult').innerHTML = `
+                <div class="success">✅ Test data cleared</div>
+            `;
+        }
+        
+        function showCurrentConfig() {
+            const config = {
+                userRole: localStorage.getItem('userRole'),
+                userId: localStorage.getItem('userId'),
+                currentView: localStorage.getItem('currentView'),
+                username: localStorage.getItem('username'),
+                userEmail: localStorage.getItem('userEmail'),
+                displayName: localStorage.getItem('displayName'),
+                impersonationData: localStorage.getItem('impersonationData')
+            };
+            
+            document.getElementById('configResult').innerHTML = `
+                <strong>Current Configuration:</strong><br>
+                ${Object.entries(config).map(([key, value]) => `${key}: ${value || 'null'}`).join('<br>')}
+            `;
+        }
+        
+        // Auto-show config on page load
+        window.onload = function() {
+            showCurrentConfig();
+        };
+    </script>
+</body>
+</html>

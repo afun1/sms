@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supervisor View</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .test-result { margin: 10px 0; padding: 10px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f2f2f2; }
+        button { padding: 10px 20px; margin: 10px 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Test Supervisor View Filtering</h1>
+    
+    <div class="test-section">
+        <h2>Test Setup</h2>
+        <button onclick="setupTestData()">Setup Test Data</button>
+        <button onclick="testSupervisorView()">Test Supervisor View</button>
+        <button onclick="testManagerView()">Test Manager View</button>
+        <button onclick="testAdminView()">Test Admin View</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Data</h2>
+        <div id="test-data"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Supervisor Table</h2>
+        <table id="supervisor-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody id="supervisor-table-body">
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="test-section">
+        <h2>Manager Table</h2>
+        <table id="manager-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Supervisor</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody id="manager-table-body">
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="test-section">
+        <h2>User Table</h2>
+        <table id="user-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Manager</th>
+                    <th>Supervisor</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody id="user-table-body">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let testUsers = [];
+        let currentUserId = 'supervisor-1';
+        
+        function setupTestData() {
+            testUsers = [
+                // Admin
+                { id: 'admin-1', first_name: 'John', last_name: 'Admin', email: 'john.admin@test.com', role: 'admin', secondary_role: null, manager_id: null, supervisor_id: null },
+                
+                // Supervisors
+                { id: 'supervisor-1', first_name: 'Jane', last_name: 'Supervisor', email: 'jane.supervisor@test.com', role: 'supervisor', secondary_role: null, manager_id: null, supervisor_id: null },
+                { id: 'supervisor-2', first_name: 'Bob', last_name: 'Supervisor', email: 'bob.supervisor@test.com', role: 'supervisor', secondary_role: null, manager_id: null, supervisor_id: null },
+                
+                // Managers under supervisor-1
+                { id: 'manager-1', first_name: 'Alice', last_name: 'Manager', email: 'alice.manager@test.com', role: 'manager', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-1' },
+                { id: 'manager-2', first_name: 'Charlie', last_name: 'Manager', email: 'charlie.manager@test.com', role: 'manager', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-1' },
+                
+                // Manager under supervisor-2 (should NOT appear in supervisor-1's view)
+                { id: 'manager-3', first_name: 'David', last_name: 'Manager', email: 'david.manager@test.com', role: 'manager', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-2' },
+                
+                // Users directly under supervisor-1
+                { id: 'user-1', first_name: 'Emma', last_name: 'User', email: 'emma.user@test.com', role: 'user', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-1' },
+                { id: 'user-2', first_name: 'Frank', last_name: 'User', email: 'frank.user@test.com', role: 'user', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-1' },
+                
+                // Users under manager-1 (who is under supervisor-1)
+                { id: 'user-3', first_name: 'Grace', last_name: 'User', email: 'grace.user@test.com', role: 'user', secondary_role: null, manager_id: 'manager-1', supervisor_id: null },
+                { id: 'user-4', first_name: 'Henry', last_name: 'User', email: 'henry.user@test.com', role: 'user', secondary_role: null, manager_id: 'manager-1', supervisor_id: null },
+                
+                // Users under manager-2 (who is under supervisor-1)
+                { id: 'user-5', first_name: 'Ivy', last_name: 'User', email: 'ivy.user@test.com', role: 'user', secondary_role: null, manager_id: 'manager-2', supervisor_id: null },
+                
+                // Users under manager-3 (who is under supervisor-2, should NOT appear in supervisor-1's view)
+                { id: 'user-6', first_name: 'Jack', last_name: 'User', email: 'jack.user@test.com', role: 'user', secondary_role: null, manager_id: 'manager-3', supervisor_id: null },
+                
+                // Users under supervisor-2 (should NOT appear in supervisor-1's view)
+                { id: 'user-7', first_name: 'Kate', last_name: 'User', email: 'kate.user@test.com', role: 'user', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-2' }
+            ];
+            
+            const testDataDiv = document.getElementById('test-data');
+            testDataDiv.innerHTML = `
+                <p><strong>Total Users:</strong> ${testUsers.length}</p>
+                <p><strong>Current User (Supervisor):</strong> ${currentUserId} (Jane Supervisor)</p>
+                <p><strong>Expected in Supervisor View:</strong></p>
+                <ul>
+                    <li>Supervisor Table: Only Jane Supervisor (current user)</li>
+                    <li>Manager Table: Alice Manager, Charlie Manager (assigned to Jane)</li>
+                    <li>User Table: Emma User, Frank User (directly under Jane) + Grace User, Henry User (under Alice) + Ivy User (under Charlie)</li>
+                    <li>NOT Expected: Bob Supervisor, David Manager, Jack User, Kate User (all under supervisor-2)</li>
+                </ul>
+            `;
+        }
+        
+        function filterUsersForSupervisor(allUsers, currentUserId) {
+            console.log('🎯 Filtering users for supervisor view');
+            console.log('🔍 Current supervisor ID:', currentUserId);
+            console.log('🔍 Total users available:', allUsers.length);
+            
+            const visibleUsers = [];
+            
+            // Add ALL admins first (for escalation)
+            const admins = allUsers.filter(user =>
+                (user.role && user.role.toLowerCase() === 'admin') ||
+                (user.secondary_role && user.secondary_role.toLowerCase() === 'admin')
+            );
+            visibleUsers.push(...admins);
+            console.log('👑 Added admins to supervisor view:', admins.length, admins.map(a => a.email));
+            
+            // Add ONLY the current supervisor themselves (not other supervisors)
+            const currentSupervisor = allUsers.find(user => user.id === currentUserId);
+            if (currentSupervisor) {
+                visibleUsers.push(currentSupervisor);
+                console.log('👤 Added current supervisor themselves:', currentSupervisor.email, 'ID:', currentSupervisor.id);
+            } else {
+                console.warn('⚠️ Current supervisor not found in user list! Looking for ID:', currentUserId);
+            }
+            
+            // Add all users assigned directly to this supervisor
+            const usersUnderSupervisor = allUsers.filter(user =>
+                user.role && user.role.toLowerCase() === 'user' &&
+                user.supervisor_id === currentUserId
+            );
+            visibleUsers.push(...usersUnderSupervisor);
+            console.log('👥 Added users directly assigned to supervisor:', usersUnderSupervisor.length, usersUnderSupervisor.map(u => u.email));
+            
+            // Find managers assigned to this supervisor
+            const managersUnderSupervisor = allUsers.filter(user => 
+                user.role && user.role.toLowerCase() === 'manager' && 
+                user.supervisor_id === currentUserId
+            );
+            visibleUsers.push(...managersUnderSupervisor);
+            console.log('👔 Added managers assigned to supervisor:', managersUnderSupervisor.length, managersUnderSupervisor.map(m => m.email));
+            
+            // Find users under those managers
+            const managerIds = managersUnderSupervisor.map(m => m.id);
+            const usersUnderManagers = allUsers.filter(user =>
+                user.role && user.role.toLowerCase() === 'user' &&
+                managerIds.includes(user.manager_id)
+            );
+            visibleUsers.push(...usersUnderManagers);
+            console.log('👤 Added users under assigned managers:', usersUnderManagers.length, usersUnderManagers.map(u => u.email));
+            
+            // Remove duplicates by creating a Set based on user IDs
+            const uniqueVisibleUsers = visibleUsers.filter((user, index, self) => 
+                index === self.findIndex(u => u.id === user.id)
+            );
+            
+            console.log('🔍 Supervisor can see:', uniqueVisibleUsers.length, 'users total');
+            console.log('📋 Visible users:', uniqueVisibleUsers.map(u => ({ email: u.email, role: u.role, id: u.id })));
+            
+            return uniqueVisibleUsers;
+        }
+        
+        function testSupervisorView() {
+            if (testUsers.length === 0) {
+                alert('Please setup test data first!');
+                return;
+            }
+            
+            const filteredUsers = filterUsersForSupervisor(testUsers, currentUserId);
+            
+            // Clear tables
+            document.getElementById('supervisor-table-body').innerHTML = '';
+            document.getElementById('manager-table-body').innerHTML = '';
+            document.getElementById('user-table-body').innerHTML = '';
+            
+            // Populate tables based on filtered users
+            filteredUsers.forEach(user => {
+                let tableBody;
+                let rowHtml;
+                
+                if (user.role === 'admin') {
+                    return; // Skip admin for table display
+                } else if (user.role === 'supervisor') {
+                    // Only show current supervisor (filtering logic should handle this)
+                    if (user.id === currentUserId) {
+                        tableBody = document.getElementById('supervisor-table-body');
+                        rowHtml = `
+                            <tr>
+                                <td>${user.first_name} ${user.last_name}</td>
+                                <td>${user.email}</td>
+                                <td>${user.role}</td>
+                                <td>${user.id}</td>
+                            </tr>
+                        `;
+                    }
+                } else if (user.role === 'manager') {
+                    tableBody = document.getElementById('manager-table-body');
+                    const supervisorName = user.supervisor_id === currentUserId ? 'Jane Supervisor' : 'Unknown';
+                    rowHtml = `
+                        <tr>
+                            <td>${user.first_name} ${user.last_name}</td>
+                            <td>${user.email}</td>
+                            <td>${user.role}</td>
+                            <td>${supervisorName}</td>
+                            <td>${user.id}</td>
+                        </tr>
+                    `;
+                } else if (user.role === 'user') {
+                    tableBody = document.getElementById('user-table-body');
+                    const managerName = user.manager_id ? testUsers.find(u => u.id === user.manager_id)?.first_name + ' ' + testUsers.find(u => u.id === user.manager_id)?.last_name : '';
+                    const supervisorName = user.supervisor_id === currentUserId ? 'Jane Supervisor' : '';
+                    rowHtml = `
+                        <tr>
+                            <td>${user.first_name} ${user.last_name}</td>
+                            <td>${user.email}</td>
+                            <td>${user.role}</td>
+                            <td>${managerName}</td>
+                            <td>${supervisorName}</td>
+                            <td>${user.id}</td>
+                        </tr>
+                    `;
+                }
+                
+                if (tableBody && rowHtml) {
+                    tableBody.innerHTML += rowHtml;
+                }
+            });
+            
+            // Display results
+            const resultsDiv = document.getElementById('test-results');
+            const supervisorRows = document.getElementById('supervisor-table-body').children.length;
+            const managerRows = document.getElementById('manager-table-body').children.length;
+            const userRows = document.getElementById('user-table-body').children.length;
+            
+            const expectedSupervisors = 1; // Only current supervisor
+            const expectedManagers = 2; // Alice and Charlie
+            const expectedUsers = 5; // Emma, Frank (direct) + Grace, Henry (under Alice) + Ivy (under Charlie)
+            
+            const supervisorTest = supervisorRows === expectedSupervisors ? 'success' : 'error';
+            const managerTest = managerRows === expectedManagers ? 'success' : 'error';
+            const userTest = userRows === expectedUsers ? 'success' : 'error';
+            
+            resultsDiv.innerHTML = `
+                <div class="test-result ${supervisorTest}">
+                    <strong>Supervisor Table:</strong> ${supervisorRows} rows (expected: ${expectedSupervisors}) - ${supervisorTest.toUpperCase()}
+                </div>
+                <div class="test-result ${managerTest}">
+                    <strong>Manager Table:</strong> ${managerRows} rows (expected: ${expectedManagers}) - ${managerTest.toUpperCase()}
+                </div>
+                <div class="test-result ${userTest}">
+                    <strong>User Table:</strong> ${userRows} rows (expected: ${expectedUsers}) - ${userTest.toUpperCase()}
+                </div>
+                <div class="test-result">
+                    <strong>Total Filtered Users:</strong> ${filteredUsers.length}
+                </div>
+            `;
+        }
+        
+        function testManagerView() {
+            alert('Manager view test not implemented yet');
+        }
+        
+        function testAdminView() {
+            alert('Admin view test not implemented yet');
+        }
+    </script>
+</body>
+</html>

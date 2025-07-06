@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel - Supervisor View Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .debug { background-color: #f0f0f0; padding: 10px; margin: 10px 0; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel - Supervisor View Test</h1>
+    
+    <div class="section">
+        <h2>Current Settings</h2>
+        <div id="current-settings"></div>
+        <button onclick="setViewMode('supervisor')">Set Supervisor View</button>
+        <button onclick="setViewMode('admin')">Set Admin View</button>
+        <button onclick="loadTestData()">Load Test Data</button>
+        <button onclick="runTest()">Run Test</button>
+    </div>
+    
+    <div class="section">
+        <h2>Debug Info</h2>
+        <div id="debug-info" class="debug"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Supervisor Table</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody id="supervisor-table-body">
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="section">
+        <h2>Manager Table</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Supervisor</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody id="manager-table-body">
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="section">
+        <h2>User Table</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Manager</th>
+                    <th>Supervisor</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody id="user-table-body">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let testUsers = [];
+        let currentUserId = 'supervisor-1';
+        
+        function setViewMode(mode) {
+            localStorage.setItem('currentView', mode);
+            localStorage.setItem('userRole', mode === 'supervisor' ? 'supervisor' : 'admin');
+            localStorage.setItem('userId', mode === 'supervisor' ? 'supervisor-1' : 'admin-1');
+            updateCurrentSettings();
+        }
+        
+        function updateCurrentSettings() {
+            const currentView = localStorage.getItem('currentView') || 'admin';
+            const userRole = localStorage.getItem('userRole') || 'admin';
+            const userId = localStorage.getItem('userId') || 'admin-1';
+            
+            document.getElementById('current-settings').innerHTML = `
+                <p><strong>Current View:</strong> ${currentView}</p>
+                <p><strong>User Role:</strong> ${userRole}</p>
+                <p><strong>User ID:</strong> ${userId}</p>
+            `;
+        }
+        
+        function loadTestData() {
+            testUsers = [
+                { id: 'admin-1', first_name: 'John', last_name: 'Admin', email: 'john.admin@test.com', role: 'admin', secondary_role: null, manager_id: null, supervisor_id: null },
+                { id: 'supervisor-1', first_name: 'Jane', last_name: 'Supervisor', email: 'jane.supervisor@test.com', role: 'supervisor', secondary_role: null, manager_id: null, supervisor_id: null },
+                { id: 'supervisor-2', first_name: 'Bob', last_name: 'Supervisor', email: 'bob.supervisor@test.com', role: 'supervisor', secondary_role: null, manager_id: null, supervisor_id: null },
+                { id: 'manager-1', first_name: 'Alice', last_name: 'Manager', email: 'alice.manager@test.com', role: 'manager', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-1' },
+                { id: 'manager-2', first_name: 'Charlie', last_name: 'Manager', email: 'charlie.manager@test.com', role: 'manager', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-1' },
+                { id: 'manager-3', first_name: 'David', last_name: 'Manager', email: 'david.manager@test.com', role: 'manager', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-2' },
+                { id: 'user-1', first_name: 'Emma', last_name: 'User', email: 'emma.user@test.com', role: 'user', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-1' },
+                { id: 'user-2', first_name: 'Frank', last_name: 'User', email: 'frank.user@test.com', role: 'user', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-1' },
+                { id: 'user-3', first_name: 'Grace', last_name: 'User', email: 'grace.user@test.com', role: 'user', secondary_role: null, manager_id: 'manager-1', supervisor_id: null },
+                { id: 'user-4', first_name: 'Henry', last_name: 'User', email: 'henry.user@test.com', role: 'user', secondary_role: null, manager_id: 'manager-1', supervisor_id: null },
+                { id: 'user-5', first_name: 'Ivy', last_name: 'User', email: 'ivy.user@test.com', role: 'user', secondary_role: null, manager_id: 'manager-2', supervisor_id: null },
+                { id: 'user-6', first_name: 'Jack', last_name: 'User', email: 'jack.user@test.com', role: 'user', secondary_role: null, manager_id: 'manager-3', supervisor_id: null },
+                { id: 'user-7', first_name: 'Kate', last_name: 'User', email: 'kate.user@test.com', role: 'user', secondary_role: null, manager_id: null, supervisor_id: 'supervisor-2' }
+            ];
+        }
+        
+        function getCurrentViewMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewMode = urlParams.get('view');
+            const storedView = localStorage.getItem('currentView');
+            
+            if (viewMode && ['admin', 'supervisor', 'manager', 'user'].includes(viewMode)) {
+                return viewMode;
+            }
+            
+            if (storedView && ['admin', 'supervisor', 'manager', 'user'].includes(storedView)) {
+                return storedView;
+            }
+            
+            return 'admin';
+        }
+        
+        function getCurrentUserId() {
+            return localStorage.getItem('userId') || 'admin-1';
+        }
+        
+        function filterUsersForSupervisor(allUsers, currentUserId) {
+            console.log('🎯 Filtering users for supervisor view');
+            console.log('🔍 Current supervisor ID:', currentUserId);
+            console.log('🔍 Total users available:', allUsers.length);
+            
+            const visibleUsers = [];
+            
+            // Add ALL admins first (for escalation)
+            const admins = allUsers.filter(user =>
+                (user.role && user.role.toLowerCase() === 'admin') ||
+                (user.secondary_role && user.secondary_role.toLowerCase() === 'admin')
+            );
+            visibleUsers.push(...admins);
+            console.log('👑 Added admins to supervisor view:', admins.length, admins.map(a => a.email));
+            
+            // Add ONLY the current supervisor themselves (not other supervisors)
+            const currentSupervisor = allUsers.find(user => user.id === currentUserId);
+            if (currentSupervisor) {
+                visibleUsers.push(currentSupervisor);
+                console.log('👤 Added current supervisor themselves:', currentSupervisor.email, 'ID:', currentSupervisor.id);
+            } else {
+                console.warn('⚠️ Current supervisor not found in user list! Looking for ID:', currentUserId);
+            }
+            
+            // Add all users assigned directly to this supervisor
+            const usersUnderSupervisor = allUsers.filter(user =>
+                user.role && user.role.toLowerCase() === 'user' &&
+                user.supervisor_id === currentUserId
+            );
+            visibleUsers.push(...usersUnderSupervisor);
+            console.log('👥 Added users directly assigned to supervisor:', usersUnderSupervisor.length, usersUnderSupervisor.map(u => u.email));
+            
+            // Find managers assigned to this supervisor
+            const managersUnderSupervisor = allUsers.filter(user => 
+                user.role && user.role.toLowerCase() === 'manager' && 
+                user.supervisor_id === currentUserId
+            );
+            visibleUsers.push(...managersUnderSupervisor);
+            console.log('👔 Added managers assigned to supervisor:', managersUnderSupervisor.length, managersUnderSupervisor.map(m => m.email));
+            
+            // Find users under those managers
+            const managerIds = managersUnderSupervisor.map(m => m.id);
+            const usersUnderManagers = allUsers.filter(user =>
+                user.role && user.role.toLowerCase() === 'user' &&
+                managerIds.includes(user.manager_id)
+            );
+            visibleUsers.push(...usersUnderManagers);
+            console.log('👤 Added users under assigned managers:', usersUnderManagers.length, usersUnderManagers.map(u => u.email));
+            
+            // Remove duplicates by creating a Set based on user IDs
+            const uniqueVisibleUsers = visibleUsers.filter((user, index, self) => 
+                index === self.findIndex(u => u.id === user.id)
+            );
+            
+            console.log('🔍 Supervisor can see:', uniqueVisibleUsers.length, 'users total');
+            return uniqueVisibleUsers;
+        }
+        
+        function runTest() {
+            if (testUsers.length === 0) {
+                alert('Please load test data first!');
+                return;
+            }
+            
+            const currentViewMode = getCurrentViewMode();
+            const currentUserId = getCurrentUserId();
+            
+            // Clear tables
+            document.getElementById('supervisor-table-body').innerHTML = '';
+            document.getElementById('manager-table-body').innerHTML = '';
+            document.getElementById('user-table-body').innerHTML = '';
+            
+            let filteredUsers = testUsers;
+            
+            if (currentViewMode === 'supervisor') {
+                filteredUsers = filterUsersForSupervisor(testUsers, currentUserId);
+            }
+            
+            // Populate tables
+            filteredUsers.forEach(user => {
+                let tableId;
+                let skipUser = false;
+                
+                if (user.role === 'admin') {
+                    return; // Skip admin for display
+                } else if (user.role === 'supervisor') {
+                    // In supervisor view, only show the current supervisor
+                    if (currentViewMode === 'supervisor' && user.id !== currentUserId) {
+                        console.log('🚫 Skipping supervisor', user.email, 'in supervisor view (not current user)');
+                        return;
+                    }
+                    tableId = 'supervisor-table-body';
+                } else if (user.role === 'manager') {
+                    tableId = 'manager-table-body';
+                } else {
+                    tableId = 'user-table-body';
+                }
+                
+                const tbody = document.getElementById(tableId);
+                if (tbody) {
+                    let rowHtml = '';
+                    
+                    if (user.role === 'supervisor') {
+                        rowHtml = `
+                            <tr>
+                                <td>${user.first_name}</td>
+                                <td>${user.last_name}</td>
+                                <td>${user.email}</td>
+                                <td>${user.role}</td>
+                                <td>${user.id}</td>
+                            </tr>
+                        `;
+                    } else if (user.role === 'manager') {
+                        const supervisorName = user.supervisor_id ? testUsers.find(s => s.id === user.supervisor_id)?.first_name + ' ' + testUsers.find(s => s.id === user.supervisor_id)?.last_name : '';
+                        rowHtml = `
+                            <tr>
+                                <td>${user.first_name}</td>
+                                <td>${user.last_name}</td>
+                                <td>${user.email}</td>
+                                <td>${user.role}</td>
+                                <td>${supervisorName}</td>
+                                <td>${user.id}</td>
+                            </tr>
+                        `;
+                    } else if (user.role === 'user') {
+                        const managerName = user.manager_id ? testUsers.find(m => m.id === user.manager_id)?.first_name + ' ' + testUsers.find(m => m.id === user.manager_id)?.last_name : '';
+                        const supervisorName = user.supervisor_id ? testUsers.find(s => s.id === user.supervisor_id)?.first_name + ' ' + testUsers.find(s => s.id === user.supervisor_id)?.last_name : '';
+                        rowHtml = `
+                            <tr>
+                                <td>${user.first_name}</td>
+                                <td>${user.last_name}</td>
+                                <td>${user.email}</td>
+                                <td>${user.role}</td>
+                                <td>${managerName}</td>
+                                <td>${supervisorName}</td>
+                                <td>${user.id}</td>
+                            </tr>
+                        `;
+                    }
+                    
+                    tbody.innerHTML += rowHtml;
+                }
+            });
+            
+            // Update debug info
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.innerHTML = `
+                <p><strong>Current View Mode:</strong> ${currentViewMode}</p>
+                <p><strong>Current User ID:</strong> ${currentUserId}</p>
+                <p><strong>Total Users:</strong> ${testUsers.length}</p>
+                <p><strong>Filtered Users:</strong> ${filteredUsers.length}</p>
+                <p><strong>Supervisor Rows:</strong> ${document.getElementById('supervisor-table-body').children.length}</p>
+                <p><strong>Manager Rows:</strong> ${document.getElementById('manager-table-body').children.length}</p>
+                <p><strong>User Rows:</strong> ${document.getElementById('user-table-body').children.length}</p>
+            `;
+        }
+        
+        // Initialize
+        updateCurrentSettings();
+    </script>
+</body>
+</html>

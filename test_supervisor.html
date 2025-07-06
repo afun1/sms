@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supervisor View</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Test Supervisor View Logic</h1>
+    
+    <div class="test-section">
+        <h2>Test Current View Mode</h2>
+        <button onclick="testViewMode()">Test View Mode Detection</button>
+        <div id="viewModeResult" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test URL Parameters</h2>
+        <button onclick="testUrlParams()">Test URL Parameters</button>
+        <div id="urlParamsResult" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Supervisor Filtering</h2>
+        <button onclick="testSupervisorFiltering()">Test Supervisor Filtering</button>
+        <div id="filteringResult" class="log"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Links to Test</h2>
+        <a href="admin.html?view=supervisor">Test Supervisor View</a><br>
+        <a href="admin.html?view=admin">Test Admin View</a><br>
+        <a href="admin.html">Test Default View</a>
+    </div>
+
+    <script>
+        function getCurrentViewMode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewMode = urlParams.get('view');
+            const storedView = localStorage.getItem('currentView');
+            
+            // Priority: URL parameter > localStorage > default based on role
+            if (viewMode && ['admin', 'supervisor', 'manager', 'user'].includes(viewMode)) {
+                return viewMode;
+            }
+            
+            if (storedView && ['admin', 'supervisor', 'manager', 'user'].includes(storedView)) {
+                return storedView;
+            }
+            
+            // Default to admin if no view mode is set
+            return 'admin';
+        }
+        
+        function testViewMode() {
+            const result = getCurrentViewMode();
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewParam = urlParams.get('view');
+            const storedView = localStorage.getItem('currentView');
+            
+            document.getElementById('viewModeResult').innerHTML = `
+                <strong>Current View Mode:</strong> ${result}<br>
+                <strong>URL Parameter:</strong> ${viewParam || 'none'}<br>
+                <strong>Stored View:</strong> ${storedView || 'none'}
+            `;
+        }
+        
+        function testUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const allParams = Array.from(urlParams.entries());
+            
+            document.getElementById('urlParamsResult').innerHTML = `
+                <strong>All URL Parameters:</strong><br>
+                ${allParams.length > 0 ? allParams.map(([key, value]) => `${key}: ${value}`).join('<br>') : 'No parameters'}
+            `;
+        }
+        
+        function testSupervisorFiltering() {
+            // Mock data for testing
+            const mockUsers = [
+                { id: 'supervisor1', email: 'supervisor1@test.com', role: 'supervisor', first_name: 'John', last_name: 'Supervisor' },
+                { id: 'supervisor2', email: 'supervisor2@test.com', role: 'supervisor', first_name: 'Jane', last_name: 'Supervisor' },
+                { id: 'manager1', email: 'manager1@test.com', role: 'manager', supervisor_id: 'supervisor1', first_name: 'Bob', last_name: 'Manager' },
+                { id: 'user1', email: 'user1@test.com', role: 'user', supervisor_id: 'supervisor1', first_name: 'Alice', last_name: 'User' },
+                { id: 'admin1', email: 'admin1@test.com', role: 'admin', first_name: 'Admin', last_name: 'User' }
+            ];
+            
+            const currentUserId = 'supervisor1';
+            const currentViewMode = getCurrentViewMode();
+            
+            // Test filtering logic
+            const filteredUsers = mockUsers.filter(user => {
+                if (currentViewMode === 'supervisor') {
+                    // In supervisor view, only show:
+                    // 1. Admins (for escalation)
+                    // 2. Current supervisor only
+                    // 3. Managers assigned to current supervisor
+                    // 4. Users assigned to current supervisor or their managers
+                    
+                    if (user.role === 'admin') return true;
+                    if (user.role === 'supervisor' && user.id === currentUserId) return true;
+                    if (user.role === 'manager' && user.supervisor_id === currentUserId) return true;
+                    if (user.role === 'user' && user.supervisor_id === currentUserId) return true;
+                    
+                    return false;
+                }
+                return true; // Admin view shows all
+            });
+            
+            document.getElementById('filteringResult').innerHTML = `
+                <strong>Current View Mode:</strong> ${currentViewMode}<br>
+                <strong>Current User ID:</strong> ${currentUserId}<br>
+                <strong>Total Users:</strong> ${mockUsers.length}<br>
+                <strong>Filtered Users:</strong> ${filteredUsers.length}<br>
+                <strong>Filtered User Details:</strong><br>
+                ${filteredUsers.map(u => `${u.role}: ${u.first_name} ${u.last_name} (${u.email})`).join('<br>')}
+            `;
+        }
+        
+        // Auto-run tests on page load
+        window.onload = function() {
+            testViewMode();
+            testUrlParams();
+            testSupervisorFiltering();
+        };
+    </script>
+</body>
+</html>
