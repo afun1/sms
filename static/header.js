@@ -76,23 +76,16 @@
                         localStorage: localStorage.getItem('currentView')
                     });
                     
-                    if (currentView === 'admin') {
-                        // Currently in admin view - always offer to switch back to their role
-                        console.log('[HEADER] In admin view, showing switch to role');
+                    // Always show admin button for admin/manager/supervisor users
+                    // Only show role switching if they're currently in admin view
+                    if (currentView === 'admin' && currentPagePath === 'admin.html') {
+                        // Currently in admin view AND on admin page - show option to switch back to their role
+                        console.log('[HEADER] In admin view on admin page, showing switch to role');
                         const roleToShow = profile.role.charAt(0).toUpperCase() + profile.role.slice(1); // Capitalize first letter
-                        const currentPagePath = window.location.pathname.split('/').pop() || 'index.html';
-                        const isOnAdminPage = currentPagePath === 'admin.html';
-                        
-                        if (isOnAdminPage) {
-                            // If on admin page, stay on admin page and just switch view
-                            roleElement.innerHTML = `<span style="color: #d32f2f; font-size: 10px;">Switch to:</span> <a href="#" style="font-size: 12px; color: #1976ff; text-decoration: none; font-weight: 600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" onclick="console.log('Setting currentView to ${userRole}'); localStorage.setItem('currentView', '${userRole}'); window.location.reload(); return false;">${roleToShow}</a>`;
-                        } else {
-                            // If not on admin page, go to index
-                            roleElement.innerHTML = `<span style="color: #d32f2f; font-size: 10px;">Switch to:</span> <a href="index.html" style="font-size: 12px; color: #1976ff; text-decoration: none; font-weight: 600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" onclick="console.log('Setting currentView to ${userRole}'); localStorage.setItem('currentView', '${userRole}'); return true;">${roleToShow}</a>`;
-                        }
+                        roleElement.innerHTML = `<span style="color: #d32f2f; font-size: 10px;">Switch to:</span> <a href="#" style="font-size: 12px; color: #1976ff; text-decoration: none; font-weight: 600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" onclick="console.log('Setting currentView to ${userRole}'); localStorage.setItem('currentView', '${userRole}'); window.location.reload(); return false;">${roleToShow}</a>`;
                     } else {
-                        // Currently in role view - show "Switch to: Admin"
-                        console.log('[HEADER] In role view, showing switch to admin');
+                        // Show admin button to go to admin.html
+                        console.log('[HEADER] Showing admin button');
                         roleElement.innerHTML = `<span style="color: #d32f2f; font-size: 10px;">Switch to:</span> <a href="admin.html" style="font-size: 12px; color: #1976ff; text-decoration: none; font-weight: 600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" onclick="console.log('Setting currentView to admin'); localStorage.setItem('currentView', 'admin'); return true;">Admin</a>`;
                     }
                 }
