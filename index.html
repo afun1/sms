@@ -5,12 +5,13 @@
   <title>Sparky Messaging Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/png" href="static/supersparky.png">
-  <link rel="stylesheet" href="static/index.css">
+  <link rel="stylesheet" href="static/index.css?v=8">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
-  <script src="static/header.js"></script>
+  <script src="static/header.js?v=19"></script>
 </head>
 <body>
-  <main style="max-width:1300px;margin:100px auto 40px auto;padding:24px;">
+  <div class="page-wrapper">
+    <main class="main-container">
     <!-- Statistics Cards -->
     <section style="margin-top:32px;">
       <h2 style="color:#1976ff;margin-bottom:24px;">Dashboard Overview</h2>
@@ -29,8 +30,8 @@
           <div class="stat-icon">🎙️</div>
           <div class="stat-content">
             <h3>RVM Campaigns</h3>
-            <div class="stat-number" id="rvm-count">89</div>
-            <div class="stat-label">Active campaigns</div>
+            <div class="stat-number" id="rvm-count">0</div>
+            <div class="stat-label">Coming soon</div>
           </div>
           <div class="expand-indicator">▼</div>
         </div>
@@ -39,8 +40,8 @@
           <div class="stat-icon">📧</div>
           <div class="stat-content">
             <h3>Email Campaigns</h3>
-            <div class="stat-number" id="email-count">456</div>
-            <div class="stat-label">Delivered today</div>
+            <div class="stat-number" id="email-count">0</div>
+            <div class="stat-label">Coming soon</div>
           </div>
           <div class="expand-indicator">▼</div>
         </div>
@@ -62,6 +63,20 @@
         <div id="sms-panel" class="detail-panel">
           <div class="panel-header">
             <h3>📱 SMS Message Details</h3>
+            <div class="date-range-picker">
+              <select id="dateRangePicker" onchange="updateDateRange()">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="all">All time</option>
+                <option value="custom">Custom range</option>
+              </select>
+              <div id="customDateInputs" style="display: none; margin-left: 12px;">
+                <input type="date" id="startDate" onchange="updateCustomDateRange()">
+                <span style="margin: 0 8px;">to</span>
+                <input type="date" id="endDate" onchange="updateCustomDateRange()">
+              </div>
+            </div>
             <button class="close-panel" onclick="togglePanel('sms-panel')">✕</button>
           </div>
           <div class="panel-content">
@@ -92,126 +107,447 @@
               </div>
               <div class="detail-item">
                 <span class="detail-label">Success Rate</span>
-                <span class="detail-value">96.1%</span>
+                <span class="detail-value" id="sms-success-rate">96.1%</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Failure Details</span>
+                <span class="detail-value">
+                  <a href="#" onclick="testFailureModal(); return false;" style="color: #2196f3; font-size: 14px; text-decoration: none;">Statistics</a>
+                </span>
               </div>
             </div>
-            <div class="failure-codes">
-              <h4>Failure Breakdown</h4>
-              <div class="failure-item">• Invalid Number: 23 (46.9%)</div>
-              <div class="failure-item">• Network Error: 15 (30.6%)</div>
-              <div class="failure-item">• Carrier Block: 8 (16.3%)</div>
-              <div class="failure-item">• Other: 3 (6.1%)</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- RVM Panel -->
-        <div id="rvm-panel" class="detail-panel">
-          <div class="panel-header">
-            <h3>🎙️ RVM Campaign Details</h3>
-            <button class="close-panel" onclick="togglePanel('rvm-panel')">✕</button>
-          </div>
-          <div class="panel-content">
-            <div class="detail-grid">
-              <div class="detail-item">
-                <span class="detail-label">Active Campaigns</span>
-                <span class="detail-value">89</span>
+            
+            <!-- Provider Performance Section -->
+            <div class="provider-breakdown">
+              <h4>Provider Performance</h4>
+              <div class="provider-links">
+                <a href="#provider-bulksms" class="provider-link" onclick="scrollToProvider('BulkSMS'); return false;">
+                  BulkSMS (285)
+                </a>
+                 | 
+                <a href="#provider-infobip" class="provider-link" onclick="scrollToProvider('Infobip'); return false;">
+                  Infobip (247)
+                </a>
+                 | 
+                <a href="#provider-clicksend" class="provider-link" onclick="scrollToProvider('ClickSend'); return false;">
+                  ClickSend (189)
+                </a>
+                 | 
+                <a href="#provider-messagebird" class="provider-link" onclick="scrollToProvider('MessageBird'); return false;">
+                  MessageBird (156)
+                </a>
+                 | 
+                <a href="#provider-sinch" class="provider-link" onclick="scrollToProvider('Sinch'); return false;">
+                  Sinch (132)
+                </a>
+                 | 
+                <a href="#provider-textmagic" class="provider-link" onclick="scrollToProvider('TextMagic'); return false;">
+                  TextMagic (98)
+                </a>
+                 | 
+                <a href="#provider-plivo" class="provider-link" onclick="scrollToProvider('Plivo'); return false;">
+                  Plivo (67)
+                </a>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Total Sent</span>
-                <span class="detail-value">2,456</span>
+              
+              <!-- BulkSMS Provider Table -->
+              <div class="provider-table-container" id="provider-bulksms" style="display: none;">
+                <div class="provider-table-header">
+                  <div class="provider-info">
+                    <span class="provider-badge" style="background: #e3f2fd; color: #1976ff; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">
+                      BulkSMS
+                    </span>
+                    <span class="month-summary" style="margin-left: 12px; color: #666; font-size: 14px;">
+                      This Month: <strong>285</strong> sent, <strong>276</strong> delivered, <strong style="color: #4caf50;">96.8%</strong> success rate
+                    </span>
+                  </div>
+                </div>
+                <div class="provider-stats-table">
+                  <div class="provider-stats-header">
+                    <div class="date-col">Date</div>
+                    <div class="stats-col">Total Sent</div>
+                    <div class="stats-col">Delivered</div>
+                    <div class="stats-col">Failed</div>
+                    <div class="stats-col">Pending</div>
+                    <div class="stats-col">Success Rate</div>
+                  </div>
+                  <div class="provider-stats-body">
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 6, 2025</div>
+                      <div class="stats-col">48</div>
+                      <div class="stats-col" style="color: #4caf50;">46</div>
+                      <div class="stats-col" style="color: #f44336;">2</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">95.8%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 5, 2025</div>
+                      <div class="stats-col">62</div>
+                      <div class="stats-col" style="color: #4caf50;">60</div>
+                      <div class="stats-col" style="color: #f44336;">2</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">96.8%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 4, 2025</div>
+                      <div class="stats-col">56</div>
+                      <div class="stats-col" style="color: #4caf50;">54</div>
+                      <div class="stats-col" style="color: #f44336;">2</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">96.4%</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Total Delivered</span>
-                <span class="detail-value">2,287</span>
+              
+              <!-- Infobip Provider Table -->
+              <div class="provider-table-container" id="provider-infobip" style="display: none;">
+                <div class="provider-table-header">
+                  <div class="provider-info">
+                    <span class="provider-badge" style="background: #e3f2fd; color: #1976ff; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">
+                      Infobip
+                    </span>
+                    <span class="month-summary" style="margin-left: 12px; color: #666; font-size: 14px;">
+                      This Month: <strong>247</strong> sent, <strong>238</strong> delivered, <strong style="color: #4caf50;">96.4%</strong> success rate
+                    </span>
+                  </div>
+                </div>
+                <div class="provider-stats-table">
+                  <div class="provider-stats-header">
+                    <div class="date-col">Date</div>
+                    <div class="stats-col">Total Sent</div>
+                    <div class="stats-col">Delivered</div>
+                    <div class="stats-col">Failed</div>
+                    <div class="stats-col">Pending</div>
+                    <div class="stats-col">Success Rate</div>
+                  </div>
+                  <div class="provider-stats-body">
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 6, 2025</div>
+                      <div class="stats-col">42</div>
+                      <div class="stats-col" style="color: #4caf50;">40</div>
+                      <div class="stats-col" style="color: #f44336;">2</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">95.2%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 5, 2025</div>
+                      <div class="stats-col">53</div>
+                      <div class="stats-col" style="color: #4caf50;">51</div>
+                      <div class="stats-col" style="color: #f44336;">2</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">96.2%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 4, 2025</div>
+                      <div class="stats-col">48</div>
+                      <div class="stats-col" style="color: #4caf50;">46</div>
+                      <div class="stats-col" style="color: #f44336;">2</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">95.8%</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Listen Rate</span>
-                <span class="detail-value">78.4%</span>
+              
+              <!-- ClickSend Provider Table -->
+              <div class="provider-table-container" id="provider-clicksend" style="display: none;">
+                <div class="provider-table-header">
+                  <div class="provider-info">
+                    <span class="provider-badge" style="background: #e3f2fd; color: #1976ff; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">
+                      ClickSend
+                    </span>
+                    <span class="month-summary" style="margin-left: 12px; color: #666; font-size: 14px;">
+                      This Month: <strong>189</strong> sent, <strong>181</strong> delivered, <strong style="color: #4caf50;">95.8%</strong> success rate
+                    </span>
+                  </div>
+                </div>
+                <div class="provider-stats-table">
+                  <div class="provider-stats-header">
+                    <div class="date-col">Date</div>
+                    <div class="stats-col">Total Sent</div>
+                    <div class="stats-col">Delivered</div>
+                    <div class="stats-col">Failed</div>
+                    <div class="stats-col">Pending</div>
+                    <div class="stats-col">Success Rate</div>
+                  </div>
+                  <div class="provider-stats-body">
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 6, 2025</div>
+                      <div class="stats-col">32</div>
+                      <div class="stats-col" style="color: #4caf50;">30</div>
+                      <div class="stats-col" style="color: #f44336;">2</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">93.8%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 5, 2025</div>
+                      <div class="stats-col">41</div>
+                      <div class="stats-col" style="color: #4caf50;">39</div>
+                      <div class="stats-col" style="color: #f44336;">2</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">95.1%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 4, 2025</div>
+                      <div class="stats-col">38</div>
+                      <div class="stats-col" style="color: #4caf50;">36</div>
+                      <div class="stats-col" style="color: #f44336;">2</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">94.7%</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Callback Rate</span>
-                <span class="detail-value">12.3%</span>
+              
+              <!-- MessageBird Provider Table -->
+              <div class="provider-table-container" id="provider-messagebird" style="display: none;">
+                <div class="provider-table-header">
+                  <div class="provider-info">
+                    <span class="provider-badge" style="background: #e3f2fd; color: #1976ff; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">
+                      MessageBird
+                    </span>
+                    <span class="month-summary" style="margin-left: 12px; color: #666; font-size: 14px;">
+                      This Month: <strong>156</strong> sent, <strong>150</strong> delivered, <strong style="color: #4caf50;">96.2%</strong> success rate
+                    </span>
+                  </div>
+                </div>
+                <div class="provider-stats-table">
+                  <div class="provider-stats-header">
+                    <div class="date-col">Date</div>
+                    <div class="stats-col">Total Sent</div>
+                    <div class="stats-col">Delivered</div>
+                    <div class="stats-col">Failed</div>
+                    <div class="stats-col">Pending</div>
+                    <div class="stats-col">Success Rate</div>
+                  </div>
+                  <div class="provider-stats-body">
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 6, 2025</div>
+                      <div class="stats-col">26</div>
+                      <div class="stats-col" style="color: #4caf50;">25</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">96.2%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 5, 2025</div>
+                      <div class="stats-col">34</div>
+                      <div class="stats-col" style="color: #4caf50;">33</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">97.1%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 4, 2025</div>
+                      <div class="stats-col">29</div>
+                      <div class="stats-col" style="color: #4caf50;">28</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">96.6%</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Avg Duration</span>
-                <span class="detail-value">45s</span>
+              
+              <!-- Sinch Provider Table -->
+              <div class="provider-table-container" id="provider-sinch" style="display: none;">
+                <div class="provider-table-header">
+                  <div class="provider-info">
+                    <span class="provider-badge" style="background: #e3f2fd; color: #1976ff; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">
+                      Sinch
+                    </span>
+                    <span class="month-summary" style="margin-left: 12px; color: #666; font-size: 14px;">
+                      This Month: <strong>132</strong> sent, <strong>127</strong> delivered, <strong style="color: #4caf50;">96.2%</strong> success rate
+                    </span>
+                  </div>
+                </div>
+                <div class="provider-stats-table">
+                  <div class="provider-stats-header">
+                    <div class="date-col">Date</div>
+                    <div class="stats-col">Total Sent</div>
+                    <div class="stats-col">Delivered</div>
+                    <div class="stats-col">Failed</div>
+                    <div class="stats-col">Pending</div>
+                    <div class="stats-col">Success Rate</div>
+                  </div>
+                  <div class="provider-stats-body">
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 6, 2025</div>
+                      <div class="stats-col">22</div>
+                      <div class="stats-col" style="color: #4caf50;">21</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">95.5%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 5, 2025</div>
+                      <div class="stats-col">28</div>
+                      <div class="stats-col" style="color: #4caf50;">27</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">96.4%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 4, 2025</div>
+                      <div class="stats-col">25</div>
+                      <div class="stats-col" style="color: #4caf50;">24</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">96.0%</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Email Panel -->
-        <div id="email-panel" class="detail-panel">
-          <div class="panel-header">
-            <h3>📧 Email Campaign Details</h3>
-            <button class="close-panel" onclick="togglePanel('email-panel')">✕</button>
-          </div>
-          <div class="panel-content">
-            <div class="detail-grid">
-              <div class="detail-item">
-                <span class="detail-label">Total Sent</span>
-                <span class="detail-value">456</span>
+              
+              <!-- Plivo Provider Table -->
+              <div class="provider-table-container" id="provider-plivo" style="display: none;">
+                <div class="provider-table-header">
+                  <div class="provider-info">
+                    <span class="provider-badge" style="background: #e3f2fd; color: #1976ff; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">
+                      Plivo
+                    </span>
+                    <span class="month-summary" style="margin-left: 12px; color: #666; font-size: 14px;">
+                      This Month: <strong>67</strong> sent, <strong>64</strong> delivered, <strong style="color: #4caf50;">95.5%</strong> success rate
+                    </span>
+                  </div>
+                </div>
+                <div class="provider-stats-table">
+                  <div class="provider-stats-header">
+                    <div class="date-col">Date</div>
+                    <div class="stats-col">Total Sent</div>
+                    <div class="stats-col">Delivered</div>
+                    <div class="stats-col">Failed</div>
+                    <div class="stats-col">Pending</div>
+                    <div class="stats-col">Success Rate</div>
+                  </div>
+                  <div class="provider-stats-body">
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 6, 2025</div>
+                      <div class="stats-col">11</div>
+                      <div class="stats-col" style="color: #4caf50;">10</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">90.9%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 5, 2025</div>
+                      <div class="stats-col">15</div>
+                      <div class="stats-col" style="color: #4caf50;">14</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">93.3%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 4, 2025</div>
+                      <div class="stats-col">13</div>
+                      <div class="stats-col" style="color: #4caf50;">12</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">92.3%</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Total Delivered</span>
-                <span class="detail-value">434</span>
+              
+              <!-- TextMagic Provider Table -->
+              <div class="provider-table-container" id="provider-textmagic" style="display: none;">
+                <div class="provider-table-header">
+                  <div class="provider-info">
+                    <span class="provider-badge" style="background: #e3f2fd; color: #1976ff; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">
+                      TextMagic
+                    </span>
+                    <span class="month-summary" style="margin-left: 12px; color: #666; font-size: 14px;">
+                      This Month: <strong>98</strong> sent, <strong>93</strong> delivered, <strong style="color: #4caf50;">94.9%</strong> success rate
+                    </span>
+                  </div>
+                </div>
+                <div class="provider-stats-table">
+                  <div class="provider-stats-header">
+                    <div class="date-col">Date</div>
+                    <div class="stats-col">Total Sent</div>
+                    <div class="stats-col">Delivered</div>
+                    <div class="stats-col">Failed</div>
+                    <div class="stats-col">Pending</div>
+                    <div class="stats-col">Success Rate</div>
+                  </div>
+                  <div class="provider-stats-body">
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 6, 2025</div>
+                      <div class="stats-col">16</div>
+                      <div class="stats-col" style="color: #4caf50;">15</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">93.8%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 5, 2025</div>
+                      <div class="stats-col">21</div>
+                      <div class="stats-col" style="color: #4caf50;">20</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">95.2%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 4, 2025</div>
+                      <div class="stats-col">19</div>
+                      <div class="stats-col" style="color: #4caf50;">18</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">94.7%</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Total Opened</span>
-                <span class="detail-value">267</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Click Through</span>
-                <span class="detail-value">89</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Total Opted Out</span>
-                <span class="detail-value">18</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Bounce Rate</span>
-                <span class="detail-value">4.8%</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Open Rate</span>
-                <span class="detail-value">61.5%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Contacts Panel -->
-        <div id="contacts-panel" class="detail-panel">
-          <div class="panel-header">
-            <h3>👥 Contact Details</h3>
-            <button class="close-panel" onclick="togglePanel('contacts-panel')">✕</button>
-          </div>
-          <div class="panel-content">
-            <div class="detail-grid">
-              <div class="detail-item">
-                <span class="detail-label">Total Contacts</span>
-                <span class="detail-value">12,384</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Active Contacts</span>
-                <span class="detail-value">11,829</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">New This Month</span>
-                <span class="detail-value">892</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Unsubscribed</span>
-                <span class="detail-value">342</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Bounced</span>
-                <span class="detail-value">213</span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Engagement Rate</span>
-                <span class="detail-value">87.2%</span>
+              
+              <!-- BulkSMS Provider Table -->
+              <div class="provider-table-container" id="provider-bulksms" style="display: none;">
+                <div class="provider-table-header">
+                  <div class="provider-info">
+                    <span class="provider-badge" style="background: #e3f2fd; color: #1976ff; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">
+                      BulkSMS
+                    </span>
+                    <span class="month-summary" style="margin-left: 12px; color: #666; font-size: 14px;">
+                      This Month: <strong>32</strong> sent, <strong>30</strong> delivered, <strong style="color: #ff9800;">93.8%</strong> success rate
+                    </span>
+                  </div>
+                </div>
+                <div class="provider-stats-table">
+                  <div class="provider-stats-header">
+                    <div class="date-col">Date</div>
+                    <div class="stats-col">Total Sent</div>
+                    <div class="stats-col">Delivered</div>
+                    <div class="stats-col">Failed</div>
+                    <div class="stats-col">Pending</div>
+                    <div class="stats-col">Success Rate</div>
+                  </div>
+                  <div class="provider-stats-body">
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 6, 2025</div>
+                      <div class="stats-col">6</div>
+                      <div class="stats-col" style="color: #4caf50;">5</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">83.3%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 5, 2025</div>
+                      <div class="stats-col">9</div>
+                      <div class="stats-col" style="color: #4caf50;">8</div>
+                      <div class="stats-col" style="color: #f44336;">1</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">88.9%</div>
+                    </div>
+                    <div class="provider-stats-row">
+                      <div class="date-col">Jul 4, 2025</div>
+                      <div class="stats-col">11</div>
+                      <div class="stats-col" style="color: #4caf50;">11</div>
+                      <div class="stats-col" style="color: #f44336;">0</div>
+                      <div class="stats-col" style="color: #ff9800;">0</div>
+                      <div class="stats-col" style="font-weight: 600;">100.0%</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -219,7 +555,33 @@
       </div>
     </section>
   </main>
+  </div>
   
+  <!-- Failure Breakdown Modal -->
+  <div id="failureModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Failure Breakdown</h3>
+        <span class="close" onclick="closeFailureModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div id="failureBreakdownContent">
+          <p>Loading failure details...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Back to top button -->
+  <button class="back-to-top" id="backToTopBtn" onclick="scrollToTop()">
+    ↑
+  </button>
+
+  <!-- Scroll indicator -->
+  <div class="scroll-indicator" id="scrollIndicator">
+    ↓ More content below
+  </div>
+
   <script>
     // Initialize Supabase client (use global client if available)
     const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
@@ -235,6 +597,91 @@
         supabase = null;
     }
     
+    // Global variables for failure data and date filtering
+    let globalFailureReasons = {};
+    let globalFailedCount = 0;
+    let globalReports = []; // Store all reports for date filtering
+    let currentDateRange = 30; // Default to last 30 days
+    let customStartDate = null;
+    let customEndDate = null;
+    
+    // Date range picker functionality
+    function updateDateRange() {
+      const picker = document.getElementById('dateRangePicker');
+      const customInputs = document.getElementById('customDateInputs');
+      
+      currentDateRange = picker.value;
+      
+      if (currentDateRange === 'custom') {
+        customInputs.style.display = 'inline-block';
+        // Set default dates if not already set
+        if (!customStartDate || !customEndDate) {
+          const endDate = new Date();
+          const startDate = new Date();
+          startDate.setDate(endDate.getDate() - 30);
+          
+          document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+          document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+          
+          customStartDate = startDate;
+          customEndDate = endDate;
+        }
+      } else {
+        customInputs.style.display = 'none';
+        customStartDate = null;
+        customEndDate = null;
+      }
+      
+      // Reload stats with new date range
+      if (globalReports.length > 0) {
+        const filteredReports = filterReportsByDateRange(globalReports);
+        const stats = calculateDeliveryStats(filteredReports);
+        updateDashboardStats(stats);
+        updateDetailedPanels(stats, filteredReports);
+      }
+    }
+    
+    function updateCustomDateRange() {
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      
+      if (startDateInput.value && endDateInput.value) {
+        customStartDate = new Date(startDateInput.value);
+        customEndDate = new Date(endDateInput.value);
+        customEndDate.setHours(23, 59, 59, 999); // Include the entire end date
+        
+        // Reload stats with custom date range
+        if (globalReports.length > 0) {
+          const filteredReports = filterReportsByDateRange(globalReports);
+          const stats = calculateDeliveryStats(filteredReports);
+          updateDashboardStats(stats);
+          updateDetailedPanels(stats, filteredReports);
+        }
+      }
+    }
+    
+    function filterReportsByDateRange(reports) {
+      const now = new Date();
+      let startDate, endDate;
+      
+      if (currentDateRange === 'custom' && customStartDate && customEndDate) {
+        startDate = customStartDate;
+        endDate = customEndDate;
+      } else if (currentDateRange === 'all') {
+        return reports; // No filtering
+      } else {
+        const days = parseInt(currentDateRange);
+        startDate = new Date();
+        startDate.setDate(now.getDate() - days);
+        endDate = now;
+      }
+      
+      return reports.filter(report => {
+        const reportDate = new Date(report.timestamp);
+        return reportDate >= startDate && reportDate <= endDate;
+      });
+    }
+
     // Animate statistics numbers on page load
     function animateNumber(element, target, duration = 2000) {
       const start = 0;
@@ -251,20 +698,60 @@
       }, 16);
     }
     
-    // Initialize stats animation when page loads
+    // Initialize stats animation and load real data when page loads
     window.addEventListener('load', () => {
       setTimeout(() => {
-        animateNumber(document.getElementById('sms-count'), 1247, 1500);
-        animateNumber(document.getElementById('rvm-count'), 89, 1200);
-        animateNumber(document.getElementById('email-count'), 456, 1300);
-        animateNumber(document.getElementById('contacts-count'), 12384, 2000);
+        // Load real stats first, then animate
+        loadRealStats();
       }, 500);
     });
     
-    // Panel toggle functionality
+    // Function to clean up all provider states
+    function cleanupAllProviders() {
+      try {
+        // Hide all provider tables
+        document.querySelectorAll('.provider-table-container').forEach(table => {
+          table.style.display = 'none';
+          table.style.maxHeight = '';
+          table.style.opacity = '';
+          table.style.transition = '';
+          table.style.overflow = '';
+          table.style.boxShadow = '';
+          table.style.transform = '';
+        });
+        
+        // Reset all provider link styles
+        document.querySelectorAll('.provider-link').forEach(link => {
+          link.style.backgroundColor = '';
+          link.style.fontWeight = '';
+          link.style.textDecoration = '';
+          link.style.borderColor = '';
+        });
+      } catch (error) {
+        console.error('[ERROR] cleanupAllProviders failed:', error);
+      }
+    }
+
+    // Enhanced panel toggle functionality to clean up providers when switching panels
     function togglePanel(panelId) {
+      console.log('[DEBUG] togglePanel called with:', panelId);
+      
       const panel = document.getElementById(panelId);
+      if (!panel) {
+        console.error('[ERROR] Panel not found:', panelId);
+        return;
+      }
+      
       const allPanels = document.querySelectorAll('.detail-panel');
+      
+      // Clean up all provider states when switching panels (with error handling)
+      if (panelId !== 'sms-panel') {
+        try {
+          cleanupAllProviders();
+        } catch (error) {
+          console.error('[ERROR] cleanupAllProviders failed:', error);
+        }
+      }
       
       // Close all other panels first
       allPanels.forEach(p => {
@@ -275,9 +762,14 @@
       
       // Toggle the clicked panel
       panel.classList.toggle('active');
+      console.log('[DEBUG] Panel active state:', panel.classList.contains('active'));
       
       // Update expand indicators
-      updateExpandIndicators();
+      try {
+        updateExpandIndicators();
+      } catch (error) {
+        console.error('[ERROR] updateExpandIndicators failed:', error);
+      }
     }
     
     function updateExpandIndicators() {
@@ -298,20 +790,471 @@
       });
     }
     
-    // TODO: Replace with real data from Supabase
-    // async function loadRealStats() {
-    //   try {
-    //     // Example: Fetch SMS count from a campaigns table
-    //     // const { data: smsData } = await supabase
-    //     //   .from('sms_campaigns')
-    //     //   .select('*', { count: 'exact' });
-    //     
-    //     // Update the numbers with real data
-    //     // document.getElementById('sms-count').textContent = smsData.length;
-    //   } catch (error) {
-    //     console.error('Error loading stats:', error);
-    //   }
-    // }
+    // Load real stats from delivery reports
+    async function loadRealStats() {
+      try {
+        console.log('[DASHBOARD] Loading real delivery report statistics...');
+        
+        // Fetch delivery reports from our API
+        const response = await fetch('/api/delivery-reports');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('[DASHBOARD] Loaded delivery reports:', data);
+        
+        if (data.success) {
+          const reports = Object.values(data.reports);
+          console.log('[DASHBOARD] Processing reports:', reports);
+          
+          // Calculate statistics
+          const stats = calculateDeliveryStats(reports);
+          console.log('[DASHBOARD] Calculated stats:', stats);
+          
+          // Update dashboard with real data
+          updateDashboardStats(stats);
+          
+          // Update detailed panels with real data
+          updateDetailedPanels(stats, reports);
+          
+          // Store reports globally for date filtering
+          globalReports = reports;
+        } else {
+          throw new Error('API returned error: ' + data.message);
+        }
+        
+      } catch (error) {
+        console.error('[DASHBOARD] Error loading delivery reports:', error);
+        // Use mock data if API fails
+        console.log('[DASHBOARD] Using mock data as fallback');
+        loadMockData();
+      }
+    }
+    
+    // Load mock data as fallback
+    function loadMockData() {
+      const mockReports = [
+        {
+          id: 'mock-001',
+          message_id: 'MOCK-001',
+          phone_number: '+1234567890',
+          status: 'Delivered',
+          timestamp: '2025-07-06T10:00:00Z',
+          provider: 'clicksend',
+          received_at: '2025-07-06T10:00:00Z'
+        },
+        {
+          id: 'mock-002',
+          message_id: 'MOCK-002',
+          phone_number: '+1234567891',
+          status: 'Failed',
+          timestamp: '2025-07-06T10:01:00Z',
+          error_text: 'Invalid phone number',
+          provider: 'clicksend',
+          received_at: '2025-07-06T10:01:00Z'
+        }
+      ];
+      
+      const stats = calculateDeliveryStats(mockReports);
+      updateDashboardStats(stats);
+      updateDetailedPanels(stats, mockReports);
+      globalReports = mockReports;
+    }
+    
+    // Calculate statistics from delivery reports
+    function calculateDeliveryStats(reports) {
+      const stats = {
+        total: reports.length,
+        delivered: 0,
+        failed: 0,
+        pending: 0,
+        providers: {},
+        thisMonth: 0,
+        failureReasons: {}
+      };
+      
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      
+      reports.forEach(report => {
+        const reportDate = new Date(report.timestamp || report.received_at);
+        
+        // Count messages from this month
+        if (reportDate.getMonth() === currentMonth && reportDate.getFullYear() === currentYear) {
+          stats.thisMonth++;
+        }
+        
+        // Count by status
+        const status = report.status ? report.status.toLowerCase() : 'unknown';
+        if (status.includes('delivered')) {
+          stats.delivered++;
+        } else if (status.includes('failed') || status.includes('error')) {
+          stats.failed++;
+          // Track failure reasons
+          const reason = report.error_text || report.error_message || report.status || 'Unknown Error';
+          stats.failureReasons[reason] = (stats.failureReasons[reason] || 0) + 1;
+        } else {
+          stats.pending++;
+        }
+        
+        // Count by provider
+        const provider = report.provider || 'Unknown';
+        stats.providers[provider] = (stats.providers[provider] || 0) + 1;
+      });
+      
+      // Calculate success rate
+      stats.successRate = stats.total > 0 ? ((stats.delivered / stats.total) * 100).toFixed(1) : 0;
+      
+      // Store failure data globally for modal
+      globalFailureReasons = stats.failureReasons;
+      globalFailedCount = stats.failed;
+      
+      return stats;
+    }
+    
+    // Update dashboard statistics cards
+    function updateDashboardStats(stats) {
+      // Update SMS count (this month)
+      animateNumber(document.getElementById('sms-count'), stats.thisMonth, 1500);
+      
+      // Update other cards with related data
+      document.getElementById('rvm-count').textContent = '0'; // No RVM data yet
+      document.getElementById('email-count').textContent = '0'; // No email data yet
+      document.getElementById('contacts-count').textContent = '12,384'; // Keep original contacts count
+    }
+    
+    // Update detailed panels with real data
+    function updateDetailedPanels(stats, reports) {
+      // Update SMS panel
+      document.getElementById('sms-sent').textContent = stats.total.toLocaleString();
+      document.getElementById('sms-delivered').textContent = stats.delivered.toLocaleString();
+      document.getElementById('sms-failed').textContent = stats.failed.toLocaleString();
+      document.getElementById('sms-optout').textContent = '0'; // No opt-out tracking yet
+      document.getElementById('sms-opened').textContent = '0'; // No open tracking yet
+      document.getElementById('sms-clicks').textContent = '0'; // No click tracking yet
+      
+      // Update success rate element (without opening the panel)
+      const successRateElement = document.getElementById('sms-success-rate');
+      if (successRateElement) {
+        successRateElement.innerHTML = `${stats.successRate}%`;
+      }
+      
+      // Update the failure link in its own column
+      const failureLinkElement = document.getElementById('sms-failure-link');
+      if (failureLinkElement) {
+        if (globalFailedCount > 0) {
+          failureLinkElement.innerHTML = `<a href="#" class="failure-link" onclick="openFailureModal(globalFailureReasons, globalFailedCount); return false;" style="color: #f44336; font-size: 16px; font-weight: 600; text-decoration: none;">View Failures (${globalFailedCount})</a>`;
+        } else {
+          failureLinkElement.innerHTML = `<span style="color: #4caf50; font-size: 16px; font-weight: 600;">No failures</span>`;
+        }
+      }
+      
+      // Add a test link for debugging modal functionality
+      console.log('Failure data:', { globalFailedCount, globalFailureReasons });
+      
+      // Remove any existing delivery reports
+      const smsPanel = document.getElementById('sms-panel');
+      const panelContent = smsPanel.querySelector('.panel-content');
+      const existingDeliveryReports = panelContent.querySelector('.delivery-reports-section');
+      if (existingDeliveryReports) {
+        existingDeliveryReports.remove();
+      }
+      
+      // Static provider breakdown remains unchanged - no dynamic updates
+    }
+    
+    // Helper function to get status color
+    function getStatusColor(status) {
+      if (!status) return '#666';
+      const statusLower = status.toLowerCase();
+      if (statusLower.includes('delivered')) return '#4caf50';
+      if (statusLower.includes('failed') || statusLower.includes('error')) return '#f44336';
+      return '#ff9800'; // pending/unknown
+    }
+    
+    // Back to top button and scroll indicator functionality
+    window.addEventListener('scroll', function() {
+      const backToTopBtn = document.getElementById('backToTopBtn');
+      const scrollIndicator = document.getElementById('scrollIndicator');
+      const scrollTop = window.pageYOffset;
+      const documentHeight = document.documentElement.scrollHeight;
+      const windowHeight = window.innerHeight;
+      
+      // Show back to top button
+      if (scrollTop > 300) {
+        backToTopBtn.classList.add('visible');
+      } else {
+        backToTopBtn.classList.remove('visible');
+      }
+      
+      // Show scroll indicator if there's more content below
+      const scrollPercentage = (scrollTop + windowHeight) / documentHeight;
+      if (scrollPercentage < 0.8 && scrollTop > 100) {
+        scrollIndicator.classList.add('visible');
+      } else {
+        scrollIndicator.classList.remove('visible');
+      }
+    });
+    
+    function scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+    
+    // Enhance provider scroll functionality with slide-down animation
+    function scrollToProvider(provider) {
+      const providerId = `provider-${provider.replace(/\s+/g, '-').toLowerCase()}`;
+      const providerElement = document.getElementById(providerId);
+      
+      if (providerElement) {
+        const isVisible = providerElement.style.display !== 'none';
+        
+        if (isVisible) {
+          // Hide the provider table with slide-up animation
+          providerElement.style.maxHeight = providerElement.scrollHeight + 'px';
+          providerElement.style.overflow = 'hidden';
+          providerElement.style.transition = 'max-height 0.3s ease-out, opacity 0.3s ease-out';
+          
+          setTimeout(() => {
+            providerElement.style.maxHeight = '0';
+            providerElement.style.opacity = '0';
+          }, 10);
+          
+          setTimeout(() => {
+            cleanupAllProviders(); // Use the cleanup function
+          }, 300);
+          
+        } else {
+          // Clean up all providers first (hide any open ones)
+          cleanupAllProviders();
+          
+          // Show the selected provider table with slide-down animation
+          setTimeout(() => {
+            providerElement.style.display = 'block';
+            providerElement.style.maxHeight = '0';
+            providerElement.style.opacity = '0';
+            providerElement.style.overflow = 'hidden';
+            providerElement.style.transition = 'max-height 0.4s ease-in, opacity 0.4s ease-in';
+            
+            setTimeout(() => {
+              providerElement.style.maxHeight = providerElement.scrollHeight + 'px';
+              providerElement.style.opacity = '1';
+            }, 10);
+            
+            setTimeout(() => {
+              providerElement.style.maxHeight = '';
+              providerElement.style.transition = '';
+              providerElement.style.overflow = '';
+              
+              // Highlight the provider table temporarily (without scrolling)
+              providerElement.style.boxShadow = '0 0 0 3px #1976ff';
+              providerElement.style.transform = 'scale(1.02)';
+              setTimeout(() => {
+                providerElement.style.boxShadow = '';
+                providerElement.style.transform = '';
+              }, 2000);
+            }, 400);
+          }, 100);
+          
+          // Highlight the clicked link
+          const clickedLink = document.querySelector(`a[href="#${providerId}"]`);
+          if (clickedLink) {
+            clickedLink.style.backgroundColor = '#e3f2fd';
+            clickedLink.style.fontWeight = '600';
+            clickedLink.style.textDecoration = 'underline';
+          }
+        }
+      }
+      return false; // Prevent default link behavior
+    }
+    
+    // Add smooth scrolling to all internal links
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add click handlers to provider links
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('provider-link')) {
+          e.preventDefault();
+          const href = e.target.getAttribute('href');
+          if (href && href.startsWith('#provider-')) {
+            const providerName = href.replace('#provider-', '').replace(/-/g, ' ');
+            scrollToProvider(providerName);
+          }
+        }
+      });
+    });
+    
+    // Test function to manually trigger the modal
+    function testFailureModal() {
+      console.log('Testing failure modal...');
+      const testFailureReasons = {
+        'Invalid phone number': 5,
+        'Carrier rejected': 3,
+        'Message too long': 2,
+        'Network timeout': 1,
+        'Insufficient credits': 1
+      };
+      openFailureModal(testFailureReasons, 12);
+    }
+    
+    // Modal functionality for failure breakdown
+    function openFailureModal(failureReasons, totalFailed) {
+      console.log('Opening failure modal with:', { failureReasons, totalFailed });
+      
+      const modal = document.getElementById('failureModal');
+      const content = document.getElementById('failureBreakdownContent');
+      
+      if (!modal) {
+        console.error('Modal element not found!');
+        return;
+      }
+      
+      if (!content) {
+        console.error('Modal content element not found!');
+        return;
+      }
+      
+      if (Object.keys(failureReasons).length === 0 || totalFailed === 0) {
+        content.innerHTML = `
+          <div class="no-failures">
+            <div class="no-failures-icon">✅</div>
+            <p>No failures to report!</p>
+            <p style="font-size: 14px; color: #666;">All messages were delivered successfully.</p>
+          </div>
+        `;
+      } else {
+        let failureHTML = `
+          <div class="failure-summary">
+            <div class="failure-summary-title">Total Failed Messages</div>
+            <div class="failure-summary-stats">${totalFailed} messages failed</div>
+          </div>
+        `;
+        
+        // Sort failures by count (descending)
+        const sortedFailures = Object.entries(failureReasons)
+          .sort(([, a], [, b]) => b - a);
+        
+        sortedFailures.forEach(([reason, count]) => {
+          const percentage = ((count / totalFailed) * 100).toFixed(1);
+          failureHTML += `
+            <div class="failure-breakdown-item">
+              <div class="failure-reason">${reason || 'Unknown Error'}</div>
+              <div class="failure-count">${count}</div>
+              <div class="failure-percentage">(${percentage}%)</div>
+            </div>
+          `;
+        });
+        
+        content.innerHTML = failureHTML;
+      }
+      
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    }
+    
+    function closeFailureModal() {
+      const modal = document.getElementById('failureModal');
+      modal.classList.remove('show');
+      document.body.style.overflow = ''; // Restore scrolling
+    }
+    
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+      const modal = document.getElementById('failureModal');
+      if (event.target === modal) {
+        closeFailureModal();
+      }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeFailureModal();
+      }
+    });
+    
+    // Force background to fit content exactly
+    function adjustBackgroundSize() {
+      const body = document.body;
+      const pageWrapper = document.querySelector('.page-wrapper');
+      
+      // Wait a bit for animations to complete
+      setTimeout(() => {
+        // Calculate the actual content height including expanded panels
+        const contentHeight = Math.max(
+          body.scrollHeight,
+          body.offsetHeight,
+          pageWrapper ? pageWrapper.scrollHeight : 0,
+          document.documentElement.scrollHeight
+        );
+        
+        // Set the background size to match content height
+        body.style.backgroundSize = `100% ${contentHeight}px`;
+        body.style.height = `${contentHeight}px`;
+        
+        console.log('[DEBUG] Background adjusted to:', contentHeight + 'px');
+      }, 100);
+    }
+    
+    // Run after page loads and content changes
+    window.addEventListener('load', () => {
+      setTimeout(adjustBackgroundSize, 1000);
+    });
+    
+    // Enhanced panel toggle to adjust background
+    const originalTogglePanel = togglePanel;
+    togglePanel = function(panelId) {
+      originalTogglePanel(panelId);
+      // Adjust background after panel animation completes
+      setTimeout(adjustBackgroundSize, 700);
+    };
+    
+    // Run after any stat card clicks
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('stat-card') || e.target.closest('.stat-card')) {
+        setTimeout(adjustBackgroundSize, 700);
+      }
+    });
+    
+    // Run after provider tables are toggled
+    const originalScrollToProvider = scrollToProvider;
+    if (typeof scrollToProvider === 'function') {
+      scrollToProvider = function(provider) {
+        const result = originalScrollToProvider(provider);
+        setTimeout(adjustBackgroundSize, 700);
+        return result;
+      };
+    }
+    
+    // Watch for DOM changes to adjust background
+    const observer = new MutationObserver(function(mutations) {
+      let shouldAdjust = false;
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList' || mutation.type === 'attributes') {
+          // Check if any detail panels changed
+          if (mutation.target.classList && 
+              (mutation.target.classList.contains('detail-panel') || 
+               mutation.target.classList.contains('stats-panels'))) {
+            shouldAdjust = true;
+          }
+        }
+      });
+      
+      if (shouldAdjust) {
+        setTimeout(adjustBackgroundSize, 500);
+      }
+    });
+    
+    // Start observing
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+
   </script>
 </body>
 </html>

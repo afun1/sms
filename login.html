@@ -306,6 +306,16 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Clear any existing session when login page loads
+        console.log('[LOGIN] Clearing any existing session');
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Also sign out from Supabase to ensure clean state
+        supabase.auth.signOut().catch(error => {
+            console.log('[LOGIN] Signout on page load (expected):', error);
+        });
+
         // Show/hide password for login
         const toggleLoginPassword = document.getElementById('toggleLoginPassword');
         if (toggleLoginPassword) {

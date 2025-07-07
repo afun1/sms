@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Test - Sparky Messaging</title>
+    <link rel="icon" type="image/png" href="static/supersparky.png">
+    <link rel="stylesheet" href="static/index.css?v=8">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script src="static/header.js?v=17"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            color: #1976ff;
+            margin-top: 0;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Header & Logo Test Page</h1>
+        <p>This page tests the header functionality and logo loading.</p>
+        
+        <div class="test-section">
+            <h3>📝 Test Results</h3>
+            <div id="testResults">
+                <p>⏳ Running tests...</p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🖼️ Logo Test</h3>
+            <p>The Sparky AI logo should appear in the header above. If you can see it, the logo is working correctly.</p>
+            <p>Direct logo test:</p>
+            <img src="static/SparkyAI2.gif" alt="Sparky AI Logo" style="max-width: 200px; border: 1px solid #ddd; padding: 10px;">
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 Navigation Links</h3>
+            <p>Test the navigation links in the header:</p>
+            <ul>
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/login.html">Login Page</a></li>
+                <li><a href="/admin.html">Admin (if you have admin access)</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Test header loading
+        function runTests() {
+            const results = document.getElementById('testResults');
+            let testResults = [];
+            
+            // Test 1: Check if header element exists
+            setTimeout(() => {
+                const headerElement = document.querySelector('header');
+                if (headerElement) {
+                    testResults.push('✅ Header element created successfully');
+                } else {
+                    testResults.push('❌ Header element not found');
+                }
+                
+                // Test 2: Check if logo is loaded
+                const logoElement = document.querySelector('header img');
+                if (logoElement) {
+                    testResults.push('✅ Logo element found in header');
+                    if (logoElement.src.includes('SparkyAI2.gif')) {
+                        testResults.push('✅ Logo source is correct (SparkyAI2.gif)');
+                    } else {
+                        testResults.push('❌ Logo source is incorrect: ' + logoElement.src);
+                    }
+                } else {
+                    testResults.push('❌ Logo element not found in header');
+                }
+                
+                // Test 3: Check if navigation exists
+                const navElement = document.querySelector('header nav');
+                if (navElement) {
+                    testResults.push('✅ Navigation element found in header');
+                } else {
+                    testResults.push('❌ Navigation element not found in header');
+                }
+                
+                // Update results
+                results.innerHTML = testResults.map(result => 
+                    `<p class="status ${result.includes('✅') ? 'success' : 'error'}">${result}</p>`
+                ).join('');
+            }, 1000);
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>

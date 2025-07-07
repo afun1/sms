@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index Page - Admin Button Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Index Page - Admin Button Test</h1>
+        
+        <div class="test-section">
+            <h3>📍 Current Context</h3>
+            <p>This is simulating the <strong>index.html</strong> page where admin users should see the "Switch to: Admin" button.</p>
+            <div class="result info" id="contextInfo">
+                Page: index.html (simulated)<br>
+                Expected: Admin users should see "Switch to: Admin" button that links to admin.html
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎯 Test Setup</h3>
+            <button onclick="setupAdmin()">Setup Admin User</button>
+            <button onclick="setupManager()">Setup Manager User</button>
+            <button onclick="setupSupervisor()">Setup Supervisor User</button>
+            <button onclick="testAdminButtonBehavior()">Test Admin Button Behavior</button>
+            
+            <div class="result info" id="setupResult">
+                Click "Setup Admin User" then "Test Admin Button Behavior" to verify the fix...
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Header Analysis</h3>
+            <div id="headerAnalysis" class="result info">
+                Waiting for header analysis...
+            </div>
+            <button onclick="analyzeHeader()">Analyze Header</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>✅ Test Results</h3>
+            <div id="testResults" class="result info">
+                Test results will appear here...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setupAdmin() {
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('currentView', 'admin');
+            localStorage.setItem('username', 'Test Admin');
+            localStorage.setItem('userEmail', 'admin@test.com');
+            localStorage.setItem('displayName', 'Test Admin');
+            
+            document.getElementById('setupResult').innerHTML = '✅ Admin user setup complete! The header should now show the admin button.';
+            document.getElementById('setupResult').className = 'result success';
+            
+            // Trigger header refresh if available
+            setTimeout(() => {
+                if (window.refreshHeader) {
+                    window.refreshHeader();
+                }
+            }, 100);
+        }
+        
+        function setupManager() {
+            localStorage.setItem('userRole', 'manager');
+            localStorage.setItem('currentView', 'manager');
+            localStorage.setItem('username', 'Test Manager');
+            localStorage.setItem('userEmail', 'manager@test.com');
+            localStorage.setItem('displayName', 'Test Manager');
+            
+            document.getElementById('setupResult').innerHTML = '✅ Manager user setup complete! The header should now show the admin button.';
+            document.getElementById('setupResult').className = 'result success';
+            
+            // Trigger header refresh if available
+            setTimeout(() => {
+                if (window.refreshHeader) {
+                    window.refreshHeader();
+                }
+            }, 100);
+        }
+        
+        function setupSupervisor() {
+            localStorage.setItem('userRole', 'supervisor');
+            localStorage.setItem('currentView', 'supervisor');
+            localStorage.setItem('username', 'Test Supervisor');
+            localStorage.setItem('userEmail', 'supervisor@test.com');
+            localStorage.setItem('displayName', 'Test Supervisor');
+            
+            document.getElementById('setupResult').innerHTML = '✅ Supervisor user setup complete! The header should now show the admin button.';
+            document.getElementById('setupResult').className = 'result success';
+            
+            // Trigger header refresh if available
+            setTimeout(() => {
+                if (window.refreshHeader) {
+                    window.refreshHeader();
+                }
+            }, 100);
+        }
+        
+        function testAdminButtonBehavior() {
+            const userRole = localStorage.getItem('userRole');
+            const currentView = localStorage.getItem('currentView');
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            
+            let testResult = '';
+            let resultClass = 'result info';
+            
+            // Test the logic from header.js
+            const shouldShowAdminButton = !(currentView === 'admin' && currentPage === 'admin.html');
+            
+            testResult = `
+                <strong>🧪 Logic Test Results:</strong><br>
+                User Role: ${userRole}<br>
+                Current View: ${currentView}<br>
+                Current Page: ${currentPage}<br>
+                <br>
+                <strong>Condition:</strong> !(currentView === 'admin' && currentPage === 'admin.html')<br>
+                <strong>Calculation:</strong> !(${currentView} === 'admin' && ${currentPage} === 'admin.html')<br>
+                <strong>Result:</strong> ${shouldShowAdminButton}<br>
+                <br>
+                <strong>Expected Behavior:</strong> ${shouldShowAdminButton ? 'Show Admin Button' : 'Show Role Switch Button'}
+            `;
+            
+            if (shouldShowAdminButton && userRole && ['admin', 'manager', 'supervisor'].includes(userRole)) {
+                testResult += '<br><br>✅ <strong>CORRECT:</strong> Admin button should appear and link to admin.html';
+                resultClass = 'result success';
+            } else if (!shouldShowAdminButton && currentPage === 'admin.html') {
+                testResult += '<br><br>✅ <strong>CORRECT:</strong> Role switch button should appear (user is on admin page)';
+                resultClass = 'result success';
+            } else {
+                testResult += '<br><br>❌ <strong>ISSUE:</strong> Unexpected behavior';
+                resultClass = 'result error';
+            }
+            
+            document.getElementById('testResults').innerHTML = testResult;
+            document.getElementById('testResults').className = resultClass;
+        }
+        
+        function analyzeHeader() {
+            const roleElement = document.querySelector('#app-header .roleText');
+            let analysis = '';
+            
+            if (roleElement) {
+                const roleHTML = roleElement.innerHTML;
+                analysis = `<strong>Role Element HTML:</strong><br>${roleHTML}<br><br>`;
+                
+                if (roleHTML.includes('href="admin.html"')) {
+                    analysis += '✅ <strong>SUCCESS:</strong> Admin button correctly points to admin.html';
+                    document.getElementById('headerAnalysis').className = 'result success';
+                } else if (roleHTML.includes('Switch to:')) {
+                    analysis += '🔄 <strong>INFO:</strong> Role switching element found (not admin button)';
+                    document.getElementById('headerAnalysis').className = 'result info';
+                } else {
+                    analysis += '❌ <strong>ERROR:</strong> No admin link or role switching found';
+                    document.getElementById('headerAnalysis').className = 'result error';
+                }
+            } else {
+                analysis = '❌ <strong>ERROR:</strong> Role element not found in header';
+                document.getElementById('headerAnalysis').className = 'result error';
+            }
+            
+            document.getElementById('headerAnalysis').innerHTML = analysis;
+        }
+        
+        // Auto-analyze header when it loads
+        window.addEventListener('load', function() {
+            setTimeout(analyzeHeader, 2000);
+        });
+    </script>
+    
+    <!-- Load the actual header.js file -->
+    <script src="static/header.js"></script>
+</body>
+</html>

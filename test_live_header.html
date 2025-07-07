@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Header Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Live Header Test</h1>
+        
+        <div class="test-section">
+            <h3>🎯 Test Setup</h3>
+            <p>This page will load the actual header.js file and test the admin button behavior.</p>
+            
+            <button onclick="setupAdmin()">Setup Admin User</button>
+            <button onclick="setupManager()">Setup Manager User</button>
+            <button onclick="setupSupervisor()">Setup Supervisor User</button>
+            <button onclick="refreshHeader()">Refresh Header</button>
+            
+            <div class="result info" id="setupResult">
+                Click a setup button to test different user roles...
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Current State</h3>
+            <div id="currentState" class="result info">
+                Loading current state...
+            </div>
+            <button onclick="refreshState()">Refresh State</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Header Analysis</h3>
+            <div id="headerAnalysis" class="result info">
+                Analyzing header...
+            </div>
+            <button onclick="analyzeHeader()">Analyze Header</button>
+        </div>
+    </div>
+
+    <script>
+        function setupAdmin() {
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('currentView', 'admin');
+            localStorage.setItem('username', 'Test Admin');
+            localStorage.setItem('userEmail', 'admin@test.com');
+            localStorage.setItem('displayName', 'Test Admin');
+            
+            document.getElementById('setupResult').innerHTML = '✅ Admin user setup complete! Header will refresh automatically.';
+            document.getElementById('setupResult').className = 'result success';
+            refreshState();
+            
+            // Trigger header refresh if available
+            if (window.refreshHeader) {
+                window.refreshHeader();
+            }
+        }
+        
+        function setupManager() {
+            localStorage.setItem('userRole', 'manager');
+            localStorage.setItem('currentView', 'manager');
+            localStorage.setItem('username', 'Test Manager');
+            localStorage.setItem('userEmail', 'manager@test.com');
+            localStorage.setItem('displayName', 'Test Manager');
+            
+            document.getElementById('setupResult').innerHTML = '✅ Manager user setup complete! Header will refresh automatically.';
+            document.getElementById('setupResult').className = 'result success';
+            refreshState();
+            
+            // Trigger header refresh if available
+            if (window.refreshHeader) {
+                window.refreshHeader();
+            }
+        }
+        
+        function setupSupervisor() {
+            localStorage.setItem('userRole', 'supervisor');
+            localStorage.setItem('currentView', 'supervisor');
+            localStorage.setItem('username', 'Test Supervisor');
+            localStorage.setItem('userEmail', 'supervisor@test.com');
+            localStorage.setItem('displayName', 'Test Supervisor');
+            
+            document.getElementById('setupResult').innerHTML = '✅ Supervisor user setup complete! Header will refresh automatically.';
+            document.getElementById('setupResult').className = 'result success';
+            refreshState();
+            
+            // Trigger header refresh if available
+            if (window.refreshHeader) {
+                window.refreshHeader();
+            }
+        }
+        
+        function refreshState() {
+            const userRole = localStorage.getItem('userRole') || 'None';
+            const currentView = localStorage.getItem('currentView') || 'None';
+            const username = localStorage.getItem('username') || 'None';
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            
+            document.getElementById('currentState').innerHTML = `
+                <strong>Current User Role:</strong> ${userRole}<br>
+                <strong>Current View:</strong> ${currentView}<br>
+                <strong>Username:</strong> ${username}<br>
+                <strong>Current Page:</strong> ${currentPage}<br>
+                <strong>URL:</strong> ${window.location.href}
+            `;
+        }
+        
+        function refreshHeader() {
+            if (window.refreshHeader) {
+                window.refreshHeader();
+                document.getElementById('setupResult').innerHTML = '✅ Header refreshed!';
+                document.getElementById('setupResult').className = 'result success';
+            } else {
+                document.getElementById('setupResult').innerHTML = '❌ Header refresh function not available';
+                document.getElementById('setupResult').className = 'result error';
+            }
+        }
+        
+        function analyzeHeader() {
+            const header = document.getElementById('app-header');
+            const roleElement = document.querySelector('#app-header .roleText');
+            
+            let analysis = '';
+            
+            if (!header) {
+                analysis = '❌ Header not found. The header.js may not have loaded.';
+            } else {
+                analysis = '✅ Header found!<br>';
+                
+                if (roleElement) {
+                    const roleHTML = roleElement.innerHTML;
+                    analysis += `<strong>Role Element HTML:</strong> ${roleHTML}<br>`;
+                    
+                    // Check if it contains admin link
+                    if (roleHTML.includes('admin.html')) {
+                        analysis += '✅ Admin link found in role element!<br>';
+                        
+                        // Check if it's pointing to admin.html correctly
+                        if (roleHTML.includes('href="admin.html"')) {
+                            analysis += '✅ Admin link correctly points to admin.html';
+                        } else {
+                            analysis += '❌ Admin link does not point to admin.html';
+                        }
+                    } else if (roleHTML.includes('Switch to:')) {
+                        analysis += '✅ Role switching element found (not admin button)';
+                    } else {
+                        analysis += '⚠️ No admin link or role switching found';
+                    }
+                } else {
+                    analysis += '❌ Role element not found in header';
+                }
+            }
+            
+            document.getElementById('headerAnalysis').innerHTML = analysis;
+            document.getElementById('headerAnalysis').className = 'result info';
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            refreshState();
+            
+            // Wait a bit for header to load, then analyze
+            setTimeout(analyzeHeader, 1000);
+        });
+    </script>
+    
+    <!-- Load the actual header.js file -->
+    <script src="static/header.js"></script>
+</body>
+</html>

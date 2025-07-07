@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login/Logout Test - Sparky Messaging</title>
+    <link rel="icon" type="image/png" href="static/supersparky.png">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            color: #1976ff;
+            margin-top: 0;
+        }
+        .test-btn {
+            background: #1976ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .test-btn:hover {
+            background: #1565c0;
+        }
+        .test-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        #logOutput {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔐 Login/Logout Test Page</h1>
+        <p>This page tests the authentication flow and session management.</p>
+        
+        <div class="test-section">
+            <h3>🧪 Authentication Tests</h3>
+            <button class="test-btn" onclick="testLogin()">Test Login</button>
+            <button class="test-btn" onclick="testLogout()">Test Logout</button>
+            <button class="test-btn" onclick="clearSession()">Clear Session</button>
+            <button class="test-btn" onclick="checkSession()">Check Session</button>
+            <button class="test-btn" onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Session Status</h3>
+            <div id="sessionStatus">
+                <span class="status info">Checking session...</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Test Log</h3>
+            <div id="logOutput">Test log will appear here...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 Quick Navigation</h3>
+            <p>Navigate to test the full flow:</p>
+            <a href="login.html" class="test-btn" style="text-decoration: none; display: inline-block;">Go to Login Page</a>
+            <a href="index.html" class="test-btn" style="text-decoration: none; display: inline-block;">Go to Dashboard</a>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.6/dist/umd/supabase.min.js"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://yggfiuqxfxsoyesqgpyt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlnZ2ZpdXF4Znhzb3llc3FncHl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MTQ0NjEsImV4cCI6MjA2NjM5MDQ2MX0.YD3fUy1m7lNWCMfUhd1DP7rlmq2tmlwAxg_yJxruB-Q';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logOutput = document.getElementById('logOutput');
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logOutput.textContent += logEntry;
+            logOutput.scrollTop = logOutput.scrollHeight;
+            
+            console.log(message);
+            return logEntry;
+        }
+        
+        function clearLog() {
+            document.getElementById('logOutput').textContent = 'Test log cleared...\n';
+        }
+        
+        function updateSessionStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('sessionStatus');
+            statusDiv.innerHTML = `<span class="status ${type}">${message}</span>`;
+        }
+        
+        async function checkSession() {
+            try {
+                log('=== CHECKING SESSION ===');
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    log(`❌ Session check error: ${error.message}`);
+                    updateSessionStatus('Session check failed', 'error');
+                    return;
+                }
+                
+                if (session) {
+                    log(`✅ Session found: ${session.user.email}`);
+                    updateSessionStatus(`Logged in as: ${session.user.email}`, 'success');
+                } else {
+                    log('ℹ️ No active session');
+                    updateSessionStatus('Not logged in', 'info');
+                }
+                
+                // Check localStorage
+                const localData = localStorage.getItem('supabase.auth.token');
+                log(`LocalStorage auth data: ${localData ? 'Present' : 'None'}`);
+                
+            } catch (error) {
+                log(`❌ Session check error: ${error.message}`);
+                updateSessionStatus('Session check failed', 'error');
+            }
+        }
+        
+        async function testLogin() {
+            log('=== TESTING LOGIN ===');
+            log('⚠️ This test uses admin@sparky.com for testing');
+            
+            // Use test credentials
+            const email = 'admin@sparky.com';
+            const password = 'TestPassword123!';
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    log(`❌ Login error: ${error.message}`);
+                    updateSessionStatus('Login failed', 'error');
+                } else {
+                    log(`✅ Login successful: ${data.user.email}`);
+                    updateSessionStatus(`Logged in as: ${data.user.email}`, 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ Login error: ${error.message}`);
+                updateSessionStatus('Login failed', 'error');
+            }
+        }
+        
+        async function testLogout() {
+            log('=== TESTING LOGOUT ===');
+            
+            try {
+                const { error } = await supabase.auth.signOut();
+                
+                if (error) {
+                    log(`❌ Logout error: ${error.message}`);
+                    updateSessionStatus('Logout failed', 'error');
+                } else {
+                    log('✅ Logout successful');
+                    updateSessionStatus('Logged out', 'info');
+                }
+                
+                // Clear local storage
+                localStorage.clear();
+                sessionStorage.clear();
+                log('🧹 Cleared local storage');
+                
+            } catch (error) {
+                log(`❌ Logout error: ${error.message}`);
+                updateSessionStatus('Logout failed', 'error');
+            }
+        }
+        
+        async function clearSession() {
+            log('=== CLEARING SESSION ===');
+            
+            try {
+                await supabase.auth.signOut();
+                localStorage.clear();
+                sessionStorage.clear();
+                log('🧹 Session cleared completely');
+                updateSessionStatus('Session cleared', 'info');
+                
+            } catch (error) {
+                log(`❌ Clear session error: ${error.message}`);
+                updateSessionStatus('Clear session failed', 'error');
+            }
+        }
+        
+        // Initialize page
+        window.addEventListener('load', function() {
+            log('🚀 Test page loaded');
+            checkSession();
+        });
+    </script>
+</body>
+</html>

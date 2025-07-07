@@ -20,6 +20,31 @@ import traceback
 PORT = 3000
 DB_FILE = 'contacts.db'
 
+# Initialize delivery reports database
+def init_delivery_reports_db():
+    """Initialize the delivery reports database table"""
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    # Create delivery_reports table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS delivery_reports (
+            id TEXT PRIMARY KEY,
+            message_id TEXT,
+            phone_number TEXT,
+            status TEXT,
+            timestamp TEXT,
+            error_code TEXT,
+            error_text TEXT,
+            provider TEXT,
+            received_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+    print("✅ Delivery reports database initialized")
+
 class ContactsAPI(BaseHTTPRequestHandler):
     
     def __init__(self, *args, **kwargs):
@@ -225,6 +250,8 @@ class ContactsAPI(BaseHTTPRequestHandler):
             self._handle_get_users(parsed_path.query)
         elif path == '/api/health':
             self._handle_health_check()
+        elif path == '/api/delivery-reports':
+            self._handle_get_delivery_reports()
         else:
             self._send_error('Endpoint not found', 404)
     
@@ -310,6 +337,10 @@ class ContactsAPI(BaseHTTPRequestHandler):
             self._handle_import_contacts()
         elif path == '/api/contacts':
             self._handle_create_contact()
+        elif path == '/api/delivery-reports':
+            self._handle_delivery_reports()
+        elif path == '/api/webhook/clicksend':
+            self._handle_clicksend_webhook()
         else:
             self._send_error('Endpoint not found', 404)
     
@@ -682,6 +713,162 @@ class ContactsAPI(BaseHTTPRequestHandler):
             print(traceback.format_exc())
             self._send_error(f'Error retrieving users: {str(e)}', 500)
     
+    def _handle_delivery_reports(self):
+        """Handle incoming delivery reports from the SMS provider"""
+        try:
+            # Get request body
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            
+            # Parse JSON data
+            report_data = json.loads(post_data.decode('utf-8'))
+            
+            # Validate required fields
+            required_fields = ['id', 'message_id', 'phone_number', 'status', 'timestamp']
+            for field in required_fields:
+                if field not in report_data:
+                    self._send_error(f'Missing required field: {field}', 400)
+                    return
+            
+            conn = self._get_db_connection()
+            cursor = conn.cursor()
+            
+            # Insert or update delivery report
+            report_id = report_data['id']
+            cursor.execute('''
+                INSERT INTO delivery_reports (id, message_id, phone_number, status, timestamp, error_code, error_text, provider)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    status = excluded.status,
+                    timestamp = excluded.timestamp,
+                    error_code = excluded.error_code,
+                    error_text = excluded.error_text,
+                    provider = excluded.provider,
+                    received_at = CURRENT_TIMESTAMP
+            ''', (
+                report_id,
+                report_data.get('message_id'),
+                report_data.get('phone_number'),
+                report_data.get('status'),
+                report_data.get('timestamp'),
+                report_data.get('error_code'),
+                report_data.get('error_text'),
+                report_data.get('provider')
+            ))
+            
+            conn.commit()
+            conn.close()
+            
+            self._send_json_response({'success': True, 'message': 'Delivery report processed'})
+            
+        except Exception as e:
+            print(f"Error in delivery report handling: {e}")
+            print(traceback.format_exc())
+            self._send_error(f'Error processing delivery report: {str(e)}', 500)
+    
+    def _handle_get_delivery_reports(self):
+        """Handle GET /api/delivery-reports - Return all delivery reports"""
+        try:
+            conn = sqlite3.connect(DB_FILE)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT id, message_id, phone_number, status, timestamp, 
+                       error_code, error_text, provider, received_at
+                FROM delivery_reports
+                ORDER BY received_at DESC
+            ''')
+            
+            reports = cursor.fetchall()
+            conn.close()
+            
+            # Convert to dict format
+            report_dict = {}
+            for report in reports:
+                report_dict[report[0]] = {
+                    'id': report[0],
+                    'message_id': report[1],
+                    'phone_number': report[2],
+                    'status': report[3],
+                    'timestamp': report[4],
+                    'error_code': report[5],
+                    'error_text': report[6],
+                    'provider': report[7],
+                    'received_at': report[8]
+                }
+            
+            self._send_json_response({
+                'success': True,
+                'reports': report_dict,
+                'count': len(reports)
+            })
+            
+        except Exception as e:
+            print(f"[ERROR] Error fetching delivery reports: {e}")
+            self._send_error(f'Error fetching delivery reports: {str(e)}', 500)
+    
+    def _handle_clicksend_webhook(self):
+        """Handle POST /api/webhook/clicksend - ClickSend delivery report webhook"""
+        try:
+            # Get the content length
+            content_length = int(self.headers.get('Content-Length', 0))
+            
+            # Read the request body
+            if content_length > 0:
+                post_data = self.rfile.read(content_length)
+                webhook_data = json.loads(post_data.decode('utf-8'))
+            else:
+                webhook_data = {}
+            
+            print(f"[DEBUG] ClickSend webhook received: {webhook_data}")
+            
+            # Process the webhook data
+            if 'messages' in webhook_data:
+                conn = sqlite3.connect(DB_FILE)
+                cursor = conn.cursor()
+                
+                for message in webhook_data['messages']:
+                    # Extract message details
+                    message_id = message.get('message_id')
+                    phone_number = message.get('to', message.get('phone_number'))
+                    status = message.get('status')
+                    timestamp = message.get('date', datetime.now().isoformat())
+                    error_code = message.get('error_code')
+                    error_text = message.get('error_text')
+                    
+                    # Insert or update delivery report
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO delivery_reports 
+                        (id, message_id, phone_number, status, timestamp, error_code, error_text, provider, received_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        message_id or str(uuid.uuid4()),
+                        message_id,
+                        phone_number,
+                        status,
+                        timestamp,
+                        error_code,
+                        error_text,
+                        'clicksend',
+                        datetime.now().isoformat()
+                    ))
+                
+                conn.commit()
+                conn.close()
+                
+                print(f"[DEBUG] Processed {len(webhook_data['messages'])} delivery reports")
+            
+            # Send success response
+            self._send_json_response({
+                'success': True,
+                'message': 'Webhook processed successfully'
+            })
+            
+        except Exception as e:
+            print(f"[ERROR] Error processing ClickSend webhook: {e}")
+            print(f"[ERROR] Traceback: {traceback.format_exc()}")
+            self._send_error(f'Error processing webhook: {str(e)}', 500)
+
 def main():
     """Start the API server"""
     # Change to the directory containing the script
@@ -698,12 +885,124 @@ def main():
         print(f"Error initializing database: {e}")
         return
     
+    # Initialize delivery reports database
+    try:
+        init_delivery_reports_db()
+        
+        # Add some sample delivery reports for testing
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        
+        # Check if sample data already exists
+        cursor.execute('SELECT COUNT(*) FROM delivery_reports')
+        report_count = cursor.fetchone()[0]
+        
+        if report_count == 0:
+            # Add sample delivery reports
+            sample_reports = [
+                {
+                    'id': 'msg-001',
+                    'message_id': 'CS-MSG-001',
+                    'phone_number': '+1234567890',
+                    'status': 'Delivered',
+                    'timestamp': '2025-07-06T10:30:00Z',
+                    'error_code': None,
+                    'error_text': None,
+                    'provider': 'clicksend'
+                },
+                {
+                    'id': 'msg-002',
+                    'message_id': 'CS-MSG-002',
+                    'phone_number': '+1234567891',
+                    'status': 'Failed',
+                    'timestamp': '2025-07-06T10:31:00Z',
+                    'error_code': '400',
+                    'error_text': 'Invalid phone number',
+                    'provider': 'clicksend'
+                },
+                {
+                    'id': 'msg-003',
+                    'message_id': 'CS-MSG-003',
+                    'phone_number': '+1234567892',
+                    'status': 'Delivered',
+                    'timestamp': '2025-07-06T10:32:00Z',
+                    'error_code': None,
+                    'error_text': None,
+                    'provider': 'clicksend'
+                },
+                {
+                    'id': 'msg-004',
+                    'message_id': 'CS-MSG-004',
+                    'phone_number': '+1234567893',
+                    'status': 'Failed',
+                    'timestamp': '2025-07-06T10:33:00Z',
+                    'error_code': '500',
+                    'error_text': 'Carrier rejected',
+                    'provider': 'clicksend'
+                },
+                {
+                    'id': 'msg-005',
+                    'message_id': 'CS-MSG-005',
+                    'phone_number': '+1234567894',
+                    'status': 'Delivered',
+                    'timestamp': '2025-07-06T10:34:00Z',
+                    'error_code': None,
+                    'error_text': None,
+                    'provider': 'clicksend'
+                }
+            ]
+            
+            for report in sample_reports:
+                cursor.execute('''
+                    INSERT INTO delivery_reports 
+                    (id, message_id, phone_number, status, timestamp, error_code, error_text, provider, received_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    report['id'],
+                    report['message_id'],
+                    report['phone_number'],
+                    report['status'],
+                    report['timestamp'],
+                    report['error_code'],
+                    report['error_text'],
+                    report['provider'],
+                    datetime.now().isoformat()
+                ))
+            
+            conn.commit()
+            print(f"✅ Added {len(sample_reports)} sample delivery reports")
+        
+        conn.close()
+        
+    except Exception as e:
+        print(f"Error initializing delivery reports database: {e}")
+        return
+    
     # Start server
     server = HTTPServer(('localhost', PORT), ContactsAPI)
     print(f"🚀 Contacts API server running at http://localhost:{PORT}")
     print(f"📊 Health check: http://localhost:{PORT}/api/health")
     print(f"📋 Contacts endpoint: http://localhost:{PORT}/api/contacts")
     print(f"📤 Import endpoint: http://localhost:{PORT}/api/contacts/import")
+    print(f"📦 Delivery reports endpoint: http://localhost:{PORT}/api/delivery-reports")
+    print("\nPress Ctrl+C to stop the server")
+    
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n👋 Server stopped")
+        server.shutdown()
+    except Exception as e:
+        print(f"Error initializing delivery reports database: {e}")
+        return
+    
+    # Start server
+    server = HTTPServer(('localhost', PORT), ContactsAPI)
+    print(f"🚀 Contacts API server running at http://localhost:{PORT}")
+    print(f"📊 Health check: http://localhost:{PORT}/api/health")
+    print(f"📋 Contacts endpoint: http://localhost:{PORT}/api/contacts")
+    print(f"📤 Import endpoint: http://localhost:{PORT}/api/contacts/import")
+    print(f"📦 Delivery reports endpoint: http://localhost:{PORT}/api/delivery-reports")
     print("\nPress Ctrl+C to stop the server")
     
     try:
