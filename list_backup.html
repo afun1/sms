@@ -174,6 +174,7 @@
       border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       overflow: auto;
+      overflow-x: auto;
       height: calc(100vh - 203px);
       border: 2px solid #e9ecef;
       padding: 0 10px 0 10px;
@@ -2394,6 +2395,12 @@
         setTimeout(() => {
           restoreSelectedContactsState();
         }, 1500);
+
+        // Initialize column resizing
+        setTimeout(() => {
+          initializeColumnResizing();
+          restoreColumnWidths();
+        }, 1600);
       } catch (error) {
         console.error('Error initializing app:', error);
         const errorMessage = error.message || 'Unknown error occurred';
@@ -3772,6 +3779,141 @@
         }
       } catch (error) {
         console.error('Error restoring selected contacts state:', error);
+      }
+    }
+
+    // Column resizing functionality
+    function initializeColumnResizing() {
+      console.log('Initializing column resizing');
+      const headers = document.querySelectorAll('.table th');
+      let resizingColumn = null;
+      let startX, startWidth;
+      
+      headers.forEach(header => {
+        const resizeHandle = header.querySelector('.resize-handle');
+        if (!resizeHandle) return;
+
+        // Add double-click for auto-fit
+        resizeHandle.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          autoFitColumn(header);
+        });
+
+        // Mouse down - start resizing
+        resizeHandle.addEventListener('mousedown', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          resizingColumn = header;
+          startX = e.pageX;
+          startWidth = header.offsetWidth;
+          
+          resizeHandle.classList.add('resizing');
+          header.classList.add('resizing');
+          
+          document.addEventListener('mousemove', handleMouseMove);
+          document.addEventListener('mouseup', handleMouseUp);
+        });
+      });
+
+      function handleMouseMove(e) {
+        if (resizingColumn) {
+          const width = startWidth + (e.pageX - startX);
+          if (width >= 50) { // Minimum width
+            resizingColumn.style.width = `${width}px`;
+            resizingColumn.style.minWidth = `${width}px`;
+          }
+        }
+      }
+
+      function handleMouseUp() {
+        if (resizingColumn) {
+          const resizeHandle = resizingColumn.querySelector('.resize-handle');
+          if (resizeHandle) {
+            resizeHandle.classList.remove('resizing');
+          }
+          resizingColumn.classList.remove('resizing');
+          
+          // Save column widths
+          saveColumnWidths();
+          
+          resizingColumn = null;
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', handleMouseUp);
+        }
+      }
+      
+      console.log('Column resizing initialized successfully');
+    }
+
+    // Auto-fit column to content
+    function autoFitColumn(header) {
+      console.log('Auto-fitting column:', header.textContent);
+      // First set column to a small width to get accurate content width
+      header.style.width = 'auto';
+      header.style.minWidth = 'auto';
+      
+      // Get all cells in this column
+      const columnIndex = Array.from(header.parentNode.children).indexOf(header);
+      const table = header.closest('table');
+      const cells = table.querySelectorAll(`tbody tr td:nth-child(${columnIndex + 1})`);
+      
+      // Calculate max content width
+      let maxWidth = header.offsetWidth + 20; // Add padding
+      
+      cells.forEach(cell => {
+        const cellWidth = cell.scrollWidth + 20; // Add padding
+        if (cellWidth > maxWidth) {
+          maxWidth = cellWidth;
+        }
+      });
+      
+      // Apply new width
+      const newWidth = Math.max(maxWidth, 50); // Ensure minimum width
+      header.style.width = `${newWidth}px`;
+      header.style.minWidth = `${newWidth}px`;
+      
+      // Save column widths
+      saveColumnWidths();
+      console.log('Auto-fitted column to width:', newWidth);
+    }
+
+    // Save column widths to localStorage
+    function saveColumnWidths() {
+      const headers = document.querySelectorAll('.table th');
+      const widths = {};
+      
+      headers.forEach((header, index) => {
+        if (header.style.width) {
+          widths[index] = header.style.width;
+        }
+      });
+      
+      localStorage.setItem('contactsTableColumnWidths', JSON.stringify(widths));
+      console.log('Saved column widths:', widths);
+    }
+
+    // Restore column widths from localStorage
+    function restoreColumnWidths() {
+      console.log('Restoring column widths');
+      const savedWidths = localStorage.getItem('contactsTableColumnWidths');
+      if (savedWidths) {
+        try {
+          const widths = JSON.parse(savedWidths);
+          const headers = document.querySelectorAll('.table th');
+          
+          Object.entries(widths).forEach(([index, width]) => {
+            const headerIndex = parseInt(index);
+            if (headerIndex < headers.length) {
+              headers[headerIndex].style.width = width;
+              headers[headerIndex].style.minWidth = width;
+            }
+          });
+          
+          console.log('Restored column widths:', widths);
+        } catch (error) {
+          console.error('Error restoring column widths:', error);
+        }
       }
     }
   </script>
