@@ -280,16 +280,23 @@
       z-index: 6;
     }
     
-    .table th:nth-child(6),
-    .table td:nth-child(6) {
-      background: #e8f5e8;
+    .table th:nth-child(6) {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      font-weight: bold !important;
       padding: 0 !important;
       width: 50px;
       min-width: 50px;
       max-width: 50px;
-      position: sticky;
-      left: 137px;
-      z-index: 5;
+      /* Let it inherit the default .table th styling for background and color */
+    }
+    
+    .table td:nth-child(6) {
+      background: white;
+      padding: 0 !important;
+      width: 50px;
+      min-width: 50px;
+      max-width: 50px;
     }
     
     /* Ensure sticky headers appear above data cells and are sticky vertically */
@@ -334,13 +341,6 @@
       left: 107px;
       z-index: 3016;
       background: #fff3e0;
-    }
-    .table thead th:nth-child(6) { 
-      position: sticky;
-      top: 0;
-      left: 137px;
-      z-index: 3015;
-      background: #e8f5e8;
     }
     
     .table tbody tr:hover {
@@ -673,6 +673,7 @@
     .column-item {
       transition: all 0.3s ease;
       user-select: none;
+      position: relative;
     }
     
     .column-item.dragging {
@@ -685,6 +686,30 @@
       background: #e3f2fd !important;
       border-color: #2196f3 !important;
       transform: translateY(-2px);
+    }
+    
+    .column-item.drop-before::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: #2196f3;
+      border-radius: 2px;
+      z-index: 1001;
+    }
+    
+    .column-item.drop-after::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: #2196f3;
+      border-radius: 2px;
+      z-index: 1001;
     }
     
     .drag-handle {
@@ -700,6 +725,10 @@
     .column-item:hover {
       background: #f0f8ff !important;
       border-color: #b3d9ff !important;
+    }
+    
+    .column-item:hover .drag-handle {
+      color: #1976d2 !important;
     }
     
     .user-search {
@@ -1117,7 +1146,8 @@
       <div class="modal-body">
         <div style="margin-bottom: 15px;">
           <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
-            <strong>Drag and drop</strong> to reorder columns. Use checkboxes to show/hide columns.
+            <strong>Drag and drop</strong> columns to reorder them. The table will update in real-time as you drag.<br>
+            <strong>Blue line</strong> shows where the column will be placed. Use checkboxes to show/hide columns.
           </p>
         </div>
         <div id="column-list" style="font-size: 12px; max-height: 400px; overflow-y: auto;">
@@ -1711,8 +1741,64 @@
       
       // Re-initialize drag and drop functionality for the modal
       setTimeout(() => {
+        // First restore the column order from storage to match the current table
+        restoreColumnOrderInModal();
         initializeColumnDragDrop();
       }, 100);
+    }
+    
+    // Restore column order in the modal to match the current table state
+    async function restoreColumnOrderInModal() {
+      try {
+        // First try to get the current order from user profile
+        const currentUser = await getCurrentUser();
+        let savedOrder = null;
+        
+        if (currentUser) {
+          const userOrder = await loadUserColumnPreferences(currentUser.id);
+          if (userOrder) {
+            savedOrder = JSON.stringify(userOrder);
+          }
+        }
+        
+        // Fall back to localStorage
+        if (!savedOrder) {
+          savedOrder = localStorage.getItem('contactsTableColumnOrder');
+        }
+        
+        if (!savedOrder) return;
+        
+        const order = JSON.parse(savedOrder);
+        const columnList = document.getElementById('column-list');
+        if (!columnList) return;
+        
+        console.log('Restoring column order in modal:', order);
+        
+        // Get current column items
+        const columnItems = Array.from(columnList.querySelectorAll('.column-item'));
+        
+        // Clear the list
+        columnList.innerHTML = '';
+        
+        // Add items back in the saved order
+        order.forEach(columnName => {
+          const item = columnItems.find(item => item.dataset.column === columnName);
+          if (item) {
+            columnList.appendChild(item);
+          }
+        });
+        
+        // Add any items that weren't in the saved order (in case new columns were added)
+        columnItems.forEach(item => {
+          if (!order.includes(item.dataset.column)) {
+            columnList.appendChild(item);
+          }
+        });
+        
+        console.log('Column order restored in modal');
+      } catch (error) {
+        console.error('Error restoring column order in modal:', error);
+      }
     }
 
     function handleSort() {
@@ -2196,23 +2282,21 @@
       console.log('[DEBUG] getCurrentUser called');
       
       try {
-        // Try to get user from global Supabase session (same way as global nav)
-        const supabase = window.globalSupabase || window.supabase;
+        // Use the same Supabase client that's working for contacts
         if (supabase && supabase.auth) {
           console.log('[DEBUG] Getting user from Supabase session...');
           const sessionResult = await supabase.auth.getSession();
-          const session = sessionResult.data.session;
-          console.log('[DEBUG] Supabase session:', session);
+          const session = sessionResult?.data?.session;
           
           if (session && session.user) {
             const userId = session.user.id;
             const userEmail = session.user.email;
             console.log('[DEBUG] User from session - ID:', userId, 'Email:', userEmail);
             
-            // For your specific email, map to the correct local user ID
+            // For your specific email mappings, use the actual Supabase user ID
             if (userEmail === 'john+2@tpnlife.com') {
               const user = {
-                id: 'user-john+2-tpnlife-com',
+                id: userId,
                 supabase_id: userId,
                 email: userEmail,
                 first_name: 'John',
@@ -2223,7 +2307,7 @@
               return user;
             } else if (userEmail === 'john+3@tpnlife.com') {
               const user = {
-                id: 'user-manager-example-com',
+                id: userId,
                 supabase_id: userId,
                 email: userEmail,
                 first_name: 'John',
@@ -2244,16 +2328,10 @@
                 
               if (profileData) {
                 const role = profileData.role || 'user';
-                let localUserId;
                 
-                if (role === 'admin') {
-                  localUserId = '63847570-8094-48c5-b531-24ae0ed00bd8';
-                } else {
-                  localUserId = 'user-' + userEmail.replace('@', '-').replace(/\./g, '-');
-                }
-                
+                // Use the actual Supabase user ID for all database operations
                 const user = {
-                  id: localUserId,
+                  id: userId,
                   supabase_id: userId,
                   email: profileData.email || userEmail,
                   first_name: profileData.first_name || '',
@@ -2262,9 +2340,32 @@
                 };
                 console.log('[DEBUG] Using profile-based user:', user);
                 return user;
+              } else {
+                // No profile found, create a basic user object with Supabase ID
+                const user = {
+                  id: userId,
+                  supabase_id: userId,
+                  email: userEmail,
+                  first_name: '',
+                  last_name: '',
+                  role: 'user'
+                };
+                console.log('[DEBUG] Using basic user (no profile found):', user);
+                return user;
               }
             } catch (profileError) {
               console.warn('[DEBUG] Profile lookup failed:', profileError);
+              // Still return user with Supabase ID even if profile lookup fails
+              const user = {
+                id: userId,
+                supabase_id: userId,
+                email: userEmail,
+                first_name: '',
+                last_name: '',
+                role: 'user'
+              };
+              console.log('[DEBUG] Using fallback user after profile error:', user);
+              return user;
             }
           }
         }
@@ -2272,13 +2373,14 @@
         console.error('[DEBUG] Error getting user from Supabase:', e);
       }
       
-      // Fallback: use demo admin
-      console.warn('No user found, using demo manager user for testing.');
+      // Fallback: use demo admin with separate preferences
+      console.log('No user found, using demo manager user for testing.');
       return {
-        id: 'user-manager-example-com',
-        email: 'manager@example.com',
-        first_name: 'Test',
-        last_name: 'Manager',
+        id: 'demo-user-for-testing-only',
+        supabase_id: null, // No database save for demo user
+        email: 'demo@example.com',
+        first_name: 'Demo',
+        last_name: 'User',
         role: 'manager'
       };
     }
@@ -3640,9 +3742,38 @@
 
       if (closeColumnModalBtn) {
         closeColumnModalBtn.addEventListener('click', () => {
-          // Apply column order before closing
-          applyColumnOrder();
-          saveColumnOrder();
+          // Debug: Show current column order before applying
+          const columnItems = document.querySelectorAll('.column-item');
+          const order = Array.from(columnItems).map(item => 
+            item.querySelector('span:last-child').textContent
+          );
+          console.log('Column order from modal before applying:', order);
+          
+          // Check if the order has actually changed
+          const currentOrder = getCurrentTableColumnOrder();
+          const orderChanged = !arraysEqual(order.map(getColumnDataName), currentOrder);
+          
+          console.log('Current table order:', currentOrder);
+          console.log('New modal order:', order.map(getColumnDataName));
+          console.log('Order changed:', orderChanged);
+          
+          if (orderChanged) {
+            // Apply column order only if it has changed
+            applyColumnOrder();
+            saveColumnOrder();
+            console.log('Applied new column order');
+          } else {
+            console.log('Column order unchanged, skipping apply');
+          }
+          
+          // Debug: Show actual table header order after applying
+          const table = document.getElementById('contacts-table');
+          if (table) {
+            const headers = table.querySelectorAll('th');
+            const headerTexts = Array.from(headers).map(h => h.textContent.trim());
+            console.log('Actual table header order after applying:', headerTexts);
+          }
+          
           document.getElementById('column-modal').style.display = 'none';
         });
       }
@@ -3669,6 +3800,7 @@
       
       let draggedElement = null;
       let dragOverElement = null;
+      let dropPosition = null; // 'before' or 'after'
       
       // Add drag event listeners to all column items
       document.querySelectorAll('.column-item').forEach(item => {
@@ -3684,10 +3816,11 @@
         item.addEventListener('dragend', function(e) {
           this.classList.remove('dragging');
           draggedElement = null;
+          dropPosition = null;
           
           // Remove drag-over class from all items
           document.querySelectorAll('.column-item').forEach(item => {
-            item.classList.remove('drag-over');
+            item.classList.remove('drag-over', 'drop-before', 'drop-after');
           });
           
           // Save the new column order
@@ -3697,6 +3830,25 @@
         item.addEventListener('dragover', function(e) {
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
+          
+          if (this !== draggedElement) {
+            // Calculate drop position based on mouse position
+            const rect = this.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            
+            // Remove previous drop indicators
+            document.querySelectorAll('.column-item').forEach(item => {
+              item.classList.remove('drop-before', 'drop-after');
+            });
+            
+            if (e.clientY < midpoint) {
+              dropPosition = 'before';
+              this.classList.add('drop-before');
+            } else {
+              dropPosition = 'after';
+              this.classList.add('drop-after');
+            }
+          }
         });
         
         item.addEventListener('dragenter', function(e) {
@@ -3710,137 +3862,299 @@
         item.addEventListener('dragleave', function(e) {
           // Only remove drag-over if we're actually leaving the element
           if (!this.contains(e.relatedTarget)) {
-            this.classList.remove('drag-over');
+            this.classList.remove('drag-over', 'drop-before', 'drop-after');
           }
         });
         
         item.addEventListener('drop', function(e) {
           e.preventDefault();
           if (this !== draggedElement) {
-            // Insert the dragged element before or after this element
-            const rect = this.getBoundingClientRect();
-            const midpoint = rect.top + rect.height / 2;
-            
-            if (e.clientY < midpoint) {
-              // Insert before
+            // Insert the dragged element based on drop position
+            if (dropPosition === 'before') {
               this.parentNode.insertBefore(draggedElement, this);
             } else {
-              // Insert after
               this.parentNode.insertBefore(draggedElement, this.nextSibling);
             }
             
-            this.classList.remove('drag-over');
-            // Apply the new column order to the table
-            applyColumnOrder();
+            this.classList.remove('drag-over', 'drop-before', 'drop-after');
+            
+            // Save the new column order but don't apply yet - wait for modal close
+            saveColumnOrder();
+            
+            // Show feedback to user
+            showColumnOrderFeedback();
           }
         });
       });
     }
-
-    // Save column order to localStorage
-    function saveColumnOrder() {
+    
+    // Show feedback when columns are reordered
+    function showColumnOrderFeedback() {
       const columnItems = document.querySelectorAll('.column-item');
-      const order = Array.from(columnItems).map(item => item.dataset.column);
-      localStorage.setItem('contactsTableColumnOrder', JSON.stringify(order));
-      console.log('Saved column order:', order);
+      const order = Array.from(columnItems).map(item => 
+        item.querySelector('span:last-child').textContent
+      );
+      
+      console.log('New column order:', order);
+      
+      // Visual feedback - briefly highlight the reordered columns
+      const table = document.getElementById('contacts-table');
+      if (table) {
+        const headers = table.querySelectorAll('th');
+        headers.forEach((header, index) => {
+          if (index >= 5) { // Skip first 5 fixed columns
+            header.style.transition = 'background-color 0.5s ease';
+            header.style.backgroundColor = '#e3f2fd';
+            setTimeout(() => {
+              header.style.backgroundColor = '';
+            }, 500);
+          }
+        });
+      }
     }
 
-    // Apply column order to the table
+    // Helper function to compare arrays
+    function arraysEqual(arr1, arr2) {
+      if (arr1.length !== arr2.length) return false;
+      for (let i = 0; i < arr1.length; i++) {
+        if (arr1[i] !== arr2[i]) return false;
+      }
+      return true;
+    }
+    
+    // Helper function to get current table column order
+    function getCurrentTableColumnOrder() {
+      const table = document.getElementById('contacts-table');
+      if (!table) return [];
+      
+      const headers = table.querySelectorAll('th');
+      const columnOrder = [];
+      
+      // Skip the first 5 columns (checkbox, SMS, Call, Email, No.)
+      for (let i = 5; i < headers.length; i++) {
+        const headerText = headers[i].textContent.trim();
+        const columnName = getColumnDataName(headerText);
+        if (columnName) {
+          columnOrder.push(columnName);
+        }
+      }
+      
+      return columnOrder;
+    }
+    
+    // Helper function to convert display names to data attribute names
+    function getColumnDataName(displayName) {
+      const columnNameMap = {
+        'Contact ID': 'contact_id',
+        'Assignee': 'assignee',
+        'Sponsor': 'sponsor',
+        'Sponsor First': 'sponsor_first',
+        'Sponsor Last': 'sponsor_last',
+        'Sparky ID': 'user_id',
+        'First Name': 'first_name',
+        'Last Name': 'last_name',
+        'Email': 'email',
+        'Valid': 'valid',
+        'Phone': 'phone',
+        'Address': 'address',
+        'City': 'city',
+        'State': 'state',
+        'Zip': 'zip',
+        'IP': 'ip_address',
+        'Date': 'date_created',
+        'Timezone': 'timezone',
+        'Cell': 'cell',
+        'Carrier': 'carrier',
+        'Landline': 'landline',
+        'VoIP': 'voip',
+        'Other': 'other_phone',
+        'Foreign': 'foreign_number',
+        'Country': 'country'
+      };
+      
+      return columnNameMap[displayName];
+    }
+
+    // Save column order to localStorage and user profile
+    async function saveColumnOrder() {
+      const columnItems = document.querySelectorAll('.column-item');
+      const order = Array.from(columnItems).map(item => item.dataset.column);
+      
+      // Save to localStorage for immediate use
+      localStorage.setItem('contactsTableColumnOrder', JSON.stringify(order));
+      console.log('Saved column order to localStorage:', order);
+      
+      // Save to user profile for persistence across sessions
+      try {
+        console.log('=== ATTEMPTING TO SAVE TO DATABASE ===');
+        const currentUser = await getCurrentUser();
+        console.log('Current user from getCurrentUser():', currentUser);
+        
+        if (currentUser && currentUser.supabase_id) {
+          // Only save to database for real users (not demo user)
+          const supabaseUserId = currentUser.supabase_id;
+          console.log('Using Supabase user ID:', supabaseUserId);
+          
+          // First, let's check if this user exists in the profiles table
+          const { data: profileCheck, error: checkError } = await supabase
+            .from('profiles')
+            .select('id, email, first_name, last_name')
+            .eq('id', supabaseUserId)
+            .single();
+          
+          if (checkError) {
+            console.error('Error checking user profile:', checkError);
+            console.log('Profile check failed, user might not exist in profiles table');
+            
+            // Try to create the profile first
+            console.log('Attempting to create profile for user:', supabaseUserId);
+            try {
+              const { data: createData, error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: supabaseUserId,
+                  email: currentUser.email,
+                  first_name: currentUser.first_name || '',
+                  last_name: currentUser.last_name || '',
+                  role: currentUser.role || 'user',
+                  column_preferences: {}
+                });
+              
+              if (createError) {
+                console.error('Error creating profile:', createError);
+                console.log('Cannot save preferences - profile creation failed');
+                return;
+              }
+              
+              console.log('Profile created successfully, proceeding with save...');
+            } catch (createException) {
+              console.error('Exception creating profile:', createException);
+              return;
+            }
+          } else {
+            console.log('User profile found:', profileCheck);
+          }
+          
+          await saveUserColumnPreferences(supabaseUserId, order);
+          console.log('=== SAVE OPERATION COMPLETED ===');
+        } else {
+          console.log('No current user found, skipping database save');
+          console.log('Current user object:', currentUser);
+        }
+      } catch (error) {
+        console.error('Error saving column order to user profile:', error);
+        console.error('Error details:', error.stack);
+      }
+    }
+    
+    // Save column preferences to user profile
+    async function saveUserColumnPreferences(userId, columnOrder) {
+      try {
+        console.log('=== SAVING COLUMN PREFERENCES ===');
+        console.log('User ID:', userId);
+        console.log('Column Order:', columnOrder);
+        console.log('Supabase client available:', !!supabase);
+        
+        if (!supabase) {
+          console.error('Supabase client not available');
+          return false;
+        }
+        
+        // Get current visibility state
+        const checkboxes = document.querySelectorAll('.column-toggle');
+        const visibilityState = {};
+        checkboxes.forEach(checkbox => {
+          visibilityState[checkbox.dataset.column] = checkbox.checked;
+        });
+        
+        console.log('Current visibility state:', visibilityState);
+        
+        // Get existing preferences to preserve other settings
+        console.log('Fetching existing preferences...');
+        const { data: existingData, error: fetchError } = await supabase
+          .from('profiles')
+          .select('column_preferences')
+          .eq('id', userId)
+          .single();
+        
+        if (fetchError) {
+          console.error('Error fetching existing preferences:', fetchError);
+          // Continue anyway, we'll create new preferences
+        } else {
+          console.log('Existing preferences:', existingData);
+        }
+        
+        const existingPreferences = existingData?.column_preferences || {};
+        
+        const preferences = {
+          ...existingPreferences,
+          column_order: columnOrder,
+          column_visibility: visibilityState,
+          updated_at: new Date().toISOString()
+        };
+        
+        console.log('Preferences to save:', preferences);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({ 
+            column_preferences: preferences
+          })
+          .eq('id', userId);
+        
+        if (error) {
+          console.error('Error saving column preferences:', error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
+          return false;
+        }
+        
+        console.log('Column preferences saved successfully:', data);
+        console.log('=== SAVE COMPLETE ===');
+        return true;
+      } catch (error) {
+        console.error('Exception in saveUserColumnPreferences:', error);
+        console.error('Error stack:', error.stack);
+        return false;
+      }
+    }
+    
+    // Load column preferences from user profile
+    async function loadUserColumnPreferences(userId) {
+      try {
+        console.log('Loading column preferences from user profile for user:', userId);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('column_preferences')
+          .eq('id', userId)
+          .single();
+        
+        if (error) {
+          console.error('Error loading column preferences:', error);
+          return null;
+        }
+        
+        if (data && data.column_preferences && data.column_preferences.column_order) {
+          console.log('Loaded column preferences from user profile:', data.column_preferences.column_order);
+          return data.column_preferences.column_order;
+        }
+        
+        return null;
+      } catch (error) {
+        console.error('Error in loadUserColumnPreferences:', error);
+        return null;
+      }
+    }
+
+    // Apply column order to the table (called when modal is closed)
     function applyColumnOrder() {
       const columnItems = document.querySelectorAll('.column-item');
       const order = Array.from(columnItems).map(item => item.dataset.column);
       
-      // Get the table
-      const table = document.getElementById('contacts-table');
-      if (!table) return;
+      console.log('Applying column order from modal:', order);
       
-      // Column mapping to original indices
-      const columnMap = {
-        'contact_id': 5,
-        'assignee': 6,
-        'sponsor': 7,
-        'sponsor_first': 8,
-        'sponsor_last': 9,
-        'user_id': 10,
-        'first_name': 11,
-        'last_name': 12,
-        'email': 13,
-        'valid': 14,
-        'phone': 15,
-        'address': 16,
-        'city': 17,
-        'state': 18,
-        'zip': 19,
-        'ip_address': 20,
-        'date_created': 21,
-        'timezone': 22,
-        'cell': 23,
-        'carrier': 24,
-        'landline': 25,
-        'voip': 26,
-        'other_phone': 27,
-        'foreign_number': 28,
-        'country': 29
-      };
-      
-      // Get header row
-      const headerRow = table.querySelector('thead tr');
-      if (!headerRow) return;
-      
-      // Get all data rows
-      const dataRows = table.querySelectorAll('tbody tr');
-      
-      // Create new header elements in the correct order
-      const headers = headerRow.querySelectorAll('th');
-      const newHeaders = [];
-      
-      // Keep the first 5 columns (checkbox, SMS, Call, Email, No.) in their original positions
-      for (let i = 0; i < 5; i++) {
-        newHeaders.push(headers[i]);
-      }
-      
-      // Add the reordered columns
-      order.forEach(columnName => {
-        const originalIndex = columnMap[columnName];
-        if (originalIndex !== undefined && headers[originalIndex]) {
-          newHeaders.push(headers[originalIndex]);
-        }
-      });
-      
-      // Clear the header row and append in new order
-      headerRow.innerHTML = '';
-      newHeaders.forEach(header => {
-        headerRow.appendChild(header);
-      });
-      
-      // Reorder cells in data rows
-      dataRows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        const newCells = [];
-        
-        // Keep the first 5 columns in their original positions
-        for (let i = 0; i < 5; i++) {
-          if (cells[i]) {
-            newCells.push(cells[i]);
-          }
-        }
-        
-        // Add the reordered columns
-        order.forEach(columnName => {
-          const originalIndex = columnMap[columnName];
-          if (originalIndex !== undefined && cells[originalIndex]) {
-            newCells.push(cells[originalIndex]);
-          }
-        });
-        
-        // Clear the row and append in new order
-        row.innerHTML = '';
-        newCells.forEach(cell => {
-          row.appendChild(cell);
-        });
-      });
-      
-      console.log('Applied column order:', order);
+      // Use the shared function to apply the order
+      applyColumnOrderFromArray(order);
     }
 
     // Reset column order to default
@@ -3876,34 +4190,182 @@
       showAlert('info', 'Column order reset to default');
     }
 
-    // Restore column order from localStorage
-    function restoreColumnOrder() {
-      const savedOrder = localStorage.getItem('contactsTableColumnOrder');
-      if (!savedOrder) return;
-      
+    // Restore column order from user profile or localStorage (called on page load)
+    async function restoreColumnOrder() {
       try {
-        const order = JSON.parse(savedOrder);
-        const columnList = document.getElementById('column-list');
-        if (!columnList) return;
+        console.log('Restoring column order on page load...');
         
-        // Reorder the column items in the modal
-        const columnItems = Array.from(columnList.querySelectorAll('.column-item'));
-        columnList.innerHTML = '';
+        // First try to load from user profile
+        const currentUser = await getCurrentUser();
+        let order = null;
         
-        order.forEach(columnName => {
-          const item = columnItems.find(item => item.dataset.column === columnName);
-          if (item) {
-            columnList.appendChild(item);
+        if (currentUser && currentUser.supabase_id) {
+          // Only load from database for real users (not demo user)
+          order = await loadUserColumnPreferences(currentUser.supabase_id);
+          console.log('Column order from user profile:', order);
+        }
+        
+        // If no user profile order, try localStorage
+        if (!order) {
+          const savedOrder = localStorage.getItem('contactsTableColumnOrder');
+          if (savedOrder) {
+            order = JSON.parse(savedOrder);
+            console.log('Column order from localStorage:', order);
+            
+            // If we found localStorage order but have a user, save it to their profile
+            if (currentUser && currentUser.supabase_id) {
+              await saveUserColumnPreferences(currentUser.supabase_id, order);
+              console.log('Migrated localStorage column order to user profile');
+            }
           }
-        });
+        }
         
-        // Apply the saved order to the table
-        applyColumnOrder();
-        
-        console.log('Restored column order:', order);
+        if (order && order.length > 0) {
+          console.log('Restoring column order:', order);
+          // Apply the saved order to the table
+          applyColumnOrderFromArray(order);
+          
+          // Also save to localStorage for immediate future use
+          localStorage.setItem('contactsTableColumnOrder', JSON.stringify(order));
+          
+          console.log('Column order restored successfully');
+        } else {
+          console.log('No saved column order found, using default order');
+        }
       } catch (error) {
         console.error('Error restoring column order:', error);
+        // Fall back to localStorage only
+        try {
+          const savedOrder = localStorage.getItem('contactsTableColumnOrder');
+          if (savedOrder) {
+            const order = JSON.parse(savedOrder);
+            applyColumnOrderFromArray(order);
+            console.log('Restored column order from localStorage fallback');
+          }
+        } catch (fallbackError) {
+          console.error('Fallback restore also failed:', fallbackError);
+        }
       }
+    }
+    
+    // Apply column order from an array of column names
+    function applyColumnOrderFromArray(order) {
+      // Get the table
+      const table = document.getElementById('contacts-table');
+      if (!table) return;
+      
+      // Get header row and data rows
+      const headerRow = table.querySelector('thead tr');
+      const dataRows = table.querySelectorAll('tbody tr');
+      if (!headerRow) return;
+      
+      // Get all current headers and cells
+      const allHeaders = Array.from(headerRow.querySelectorAll('th'));
+      const allDataRows = Array.from(dataRows);
+      
+      // Create a dynamic mapping of column names to current positions
+      const currentColumnMap = {};
+      allHeaders.forEach((header, index) => {
+        const headerText = header.textContent.trim();
+        
+        // Map header text to column data attribute names
+        const columnNameMap = {
+          'Contact ID': 'contact_id',
+          'Assignee': 'assignee',
+          'Sponsor': 'sponsor',
+          'Sponsor First': 'sponsor_first',
+          'Sponsor Last': 'sponsor_last',
+          'Sparky ID': 'user_id',
+          'First Name': 'first_name',
+          'Last Name': 'last_name',
+          'Email': 'email',
+          'Valid': 'valid',
+          'Phone': 'phone',
+          'Address': 'address',
+          'City': 'city',
+          'State': 'state',
+          'Zip': 'zip',
+          'IP': 'ip_address',
+          'Date': 'date_created',
+          'Timezone': 'timezone',
+          'Cell': 'cell',
+          'Carrier': 'carrier',
+          'Landline': 'landline',
+          'VoIP': 'voip',
+          'Other': 'other_phone',
+          'Foreign': 'foreign_number',
+          'Country': 'country'
+        };
+        
+        const columnName = columnNameMap[headerText];
+        if (columnName) {
+          currentColumnMap[columnName] = index;
+        }
+      });
+      
+      console.log('Current column positions:', currentColumnMap);
+      
+      // Create arrays to store the reordered elements
+      const reorderedHeaders = [];
+      const reorderedDataCells = [];
+      
+      // Keep the first 5 columns (checkbox, SMS, Call, Email, No.) in their original positions
+      for (let i = 0; i < 5; i++) {
+        if (allHeaders[i]) {
+          reorderedHeaders.push(allHeaders[i]);
+        }
+      }
+      
+      // Initialize data cell arrays for each row
+      allDataRows.forEach(() => {
+        reorderedDataCells.push([]);
+      });
+      
+      // Add the first 5 data columns for each row
+      allDataRows.forEach((row, rowIndex) => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        for (let i = 0; i < 5; i++) {
+          if (cells[i]) {
+            reorderedDataCells[rowIndex].push(cells[i]);
+          }
+        }
+      });
+      
+      // Now add the columns in the specified order using current positions
+      order.forEach(columnName => {
+        const currentIndex = currentColumnMap[columnName];
+        if (currentIndex !== undefined && allHeaders[currentIndex]) {
+          // Add header
+          reorderedHeaders.push(allHeaders[currentIndex]);
+          
+          // Add data cells for this column from all rows
+          allDataRows.forEach((row, rowIndex) => {
+            const cells = Array.from(row.querySelectorAll('td'));
+            if (cells[currentIndex]) {
+              reorderedDataCells[rowIndex].push(cells[currentIndex]);
+            }
+          });
+        }
+      });
+      
+      // Clear and rebuild the header row
+      headerRow.innerHTML = '';
+      reorderedHeaders.forEach(header => {
+        headerRow.appendChild(header);
+      });
+      
+      // Clear and rebuild each data row
+      allDataRows.forEach((row, rowIndex) => {
+        row.innerHTML = '';
+        if (reorderedDataCells[rowIndex]) {
+          reorderedDataCells[rowIndex].forEach(cell => {
+            row.appendChild(cell);
+          });
+        }
+      });
+      
+      console.log('Applied column order from array:', order);
+      console.log('New header order:', reorderedHeaders.slice(0, 8).map(h => h.textContent.trim()));
     }
 
     // Column visibility functions
@@ -3969,6 +4431,97 @@
       saveColumnVisibilityState();
     }
 
+    async function saveColumnVisibilityState() {
+      const checkboxes = document.querySelectorAll('.column-toggle');
+      const visibilityState = {};
+      
+      checkboxes.forEach(checkbox => {
+        visibilityState[checkbox.dataset.column] = checkbox.checked;
+      });
+      
+      // Save to localStorage for immediate use
+      localStorage.setItem('contactsTableColumnVisibility', JSON.stringify(visibilityState));
+      console.log('Saved column visibility to localStorage:', visibilityState);
+      
+      // Save to user profile for persistence across sessions
+      try {
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+          await saveUserColumnVisibility(currentUser.id, visibilityState);
+        }
+      } catch (error) {
+        console.error('Error saving column visibility to user profile:', error);
+      }
+    }
+
+    // Save column visibility to user profile
+    async function saveUserColumnVisibility(userId, visibilityState) {
+      try {
+        console.log('Saving column visibility to user profile for user:', userId);
+        
+        // Get existing preferences to preserve other settings
+        const { data: existingData } = await supabase
+          .from('profiles')
+          .select('column_preferences')
+          .eq('id', userId)
+          .single();
+        
+        const existingPreferences = existingData?.column_preferences || {};
+        
+        const preferences = {
+          ...existingPreferences,
+          column_visibility: visibilityState,
+          updated_at: new Date().toISOString()
+        };
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({ 
+            column_preferences: preferences
+          })
+          .eq('id', userId);
+        
+        if (error) {
+          console.error('Error saving column visibility:', error);
+          return false;
+        }
+        
+        console.log('Column visibility saved to user profile successfully');
+        return true;
+      } catch (error) {
+        console.error('Error in saveUserColumnVisibility:', error);
+        return false;
+      }
+    }
+
+    // Load column visibility from user profile
+    async function loadUserColumnVisibility(userId) {
+      try {
+        console.log('Loading column visibility from user profile for user:', userId);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('column_preferences')
+          .eq('id', userId)
+          .single();
+        
+        if (error) {
+          console.error('Error loading column visibility:', error);
+          return null;
+        }
+        
+        if (data && data.column_preferences && data.column_preferences.column_visibility) {
+          console.log('Loaded column visibility from user profile:', data.column_preferences.column_visibility);
+          return data.column_preferences.column_visibility;
+        }
+        
+        return null;
+      } catch (error) {
+        console.error('Error in loadUserColumnVisibility:', error);
+        return null;
+      }
+    }
+
     function showAllColumns() {
       const checkboxes = document.querySelectorAll('.column-toggle');
       checkboxes.forEach(checkbox => {
@@ -4008,25 +4561,74 @@
       }
     }
 
-    function restoreColumnVisibilityState() {
+    async function restoreColumnVisibilityState() {
       try {
-        const savedState = localStorage.getItem('columnVisibilityState');
-        if (savedState) {
-          const columnVisibilityState = JSON.parse(savedState);
-          console.log('Restoring column visibility state:', columnVisibilityState);
+        console.log('Restoring column visibility state...');
+        
+        // First try to load from user profile
+        const currentUser = await getCurrentUser();
+        let visibilityState = null;
+        
+        if (currentUser) {
+          visibilityState = await loadUserColumnVisibility(currentUser.id);
+          console.log('Column visibility from user profile:', visibilityState);
+        }
+        
+        // If no user profile state, try localStorage
+        if (!visibilityState) {
+          const savedState = localStorage.getItem('columnVisibilityState');
+          if (savedState) {
+            visibilityState = JSON.parse(savedState);
+            console.log('Column visibility from localStorage:', visibilityState);
+            
+            // If we found localStorage state but have a user, save it to their profile
+            if (currentUser) {
+              await saveUserColumnVisibility(currentUser.id, visibilityState);
+              console.log('Migrated localStorage column visibility to user profile');
+            }
+          }
+        }
+        
+        if (visibilityState) {
+          console.log('Restoring column visibility state:', visibilityState);
           
           // Apply saved state to checkboxes and columns
           const checkboxes = document.querySelectorAll('.column-toggle');
           checkboxes.forEach(checkbox => {
             const columnName = checkbox.dataset.column;
-            if (columnVisibilityState.hasOwnProperty(columnName)) {
-              checkbox.checked = columnVisibilityState[columnName];
-              toggleColumn(columnName, columnVisibilityState[columnName]);
+            if (visibilityState.hasOwnProperty(columnName)) {
+              checkbox.checked = visibilityState[columnName];
+              toggleColumn(columnName, visibilityState[columnName]);
             }
           });
+          
+          // Also save to localStorage for immediate future use
+          localStorage.setItem('columnVisibilityState', JSON.stringify(visibilityState));
+          
+          console.log('Column visibility state restored successfully');
+        } else {
+          console.log('No saved column visibility state found, using defaults');
         }
       } catch (error) {
         console.error('Error restoring column visibility state:', error);
+        // Fall back to localStorage only
+        try {
+          const savedState = localStorage.getItem('columnVisibilityState');
+          if (savedState) {
+            const visibilityState = JSON.parse(savedState);
+            const checkboxes = document.querySelectorAll('.column-toggle');
+            checkboxes.forEach(checkbox => {
+              const columnName = checkbox.dataset.column;
+              if (visibilityState.hasOwnProperty(columnName)) {
+                checkbox.checked = visibilityState[columnName];
+                toggleColumn(columnName, visibilityState[columnName]);
+              }
+            });
+            console.log('Restored column visibility from localStorage fallback');
+          }
+        } catch (fallbackError) {
+          console.error('Fallback column visibility restore also failed:', fallbackError);
+        }
       }
     }
 
