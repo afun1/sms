@@ -669,6 +669,39 @@
       color: #000;
     }
     
+    /* Drag and drop styles for column reordering */
+    .column-item {
+      transition: all 0.3s ease;
+      user-select: none;
+    }
+    
+    .column-item.dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+      z-index: 1000;
+    }
+    
+    .column-item.drag-over {
+      background: #e3f2fd !important;
+      border-color: #2196f3 !important;
+      transform: translateY(-2px);
+    }
+    
+    .drag-handle {
+      user-select: none;
+      font-weight: bold;
+      letter-spacing: -1px;
+    }
+    
+    .drag-handle:hover {
+      color: #2196f3 !important;
+    }
+    
+    .column-item:hover {
+      background: #f0f8ff !important;
+      border-color: #b3d9ff !important;
+    }
+    
     .user-search {
       width: 100%;
       padding: 0 10px;
@@ -1076,159 +1109,189 @@
 
   <!-- Column Visibility Modal -->
   <div id="column-modal" class="modal">
-    <div class="modal-content" style="max-width: 400px;">
+    <div class="modal-content" style="max-width: 500px;">
       <div class="modal-header">
-        <h3>Column Visibility</h3>
+        <h3>Column Settings</h3>
         <span class="close">&times;</span>
       </div>
       <div class="modal-body">
-        <div style="font-size: 12px; max-height: 300px; overflow-y: auto;">
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+        <div style="margin-bottom: 15px;">
+          <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+            <strong>Drag and drop</strong> to reorder columns. Use checkboxes to show/hide columns.
+          </p>
+        </div>
+        <div id="column-list" style="font-size: 12px; max-height: 400px; overflow-y: auto;">
+          <div class="column-item" data-column="contact_id" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="contact_id" checked style="margin-right: 8px;">
               <span>Contact ID</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="assignee" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="assignee" checked style="margin-right: 8px;">
               <span>Assignee</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="sponsor" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="sponsor" checked style="margin-right: 8px;">
               <span>Sponsor</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="sponsor_first" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="sponsor_first" checked style="margin-right: 8px;">
               <span>Sponsor First</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="sponsor_last" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="sponsor_last" checked style="margin-right: 8px;">
               <span>Sponsor Last</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="user_id" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="user_id" checked style="margin-right: 8px;">
               <span>Sparky ID</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="first_name" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="first_name" checked style="margin-right: 8px;">
               <span>First Name</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="last_name" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="last_name" checked style="margin-right: 8px;">
               <span>Last Name</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="email" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="email" checked style="margin-right: 8px;">
               <span>Email</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="valid" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="valid" checked style="margin-right: 8px;">
               <span>Valid</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="phone" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="phone" checked style="margin-right: 8px;">
               <span>Phone</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="address" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="address" checked style="margin-right: 8px;">
               <span>Address</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="city" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="city" checked style="margin-right: 8px;">
               <span>City</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="state" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="state" checked style="margin-right: 8px;">
               <span>State</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="zip" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="zip" checked style="margin-right: 8px;">
               <span>Zip</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="ip_address" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="ip_address" checked style="margin-right: 8px;">
               <span>IP</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="date_created" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="date_created" checked style="margin-right: 8px;">
               <span>Date</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="timezone" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="timezone" checked style="margin-right: 8px;">
               <span>Timezone</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="cell" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="cell" checked style="margin-right: 8px;">
               <span>Cell</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="carrier" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="carrier" checked style="margin-right: 8px;">
               <span>Carrier</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="landline" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="landline" checked style="margin-right: 8px;">
               <span>Landline</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="voip" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="voip" checked style="margin-right: 8px;">
               <span>VoIP</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="other_phone" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="other_phone" checked style="margin-right: 8px;">
               <span>Other</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="foreign_number" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="foreign_number" checked style="margin-right: 8px;">
               <span>Foreign</span>
             </label>
           </div>
-          <div style="margin-bottom: 5px; padding: 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
+          <div class="column-item" data-column="country" style="margin-bottom: 2px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; cursor: move;">
+            <label style="display: flex; align-items: center; cursor: pointer; width: 100%;">
+              <span class="drag-handle" style="margin-right: 8px; color: #666; cursor: move;">⋮⋮</span>
               <input type="checkbox" class="column-toggle" data-column="country" checked style="margin-right: 8px;">
               <span>Country</span>
             </label>
@@ -1238,7 +1301,8 @@
       <div class="modal-actions">
         <button id="show-all-columns" class="btn btn-secondary">Show All</button>
         <button id="hide-all-columns" class="btn btn-secondary">Hide All</button>
-        <button id="close-column-modal" class="btn btn-primary">Close</button>
+        <button id="reset-column-order" class="btn btn-secondary">Reset Order</button>
+        <button id="close-column-modal" class="btn btn-primary">Apply & Close</button>
       </div>
     </div>
   </div>
@@ -1644,6 +1708,11 @@
     function handleAdd() {
       const modal = document.getElementById('column-modal');
       modal.style.display = 'block';
+      
+      // Re-initialize drag and drop functionality for the modal
+      setTimeout(() => {
+        initializeColumnDragDrop();
+      }, 100);
     }
 
     function handleSort() {
@@ -2401,6 +2470,11 @@
           initializeColumnResizing();
           restoreColumnWidths();
         }, 1600);
+
+        // Restore column order
+        setTimeout(() => {
+          restoreColumnOrder();
+        }, 1700);
       } catch (error) {
         console.error('Error initializing app:', error);
         const errorMessage = error.message || 'Unknown error occurred';
@@ -3566,6 +3640,9 @@
 
       if (closeColumnModalBtn) {
         closeColumnModalBtn.addEventListener('click', () => {
+          // Apply column order before closing
+          applyColumnOrder();
+          saveColumnOrder();
           document.getElementById('column-modal').style.display = 'none';
         });
       }
@@ -3574,6 +3651,259 @@
       document.querySelectorAll('.column-toggle').forEach(checkbox => {
         checkbox.addEventListener('change', handleColumnToggle);
       });
+      
+      // Initialize drag and drop for column reordering
+      initializeColumnDragDrop();
+      
+      // Reset column order button
+      const resetColumnOrderBtn = document.getElementById('reset-column-order');
+      if (resetColumnOrderBtn) {
+        resetColumnOrderBtn.addEventListener('click', resetColumnOrder);
+      }
+    }
+
+    // Initialize drag and drop functionality for column reordering
+    function initializeColumnDragDrop() {
+      const columnList = document.getElementById('column-list');
+      if (!columnList) return;
+      
+      let draggedElement = null;
+      let dragOverElement = null;
+      
+      // Add drag event listeners to all column items
+      document.querySelectorAll('.column-item').forEach(item => {
+        item.draggable = true;
+        
+        item.addEventListener('dragstart', function(e) {
+          draggedElement = this;
+          this.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/html', this.outerHTML);
+        });
+        
+        item.addEventListener('dragend', function(e) {
+          this.classList.remove('dragging');
+          draggedElement = null;
+          
+          // Remove drag-over class from all items
+          document.querySelectorAll('.column-item').forEach(item => {
+            item.classList.remove('drag-over');
+          });
+          
+          // Save the new column order
+          saveColumnOrder();
+        });
+        
+        item.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+        });
+        
+        item.addEventListener('dragenter', function(e) {
+          e.preventDefault();
+          if (this !== draggedElement) {
+            this.classList.add('drag-over');
+            dragOverElement = this;
+          }
+        });
+        
+        item.addEventListener('dragleave', function(e) {
+          // Only remove drag-over if we're actually leaving the element
+          if (!this.contains(e.relatedTarget)) {
+            this.classList.remove('drag-over');
+          }
+        });
+        
+        item.addEventListener('drop', function(e) {
+          e.preventDefault();
+          if (this !== draggedElement) {
+            // Insert the dragged element before or after this element
+            const rect = this.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            
+            if (e.clientY < midpoint) {
+              // Insert before
+              this.parentNode.insertBefore(draggedElement, this);
+            } else {
+              // Insert after
+              this.parentNode.insertBefore(draggedElement, this.nextSibling);
+            }
+            
+            this.classList.remove('drag-over');
+            // Apply the new column order to the table
+            applyColumnOrder();
+          }
+        });
+      });
+    }
+
+    // Save column order to localStorage
+    function saveColumnOrder() {
+      const columnItems = document.querySelectorAll('.column-item');
+      const order = Array.from(columnItems).map(item => item.dataset.column);
+      localStorage.setItem('contactsTableColumnOrder', JSON.stringify(order));
+      console.log('Saved column order:', order);
+    }
+
+    // Apply column order to the table
+    function applyColumnOrder() {
+      const columnItems = document.querySelectorAll('.column-item');
+      const order = Array.from(columnItems).map(item => item.dataset.column);
+      
+      // Get the table
+      const table = document.getElementById('contacts-table');
+      if (!table) return;
+      
+      // Column mapping to original indices
+      const columnMap = {
+        'contact_id': 5,
+        'assignee': 6,
+        'sponsor': 7,
+        'sponsor_first': 8,
+        'sponsor_last': 9,
+        'user_id': 10,
+        'first_name': 11,
+        'last_name': 12,
+        'email': 13,
+        'valid': 14,
+        'phone': 15,
+        'address': 16,
+        'city': 17,
+        'state': 18,
+        'zip': 19,
+        'ip_address': 20,
+        'date_created': 21,
+        'timezone': 22,
+        'cell': 23,
+        'carrier': 24,
+        'landline': 25,
+        'voip': 26,
+        'other_phone': 27,
+        'foreign_number': 28,
+        'country': 29
+      };
+      
+      // Get header row
+      const headerRow = table.querySelector('thead tr');
+      if (!headerRow) return;
+      
+      // Get all data rows
+      const dataRows = table.querySelectorAll('tbody tr');
+      
+      // Create new header elements in the correct order
+      const headers = headerRow.querySelectorAll('th');
+      const newHeaders = [];
+      
+      // Keep the first 5 columns (checkbox, SMS, Call, Email, No.) in their original positions
+      for (let i = 0; i < 5; i++) {
+        newHeaders.push(headers[i]);
+      }
+      
+      // Add the reordered columns
+      order.forEach(columnName => {
+        const originalIndex = columnMap[columnName];
+        if (originalIndex !== undefined && headers[originalIndex]) {
+          newHeaders.push(headers[originalIndex]);
+        }
+      });
+      
+      // Clear the header row and append in new order
+      headerRow.innerHTML = '';
+      newHeaders.forEach(header => {
+        headerRow.appendChild(header);
+      });
+      
+      // Reorder cells in data rows
+      dataRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const newCells = [];
+        
+        // Keep the first 5 columns in their original positions
+        for (let i = 0; i < 5; i++) {
+          if (cells[i]) {
+            newCells.push(cells[i]);
+          }
+        }
+        
+        // Add the reordered columns
+        order.forEach(columnName => {
+          const originalIndex = columnMap[columnName];
+          if (originalIndex !== undefined && cells[originalIndex]) {
+            newCells.push(cells[originalIndex]);
+          }
+        });
+        
+        // Clear the row and append in new order
+        row.innerHTML = '';
+        newCells.forEach(cell => {
+          row.appendChild(cell);
+        });
+      });
+      
+      console.log('Applied column order:', order);
+    }
+
+    // Reset column order to default
+    function resetColumnOrder() {
+      const defaultOrder = [
+        'contact_id', 'assignee', 'sponsor', 'sponsor_first', 'sponsor_last',
+        'user_id', 'first_name', 'last_name', 'email', 'valid', 'phone',
+        'address', 'city', 'state', 'zip', 'ip_address', 'date_created',
+        'timezone', 'cell', 'carrier', 'landline', 'voip', 'other_phone',
+        'foreign_number', 'country'
+      ];
+      
+      const columnList = document.getElementById('column-list');
+      if (!columnList) return;
+      
+      // Reorder the column items in the modal
+      const columnItems = Array.from(columnList.querySelectorAll('.column-item'));
+      columnList.innerHTML = '';
+      
+      defaultOrder.forEach(columnName => {
+        const item = columnItems.find(item => item.dataset.column === columnName);
+        if (item) {
+          columnList.appendChild(item);
+        }
+      });
+      
+      // Apply the default order to the table
+      applyColumnOrder();
+      
+      // Remove from localStorage
+      localStorage.removeItem('contactsTableColumnOrder');
+      
+      showAlert('info', 'Column order reset to default');
+    }
+
+    // Restore column order from localStorage
+    function restoreColumnOrder() {
+      const savedOrder = localStorage.getItem('contactsTableColumnOrder');
+      if (!savedOrder) return;
+      
+      try {
+        const order = JSON.parse(savedOrder);
+        const columnList = document.getElementById('column-list');
+        if (!columnList) return;
+        
+        // Reorder the column items in the modal
+        const columnItems = Array.from(columnList.querySelectorAll('.column-item'));
+        columnList.innerHTML = '';
+        
+        order.forEach(columnName => {
+          const item = columnItems.find(item => item.dataset.column === columnName);
+          if (item) {
+            columnList.appendChild(item);
+          }
+        });
+        
+        // Apply the saved order to the table
+        applyColumnOrder();
+        
+        console.log('Restored column order:', order);
+      } catch (error) {
+        console.error('Error restoring column order:', error);
+      }
     }
 
     // Column visibility functions
