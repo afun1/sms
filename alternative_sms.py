@@ -96,13 +96,24 @@ class AlternativeSMSSender:
             print(f"Starting to send {total} messages using {provider}...")
             
             for idx, row in df.iterrows():
-                phone = str(row['phone_number']).strip()
-                name = row.get('name', 'Friend')
-                custom_msg = row.get('message', '')
+                # Handle phone number safely
+                phone_raw = row['phone_number']
+                if pd.isna(phone_raw):
+                    print(f"Skipping row {idx + 1}: No phone number")
+                    continue
+                phone = str(phone_raw).strip()
+                
+                # Handle name safely
+                name_raw = row.get('name', 'Friend')
+                name = str(name_raw) if not pd.isna(name_raw) else 'Friend'
+                
+                # Handle custom message safely
+                custom_msg_raw = row.get('message', '')
+                custom_msg = str(custom_msg_raw) if not pd.isna(custom_msg_raw) else ''
                 
                 # Prepare message
-                message = custom_msg if custom_msg and str(custom_msg).strip() else default_message
-                message = message.replace('{name}', name if name else 'Friend')
+                message = custom_msg if custom_msg and custom_msg.strip() else default_message
+                message = message.replace('{name}', name)
                 
                 print(f"Sending to {phone}...")
                 
@@ -133,18 +144,104 @@ class AlternativeSMSSender:
             
         except Exception as e:
             print(f"Error: {str(e)}")
+    
+    def test_clicksend_connection(self):
+        """
+        Test ClickSend connection and credentials
+        """
+        username = os.getenv('CLICKSEND_USERNAME')
+        api_key = os.getenv('CLICKSEND_API_KEY')
+        
+        print("🚀 Testing ClickSend Connection...")
+        print("=" * 40)
+        
+        if not username or not api_key:
+            print("❌ ClickSend credentials not found in environment")
+            print("Make sure to set:")
+            print("  CLICKSEND_USERNAME=your_username")
+            print("  CLICKSEND_API_KEY=your_api_key")
+            return False
+        
+        print(f"✅ Found credentials for user: {username}")
+        
+        # Test account connection
+        try:
+            response = requests.get(
+                'https://rest.clicksend.com/v3/account',
+                auth=(username, api_key)
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                account = data.get('data', {})
+                print(f"✅ Account connected successfully!")
+                print(f"   Company: {account.get('company_name', 'N/A')}")
+                print(f"   Country: {account.get('country', 'N/A')}")
+                
+                # Check balance
+                balance_response = requests.get(
+                    'https://rest.clicksend.com/v3/account/balance',
+                    auth=(username, api_key)
+                )
+                
+                if balance_response.status_code == 200:
+                    balance_data = balance_response.json()
+                    balance = balance_data.get('data', {})
+                    credit = balance.get('balance', 0)
+                    currency = balance.get('currency', 'USD')
+                    print(f"💰 Balance: {credit} {currency}")
+                    
+                    if credit > 0:
+                        print("✅ Ready to send messages!")
+                        return True
+                    else:
+                        print("⚠️  Low balance - add credit to send messages")
+                        return True
+                else:
+                    print("⚠️  Could not check balance")
+                    return True
+            else:
+                print(f"❌ Authentication failed: {response.status_code}")
+                print(f"Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Connection error: {str(e)}")
+            return False
 
 def main():
     sender = AlternativeSMSSender()
     
-    # Example usage
-    csv_file = 'sample_contacts.csv'
-    default_message = "Hello {name}, this is a test message from our system!"
+    # Test ClickSend connection first
+    print("Testing ClickSend integration...")
+    if sender.test_clicksend_connection():
+        print("\n" + "="*50)
+        print("🎉 ClickSend is ready to use!")
+        print("Advantages of ClickSend (No A2P required):")
+        print("✅ Unlimited daily messages (no 200/day limit)")
+        print("✅ Instant setup (no weeks of approval)")
+        print("✅ Global reach (190+ countries)")
+        print("✅ No monthly fees")
+        print("="*50)
+        
+        # Ask if user wants to test sending
+        test_send = input("\nWould you like to test sending a message? (y/n): ").strip().lower()
+        if test_send == 'y':
+            phone = input("Enter phone number (with country code, e.g., +1234567890): ").strip()
+            if phone:
+                success, result = sender.send_via_clicksend(phone, "Test message from ClickSend - No A2P required! 🚀")
+                if success:
+                    print(f"✅ Test message sent: {result}")
+                else:
+                    print(f"❌ Test failed: {result}")
+    else:
+        print("\n❌ ClickSend setup needs attention")
     
-    # Choose provider: 'textbelt' or 'clicksend'
-    provider = 'textbelt'
-    
-    sender.send_bulk_sms(csv_file, default_message, provider)
+    # Uncomment below to run bulk SMS
+    # csv_file = 'sample_contacts.csv'
+    # default_message = "Hello {name}, this is a test message from our system!"
+    # provider = 'clicksend'
+    # sender.send_bulk_sms(csv_file, default_message, provider)
 
 if __name__ == "__main__":
     main()

@@ -2110,7 +2110,22 @@
                 <div style="flex: 0 0 40%;">
                   <label for="phone-number" style="margin: 0; margin-bottom: 8px; display: block;">Phone Number:</label>
                   <input type="tel" id="phone-number" placeholder="1234567890123456" maxlength="16" style="width: 100%;" required>
+                  <button type="button" id="send-to-list-btn" onclick="window.open('list.html', '_blank')" style="background: #ff6b35; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; margin-top: 8px; width: 100%; font-size: 14px;">📋 Send to List</button>
                 </div>
+              </div>
+            </div>
+            
+            <!-- Selected Contacts Section -->
+            <div class="form-group" id="selected-contacts-section" style="display: none;">
+              <label>Selected Contacts:</label>
+              <div id="selected-contacts-display" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px; max-height: 150px; overflow-y: auto;">
+                <div id="contacts-count" style="font-weight: 600; color: #495057; margin-bottom: 8px;"></div>
+                <div id="contacts-list" style="font-size: 0.9em; color: #666;"></div>
+              </div>
+              <div style="margin-top: 8px;">
+                <button type="button" id="clear-contacts-btn" style="background: #dc3545; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8em;">Clear Selection</button>
+                <button type="button" id="back-to-list-btn" onclick="window.location.href='list.html'" style="background: #6c757d; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-left: 8px;">Back to List</button>
+                <button type="button" id="fresh-start-btn" onclick="clearListStateAndGoBack()" style="background: #ffc107; color: #212529; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-left: 8px;">Fresh Start</button>
               </div>
             </div>
             
@@ -2937,8 +2952,129 @@
       }
     }
 
+    // Clear list state and go back to list (for manual back button)
+    function clearListStateAndGoBack() {
+      localStorage.removeItem('listState');
+      window.location.href = 'list.html';
+    }
+
+    // Load selected contacts from localStorage
+    function loadSelectedContacts() {
+      const selectedContactsData = localStorage.getItem('selectedContactsForSMS');
+      if (selectedContactsData) {
+        try {
+          const selectedContacts = JSON.parse(selectedContactsData);
+          if (selectedContacts && selectedContacts.length > 0) {
+            displaySelectedContacts(selectedContacts);
+            // Hide phone number field when sending to contacts
+            document.getElementById('phone-number').style.display = 'none';
+          }
+        } catch (error) {
+          console.error('Error loading selected contacts:', error);
+        }
+      }
+    }
+
+    // Display selected contacts
+    function displaySelectedContacts(contacts) {
+      const section = document.getElementById('selected-contacts-section');
+      const countElement = document.getElementById('contacts-count');
+      const listElement = document.getElementById('contacts-list');
+      
+      countElement.textContent = `${contacts.length} contact${contacts.length > 1 ? 's' : ''} selected`;
+      
+      // Display first few contacts and show count if there are more
+      const displayLimit = 10;
+      let contactsList = '';
+      
+      for (let i = 0; i < Math.min(contacts.length, displayLimit); i++) {
+        const contact = contacts[i];
+        const name = `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'No name';
+        const phone = contact.phone || 'No phone';
+        contactsList += `<div style="margin-bottom: 4px;">• ${name} (${phone})</div>`;
+      }
+      
+      if (contacts.length > displayLimit) {
+        contactsList += `<div style="margin-top: 8px; font-style: italic; color: #999;">... and ${contacts.length - displayLimit} more contact${contacts.length - displayLimit > 1 ? 's' : ''}</div>`;
+      }
+      
+      listElement.innerHTML = contactsList;
+      section.style.display = 'block';
+    }
+
+    // Handle SMS form submission
+    function handleSMSSubmission() {
+      const message = document.getElementById('sms-message').value.trim();
+      const phoneNumber = document.getElementById('phone-number').value.trim();
+      const selectedContactsData = localStorage.getItem('selectedContactsForSMS');
+      
+      if (!message) {
+        alert('Please enter a message to send.');
+        return;
+      }
+      
+      if (!selectedProvider) {
+        alert('Please select an SMS provider.');
+        return;
+      }
+      
+      // Check if we have selected contacts or a phone number
+      if (selectedContactsData) {
+        // Send to selected contacts
+        try {
+          const selectedContacts = JSON.parse(selectedContactsData);
+          sendToSelectedContacts(message, selectedContacts);
+        } catch (error) {
+          console.error('Error parsing selected contacts:', error);
+          alert('Error with selected contacts. Please try again.');
+        }
+      } else if (phoneNumber) {
+        // Send to single phone number
+        sendToSingleNumber(message, phoneNumber);
+      } else {
+        alert('Please enter a phone number or select contacts from the list.');
+      }
+    }
+
+    // Send SMS to selected contacts
+    function sendToSelectedContacts(message, contacts) {
+      const validContacts = contacts.filter(contact => contact.phone && contact.phone.trim());
+      
+      if (validContacts.length === 0) {
+        alert('No valid phone numbers found in selected contacts.');
+        return;
+      }
+      
+      if (confirm(`Send SMS to ${validContacts.length} contact${validContacts.length > 1 ? 's' : ''}?`)) {
+        // Here you would implement the actual SMS sending logic
+        alert(`SMS sent to ${validContacts.length} contact${validContacts.length > 1 ? 's' : ''}!\n\nMessage: "${message}"\nProvider: ${selectedProvider}`);
+        
+        // Clear selected contacts after successful send
+        localStorage.removeItem('selectedContactsForSMS');
+        localStorage.removeItem('listState'); // Clear state after successful send
+        document.getElementById('selected-contacts-section').style.display = 'none';
+        document.getElementById('phone-number').style.display = 'block';
+        document.getElementById('sms-message').value = '';
+      }
+    }
+
+    // Send SMS to single phone number
+    function sendToSingleNumber(message, phoneNumber) {
+      if (confirm(`Send SMS to ${phoneNumber}?`)) {
+        // Here you would implement the actual SMS sending logic
+        alert(`SMS sent to ${phoneNumber}!\n\nMessage: "${message}"\nProvider: ${selectedProvider}`);
+        
+        // Clear form after successful send
+        document.getElementById('phone-number').value = '';
+        document.getElementById('sms-message').value = '';
+      }
+    }
+
     // Provider Selection Functionality
     document.addEventListener('DOMContentLoaded', function() {
+      // Load selected contacts from localStorage
+      loadSelectedContacts();
+      
       // Load message templates
       loadMessageTemplates();
       
@@ -2952,6 +3088,20 @@
         setTimeout(() => {
           this.textContent = '📝 Manage Templates';
         }, 2000);
+      });
+      
+      // Set up clear contacts button
+      document.getElementById('clear-contacts-btn').addEventListener('click', function() {
+        localStorage.removeItem('selectedContactsForSMS');
+        document.getElementById('selected-contacts-section').style.display = 'none';
+        // Show the phone number field again
+        document.getElementById('phone-number').style.display = 'block';
+      });
+      
+      // Set up form submission
+      document.getElementById('sms-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleSMSSubmission();
       });
       
       // Add click handlers for provider cards

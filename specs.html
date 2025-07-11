@@ -1,0 +1,2841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phone Number Provider Specifications</title>
+  <link rel="icon" type="image/png" href="static/supersparky.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+  <script src="static/header.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1976ff 0%, #42a5f5 100%);
+      color: white;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .header p {
+      font-size: 1.2em;
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 40px;
+    }
+
+    .provider-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin-bottom: 40px;
+    }
+
+    .provider-card {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 20px;
+      border: 2px solid #e9ecef;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+    }
+
+    .provider-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      border-color: #1976ff;
+    }
+
+    .provider-card.expanded {
+      border-color: #1976ff;
+      box-shadow: 0 8px 25px rgba(25, 118, 255, 0.2);
+    }
+
+    .provider-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .provider-toggle {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: #28a745;
+      color: white;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .provider-toggle:hover {
+      background: #218838;
+      transform: scale(1.1);
+    }
+
+    .provider-card.expanded .provider-toggle {
+      background: #dc3545;
+      color: white;
+    }
+
+    .provider-card.expanded .provider-toggle:hover {
+      background: #c82333;
+      transform: scale(1.1);
+    }
+
+    .provider-card.expanded .provider-header {
+      margin-bottom: 20px;
+    }
+
+    .provider-icon {
+      font-size: 2em;
+      margin-right: 15px;
+    }
+
+    .provider-name {
+      font-size: 1.3em;
+      font-weight: 700;
+      color: #1976ff;
+    }
+
+    .provider-website {
+      font-size: 0.85em;
+      color: #666;
+      text-decoration: none;
+      margin-left: 8px;
+    }
+
+    .provider-website:hover {
+      color: #1976ff;
+      text-decoration: underline;
+    }
+
+    .provider-specialization {
+      background: #e3f2fd;
+      color: #1976ff;
+      padding: 6px 10px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+      margin-bottom: 15px;
+      display: inline-block;
+    }
+
+    .service-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      overflow: hidden;
+      transition: all 0.5s ease-in-out;
+      height: 0;
+      opacity: 0;
+    }
+
+    .service-list.expanded {
+      height: auto;
+      opacity: 1;
+      padding-top: 10px;
+    }
+
+    .service-link {
+      color: #1976ff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1em;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .service-link:hover {
+      background: #e3f2fd;
+      color: #1565c0;
+      text-decoration: none;
+    }
+
+    .service-icon {
+      font-size: 1.2em;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 20px auto;
+      padding: 30px;
+      border-radius: 15px;
+      width: 1100px;
+      max-width: 95%;
+      position: relative;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e9ecef;
+    }
+
+    .modal-title {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: #1976ff;
+      margin: 0;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 2em;
+      cursor: pointer;
+      color: #666;
+      padding: 0;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    .close-btn:hover {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .modal-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .modal-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .modal-section h3 {
+      color: #1976ff;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+      font-weight: 600;
+    }
+
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .pros-cons h4 {
+      color: #28a745;
+      margin-bottom: 10px;
+      font-size: 1.1em;
+    }
+
+    .pros-cons .cons h4 {
+      color: #dc3545;
+    }
+
+    .pros-cons ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .pros-cons li {
+      padding: 5px 0;
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .pros li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #28a745;
+      font-weight: bold;
+    }
+
+    .cons li:before {
+      content: "✗";
+      position: absolute;
+      left: 0;
+      color: #dc3545;
+      font-weight: bold;
+    }
+
+    .pricing-section {
+      margin-bottom: 20px;
+    }
+
+    .pricing-title {
+      font-size: 1.1em;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+      padding-bottom: 5px;
+      border-bottom: 2px solid #1976ff;
+    }
+
+    .pricing-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .pricing-table th {
+      background: #1976ff;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.9em;
+    }
+
+    .pricing-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e9ecef;
+      font-size: 0.9em;
+    }
+
+    .pricing-table tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+
+    .pricing-table tr:hover {
+      background: #e3f2fd;
+    }
+
+    .price-highlight {
+      font-weight: 700;
+      color: #1976ff;
+    }
+
+    .comparison-section {
+      margin-top: 50px;
+      padding-top: 30px;
+      border-top: 3px solid #1976ff;
+    }
+
+    .comparison-title {
+      font-size: 2em;
+      font-weight: 700;
+      color: #1976ff;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+
+    .comparison-card {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+    }
+
+    .comparison-card h3 {
+      font-size: 1.3em;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+
+    .comparison-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .comparison-card li {
+      padding: 5px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .comparison-card li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .recommendations {
+      background: #f8f9fa;
+      padding: 30px;
+      border-radius: 15px;
+      margin-top: 30px;
+    }
+
+    .recommendations h3 {
+      font-size: 1.5em;
+      color: #1976ff;
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+
+    .recommendation-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .recommendation-item {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      border-left: 4px solid #1976ff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .recommendation-item h4 {
+      color: #1976ff;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .recommendation-item ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .recommendation-item li {
+      padding: 3px 0;
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    .recommendation-item li:before {
+      content: "→";
+      color: #1976ff;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .back-button {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: #1976ff;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 25px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(25, 118, 255, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .back-button:hover {
+      background: #1565c0;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(25, 118, 255, 0.4);
+    }
+
+    .search-box {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .search-box input {
+      width: 100%;
+      max-width: 400px;
+      padding: 15px 20px;
+      border: 2px solid #e9ecef;
+      border-radius: 25px;
+      font-size: 1em;
+      transition: all 0.3s ease;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #1976ff;
+      box-shadow: 0 0 0 3px rgba(25, 118, 255, 0.1);
+    }
+
+    .filter-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .filter-button {
+      padding: 10px 20px;
+      border: 2px solid #1976ff;
+      background: white;
+      color: #1976ff;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .filter-button:hover,
+    .filter-button.active {
+      background: #1976ff;
+      color: white;
+    }
+
+    @media (max-width: 1400px) {
+      .provider-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .provider-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .provider-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        margin: 10px;
+        border-radius: 15px;
+      }
+
+      .header {
+        padding: 20px;
+      }
+
+      .header h1 {
+        font-size: 2em;
+      }
+
+      .content {
+        padding: 20px;
+      }
+
+      .provider-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .recommendation-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .back-button {
+        position: relative;
+        margin-bottom: 20px;
+      }
+
+      .modal-content {
+        width: 95%;
+        margin: 10px auto;
+        padding: 20px;
+      }
+
+      .modal-body {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="back-button" onclick="window.history.back()">← Back</button>
+  
+  <div class="container">
+    <div class="header">
+      <h1>📱 Phone Number Provider Specifications</h1>
+      <p>Comprehensive pricing and features comparison for SMS/Voice providers</p>
+    </div>
+
+    <div class="content">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search providers, features, or pricing..." onkeyup="searchProviders()">
+      </div>
+
+      <div class="filter-buttons">
+        <button class="filter-button active" onclick="filterProviders('all')">All Providers</button>
+        <button class="filter-button" onclick="filterProviders('cost-effective')">Cost-Effective</button>
+        <button class="filter-button" onclick="filterProviders('enterprise')">Enterprise</button>
+        <button class="filter-button" onclick="filterProviders('international')">International</button>
+        <button class="filter-button" onclick="filterProviders('developer')">Developer-Focused</button>
+      </div>
+
+      <div class="provider-grid" id="providerGrid">
+        <!-- Twilio -->
+        <div class="provider-card" data-category="enterprise" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">🏆</div>
+            <div>
+              <div class="provider-name">Twilio</div>
+              <a href="https://www.twilio.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">twilio.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Leading CPaaS platform</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('twilio-phone'); return false;">
+              <span class="service-icon">�</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('twilio-sms'); return false;">
+              <span class="service-icon">�</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('twilio-voice'); return false;">
+              <span class="service-icon">�</span>
+              Voice
+            </a>
+            <a href="#" class="service-link" onclick="openModal('twilio-email'); return false;">
+              <span class="service-icon">📧</span>
+              Email
+            </a>
+            <a href="#" class="service-link" onclick="openModal('twilio-verify'); return false;">
+              <span class="service-icon">🔐</span>
+              Verify
+            </a>
+          </div>
+        </div>
+
+        <!-- Plivo -->
+        <div class="provider-card" data-category="developer cost-effective" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">💼</div>
+            <div>
+              <div class="provider-name">Plivo</div>
+              <a href="https://www.plivo.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">plivo.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Developer-friendly CPaaS</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('plivo-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('plivo-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('plivo-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+            <a href="#" class="service-link" onclick="openModal('plivo-email'); return false;">
+              <span class="service-icon">�</span>
+              Email
+            </a>
+          </div>
+        </div>
+
+        <!-- Vonage -->
+        <div class="provider-card" data-category="enterprise" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">📞</div>
+            <div>
+              <div class="provider-name">Vonage</div>
+              <a href="https://www.vonage.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">vonage.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Enterprise communications</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('vonage-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('vonage-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('vonage-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+            <a href="#" class="service-link" onclick="openModal('vonage-email'); return false;">
+              <span class="service-icon">📧</span>
+              Email
+            </a>
+          </div>
+        </div>
+
+        <!-- Bandwidth -->
+        <div class="provider-card" data-category="enterprise cost-effective" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">🌐</div>
+            <div>
+              <div class="provider-name">Bandwidth</div>
+              <a href="https://www.bandwidth.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">bandwidth.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Carrier-grade infrastructure</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('bandwidth-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('bandwidth-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('bandwidth-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+            <a href="#" class="service-link" onclick="openModal('bandwidth-email'); return false;">
+              <span class="service-icon">�</span>
+              Email
+            </a>
+          </div>
+        </div>
+
+        <!-- Sinch -->
+        <div class="provider-card" data-category="international enterprise" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">🚀</div>
+            <div>
+              <div class="provider-name">Sinch</div>
+              <a href="https://www.sinch.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">sinch.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Global Super Network</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('sinch-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('sinch-sms'); return false;">
+              <span class="service-icon">�</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('sinch-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+            <a href="#" class="service-link" onclick="openModal('sinch-email'); return false;">
+              <span class="service-icon">📧</span>
+              Email
+            </a>
+          </div>
+        </div>
+
+        <!-- MessageBird -->
+        <div class="provider-card" data-category="international developer" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">🐦</div>
+            <div>
+              <div class="provider-name">MessageBird</div>
+              <a href="https://messagebird.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">messagebird.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Omnichannel messaging</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('messagebird-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('messagebird-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('messagebird-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+            <a href="#" class="service-link" onclick="openModal('messagebird-email'); return false;">
+              <span class="service-icon">📧</span>
+              Email
+            </a>
+          </div>
+        </div>
+
+        <!-- Telnyx -->
+        <div class="provider-card" data-category="cost-effective developer" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">⚡</div>
+            <div>
+              <div class="provider-name">Telnyx</div>
+              <a href="https://telnyx.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">telnyx.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Mission-critical communications</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('telnyx-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('telnyx-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('telnyx-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+            <a href="#" class="service-link" onclick="openModal('telnyx-email'); return false;">
+              <span class="service-icon">📧</span>
+              Email
+            </a>
+          </div>
+        </div>
+
+        <!-- SignalWire -->
+        <div class="provider-card" data-category="developer" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">📡</div>
+            <div>
+              <div class="provider-name">SignalWire</div>
+              <a href="https://signalwire.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">signalwire.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Real-time communications</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('signalwire-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('signalwire-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('signalwire-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+            <a href="#" class="service-link" onclick="openModal('signalwire-webrtc'); return false;">
+              <span class="service-icon">🌐</span>
+              WebRTC
+            </a>
+          </div>
+        </div>
+
+        <!-- 46elks -->
+        <div class="provider-card" data-category="international" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">🦌</div>
+            <div>
+              <div class="provider-name">46elks</div>
+              <a href="https://46elks.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">46elks.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Nordic/European focus</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('46elks-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('46elks-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('46elks-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+          </div>
+        </div>
+
+        <!-- Flowroute -->
+        <div class="provider-card" data-category="cost-effective" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">🌊</div>
+            <div>
+              <div class="provider-name">Flowroute</div>
+              <a href="https://www.flowroute.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">flowroute.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">SIP trunking and messaging</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('flowroute-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('flowroute-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('flowroute-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+          </div>
+        </div>
+
+        <!-- BulkSMS -->
+        <div class="provider-card" data-category="cost-effective international" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">📦</div>
+            <div>
+              <div class="provider-name">BulkSMS</div>
+              <a href="https://www.bulksms.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">bulksms.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Global SMS gateway</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('bulksms-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('bulksms-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('bulksms-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+          </div>
+        </div>
+
+        <!-- Infobip -->
+        <div class="provider-card" data-category="enterprise international" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">🌐</div>
+            <div>
+              <div class="provider-name">Infobip</div>
+              <a href="https://www.infobip.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">infobip.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Cloud communication platform</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('infobip-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('infobip-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('infobip-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+            <a href="#" class="service-link" onclick="openModal('infobip-email'); return false;">
+              <span class="service-icon">📧</span>
+              Email
+            </a>
+          </div>
+        </div>
+
+        <!-- ClickSend -->
+        <div class="provider-card" data-category="cost-effective international" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">🖱️</div>
+            <div>
+              <div class="provider-name">ClickSend</div>
+              <a href="https://www.clicksend.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">clicksend.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Multi-channel messaging</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('clicksend-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('clicksend-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('clicksend-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+            <a href="#" class="service-link" onclick="openModal('clicksend-email'); return false;">
+              <span class="service-icon">📧</span>
+              Email
+            </a>
+          </div>
+        </div>
+
+        <!-- TextMagic -->
+        <div class="provider-card" data-category="cost-effective" onclick="toggleProvider(this)">
+          <div class="provider-header">
+            <div class="provider-icon">🎩</div>
+            <div>
+              <div class="provider-name">TextMagic</div>
+              <a href="https://www.textmagic.com" target="_blank" class="provider-website" onclick="event.stopPropagation()">textmagic.com</a>
+            </div>
+            <button class="provider-toggle" onclick="event.stopPropagation(); toggleProvider(this.closest('.provider-card'))">+</button>
+          </div>
+          <div class="provider-specialization">Business text messaging</div>
+          
+          <div class="service-list">
+            <a href="#" class="service-link" onclick="openModal('textmagic-phone'); return false;">
+              <span class="service-icon">📞</span>
+              Phone Numbers
+            </a>
+            <a href="#" class="service-link" onclick="openModal('textmagic-sms'); return false;">
+              <span class="service-icon">💬</span>
+              SMS/MMS
+            </a>
+            <a href="#" class="service-link" onclick="openModal('textmagic-voice'); return false;">
+              <span class="service-icon">📞</span>
+              Voice
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison Section -->
+      <div class="comparison-section">
+        <h2 class="comparison-title">💰 Cost Comparison Summary</h2>
+        
+        <div class="comparison-grid">
+          <div class="comparison-card">
+            <h3>Most Cost-Effective for US Numbers</h3>
+            <ul>
+              <li>Telnyx: $0.25/month (Local)</li>
+              <li>Bandwidth: $0.35/month (Local)</li>
+              <li>Plivo: $0.80/month (Local)</li>
+            </ul>
+          </div>
+
+          <div class="comparison-card">
+            <h3>Best SMS Pricing</h3>
+            <ul>
+              <li>Telnyx: $0.004/message</li>
+              <li>Plivo: $0.0025/message</li>
+              <li>Bandwidth: $0.0065/message</li>
+            </ul>
+          </div>
+
+          <div class="comparison-card">
+            <h3>Best Voice Pricing</h3>
+            <ul>
+              <li>Vonage: $0.004/minute</li>
+              <li>Telnyx: $0.004/minute</li>
+              <li>Bandwidth: $0.0035/minute</li>
+            </ul>
+          </div>
+
+          <div class="comparison-card">
+            <h3>Enterprise/Reliability Leaders</h3>
+            <ul>
+              <li>Twilio (most features, highest reliability)</li>
+              <li>Bandwidth (carrier-grade)</li>
+              <li>Vonage (enterprise focus)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="recommendations">
+          <h3>🎯 Recommendations by Use Case</h3>
+          <div class="recommendation-grid">
+            <div class="recommendation-item">
+              <h4>Startups/Small Business</h4>
+              <ul>
+                <li>Telnyx (best pricing)</li>
+                <li>Plivo (developer-friendly)</li>
+                <li>Bandwidth (good balance)</li>
+              </ul>
+            </div>
+
+            <div class="recommendation-item">
+              <h4>Enterprise/Mission-Critical</h4>
+              <ul>
+                <li>Twilio (most reliable)</li>
+                <li>Bandwidth (carrier-grade)</li>
+                <li>Vonage (enterprise support)</li>
+              </ul>
+            </div>
+
+            <div class="recommendation-item">
+              <h4>International/Global</h4>
+              <ul>
+                <li>Sinch (Global Super Network)</li>
+                <li>MessageBird (international presence)</li>
+                <li>Twilio (broadest coverage)</li>
+              </ul>
+            </div>
+
+            <div class="recommendation-item">
+              <h4>Developer-Focused</h4>
+              <ul>
+                <li>Plivo (excellent APIs)</li>
+                <li>Telnyx (developer-friendly)</li>
+                <li>SignalWire (modern WebRTC)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Structure -->
+  <div id="serviceModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">Service Details</h2>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-section">
+          <h3>Pricing & Services</h3>
+          <div id="modalPricing">
+            <!-- Pricing content will be inserted here -->
+          </div>
+        </div>
+        <div class="modal-section">
+          <h3>Additional Information</h3>
+          <div id="modalInfo">
+            <!-- Additional info will be inserted here -->
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>✅ Pros</h4>
+          <ul id="modalPros">
+            <!-- Pros will be inserted here -->
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>❌ Cons</h4>
+          <ul id="modalCons">
+            <!-- Cons will be inserted here -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Service data structure
+    const serviceData = {
+      'twilio-phone': {
+        title: 'Twilio - Phone Numbers',
+        pricing: [
+          ['US Local Numbers', '$1.00/month'],
+          ['US Toll-Free', '$2.00/month'],
+          ['Canada Local', '$1.00/month'],
+          ['UK Local', '$1.50/month'],
+          ['Australia Local', '$3.00/month'],
+          ['Germany Local', '$2.00/month']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '⚠️ A2P registration REQUIRED for international messaging',
+          'Sending limits: 1 msg/sec (unregistered), unlimited (registered)',
+          'Global phone number inventory available',
+          'Instant number provisioning in most regions',
+          'Number porting supported globally',
+          'Advanced features: sticky sender, alphanumeric sender IDs'
+        ],
+        pros: [
+          'Industry leader with most features',
+          'Excellent documentation and support',
+          'Broadest global coverage',
+          'Rich ecosystem of add-ons',
+          'Scalable from startup to enterprise',
+          'Highest reliability and uptime'
+        ],
+        cons: [
+          'Higher pricing than competitors',
+          'Complex pricing structure',
+          'Can be overkill for simple use cases',
+          'Vendor lock-in concerns',
+          'Support can be slow for smaller accounts'
+        ]
+      },
+      'twilio-sms': {
+        title: 'Twilio - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.0075 per message'],
+          ['UK', '$0.04 per message'],
+          ['Australia', '$0.05 per message'],
+          ['Global Average', '$0.02-0.15 per message']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '⚠️ A2P registration REQUIRED for international messaging',
+          'Sending limits: 1 msg/sec (unregistered), unlimited (registered)',
+          'Free tier: No free SMS messages',
+          'Volume discounts available for enterprise customers',
+          'Advanced features: Messaging Services, Short Codes, Alphanumeric Sender IDs',
+          'Compliance: SOC 2 Type II, HIPAA eligible'
+        ],
+        pros: [
+          'Excellent delivery rates',
+          'Advanced features like shortcodes',
+          'Comprehensive analytics',
+          'Strong fraud protection',
+          'Rich media support (MMS)'
+        ],
+        cons: [
+          'Higher per-message costs',
+          'Complex feature set may be overwhelming',
+          'Premium pricing for premium features'
+        ]
+      },
+      'twilio-voice': {
+        title: 'Twilio - Voice',
+        pricing: [
+          ['US/Canada', '$0.0085 per minute'],
+          ['International', '$0.02-0.50 per minute']
+        ],
+        additionalInfo: [
+          'WebRTC and PSTN support',
+          'Advanced call recording and analytics',
+          'Global voice infrastructure',
+          'Programmable voice features (IVR, conferencing)',
+          'Enterprise SLA options available'
+        ],
+        pros: [
+          'Excellent voice quality',
+          'Advanced call features',
+          'WebRTC support',
+          'Global reach',
+          'Rich call analytics'
+        ],
+        cons: [
+          'Higher per-minute costs',
+          'Complex setup for advanced features',
+          'Premium pricing model'
+        ]
+      },
+      'twilio-email': {
+        title: 'Twilio - Email (SendGrid)',
+        pricing: [
+          ['Free tier', '100 emails/day'],
+          ['Essentials', '$14.95/month (50k emails)'],
+          ['Pro', '$89.95/month (1M emails)']
+        ],
+        additionalInfo: [
+          'Advanced email analytics and tracking',
+          'Template management and A/B testing',
+          'Dedicated IP addresses available',
+          'Reputation monitoring and management',
+          'SMTP relay and Web API options'
+        ],
+        pros: [
+          'Excellent deliverability',
+          'Advanced email analytics',
+          'Template management',
+          'A/B testing capabilities',
+          'Strong reputation management'
+        ],
+        cons: [
+          'Can be expensive for high volumes',
+          'Complex feature set',
+          'Requires technical expertise'
+        ]
+      },
+      'twilio-verify': {
+        title: 'Twilio - Verify',
+        pricing: [
+          ['SMS verification', '$0.05 per attempt'],
+          ['Voice verification', '$0.10 per attempt'],
+          ['Email verification', '$0.05 per attempt']
+        ],
+        additionalInfo: [
+          'Multi-channel verification support',
+          'Built-in fraud detection and prevention',
+          'Global carrier reach',
+          'Customizable verification flows',
+          'Enterprise security compliance'
+        ],
+        pros: [
+          'Multiple verification channels',
+          'Fraud prevention built-in',
+          'Global coverage',
+          'Easy integration',
+          'High success rates'
+        ],
+        cons: [
+          'Higher cost than basic SMS',
+          'Requires Twilio ecosystem',
+          'Complex pricing structure'
+        ]
+      },
+      'plivo-phone': {
+        title: 'Plivo - Phone Numbers',
+        pricing: [
+          ['US Local', '$0.80/month'],
+          ['US Toll-Free', '$2.00/month'],
+          ['Canada Local', '$1.00/month'],
+          ['UK Local', '$1.00/month'],
+          ['Australia Local', '$3.00/month']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 10 msg/sec (default), unlimited (with approval)',
+          'Number porting available',
+          'Instant provisioning in most regions',
+          'Simple pricing structure',
+          'Developer-friendly API'
+        ],
+        pros: [
+          'Competitive pricing',
+          'Good API documentation',
+          'Easy number management',
+          'Decent global coverage'
+        ],
+        cons: [
+          'Limited advanced features',
+          'Smaller company support',
+          'Less enterprise-focused'
+        ]
+      },
+      'plivo-sms': {
+        title: 'Plivo - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.0025-0.0055 per message'],
+          ['UK', '$0.035 per message'],
+          ['Australia', '$0.045 per message'],
+          ['Global', '$0.02-0.12 per message']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 10 msg/sec (default), unlimited (with approval)',
+          'Free trial: $20 credit for new accounts',
+          'Volume discounts available',
+          'Simple REST API',
+          'Basic analytics included'
+        ],
+        pros: [
+          'Very competitive pricing',
+          'Good delivery rates',
+          'Simple API',
+          'Fast setup'
+        ],
+        cons: [
+          'Limited advanced features',
+          'Basic analytics',
+          'Smaller support team'
+        ]
+      },
+      'plivo-voice': {
+        title: 'Plivo - Voice',
+        pricing: [
+          ['US/Canada', '$0.007 per minute'],
+          ['International', '$0.015-0.40 per minute']
+        ],
+        pros: [
+          'Excellent pricing',
+          'Good voice quality',
+          'Simple setup',
+          'Developer-friendly'
+        ],
+        cons: [
+          'Limited advanced features',
+          'Basic call analytics',
+          'Smaller global presence'
+        ]
+      },
+      'plivo-email': {
+        title: 'Plivo - Email',
+        pricing: [
+          ['Not available', 'Plivo does not offer email services']
+        ],
+        pros: [
+          'Focus on core messaging services'
+        ],
+        cons: [
+          'No email service offered',
+          'Need separate email provider'
+        ]
+      },
+      'vonage-phone': {
+        title: 'Vonage - Phone Numbers',
+        pricing: [
+          ['US Local', '$0.90/month'],
+          ['US Toll-Free', '$5.00/month'],
+          ['Canada Local', '$1.25/month'],
+          ['UK Local', '$1.25/month'],
+          ['Australia Local', '$7.00/month']
+        ],
+        pros: [
+          'Global coverage with local numbers',
+          'Enterprise-grade reliability',
+          'Easy number porting',
+          'Good API for number management'
+        ],
+        cons: [
+          'Higher pricing than competitors',
+          'Limited availability in some regions',
+          'Complex setup for simple use cases'
+        ]
+      },
+      'vonage-sms': {
+        title: 'Vonage - SMS/MMS',
+        pricing: [
+          ['US', '$0.0075 per message'],
+          ['Canada', '$0.0075 per message'],
+          ['UK', '$0.033 per message'],
+          ['Australia', '$0.045 per message']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: Variable based on carrier, unlimited (with registration)',
+          'Global SMS coverage',
+          'Good delivery reports',
+          'Easy integration with voice services',
+          'Support for long messages'
+        ],
+        pros: [
+          'Global SMS coverage',
+          'Good delivery reports',
+          'Easy integration with voice services',
+          'Support for long messages'
+        ],
+        cons: [
+          'Higher per-message costs',
+          'Limited advanced SMS features',
+          'Slower than specialized SMS providers'
+        ]
+      },
+      'vonage-voice': {
+        title: 'Vonage - Voice',
+        pricing: [
+          ['US/Canada', '$0.004 per minute'],
+          ['International', '$0.02-0.30 per minute']
+        ],
+        pros: [
+          'Excellent voice quality',
+          'Global reach and reliability',
+          'Enterprise-grade features',
+          'Strong unified communications'
+        ],
+        cons: [
+          'Premium pricing',
+          'Complex for simple voice needs',
+          'Support can be bureaucratic'
+        ]
+      },
+      'vonage-email': {
+        title: 'Vonage - Email',
+        pricing: [
+          ['Not available', 'Vonage does not offer email services']
+        ],
+        pros: [
+          'Focus on core communication services'
+        ],
+        cons: [
+          'No email service offered',
+          'Need separate email provider'
+        ]
+      },
+      'bandwidth-phone': {
+        title: 'Bandwidth - Phone Numbers',
+        pricing: [
+          ['US Local', '$0.35/month'],
+          ['US Toll-Free', '$2.00/month'],
+          ['Canada Local', '$1.00/month'],
+          ['UK Local', '$1.50/month'],
+          ['Australia Local', '$4.00/month']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 1 msg/sec (default), unlimited (with registration)',
+          'Carrier-grade infrastructure',
+          'Number porting supported',
+          'Instant provisioning in most regions',
+          'Direct carrier relationships'
+        ],
+        pros: [
+          'Carrier-grade infrastructure',
+          'Competitive pricing',
+          'Direct carrier relationships',
+          'Good for high-volume applications',
+          'Strong US coverage'
+        ],
+        cons: [
+          'Limited global presence',
+          'Complex setup for beginners',
+          'Enterprise-focused pricing'
+        ]
+      },
+      'bandwidth-sms': {
+        title: 'Bandwidth - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.0065 per message'],
+          ['International', 'Limited availability']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 1 msg/sec (unregistered), unlimited (registered)',
+          'Free trial: $10 credit for new accounts',
+          'Volume discounts available',
+          'Direct carrier relationships',
+          'Real-time delivery reports'
+        ],
+        pros: [
+          'Carrier-grade delivery',
+          'Good for high-volume messaging',
+          'Direct carrier relationships',
+          'Competitive pricing',
+          'Strong US coverage'
+        ],
+        cons: [
+          'Limited international coverage',
+          'Strict A2P requirements',
+          'Enterprise-focused'
+        ]
+      },
+      'bandwidth-voice': {
+        title: 'Bandwidth - Voice',
+        pricing: [
+          ['US/Canada', '$0.0035 per minute'],
+          ['International', 'Limited availability']
+        ],
+        additionalInfo: [
+          'Carrier-grade voice infrastructure',
+          'Advanced call routing and analytics',
+          'SIP and WebRTC support',
+          'Call recording capabilities',
+          'Enterprise SLA options'
+        ],
+        pros: [
+          'Excellent voice quality',
+          'Very competitive pricing',
+          'Carrier-grade infrastructure',
+          'Advanced call features',
+          'Strong US coverage'
+        ],
+        cons: [
+          'Limited international coverage',
+          'Enterprise-focused',
+          'Complex setup for simple needs'
+        ]
+      },
+      'bandwidth-email': {
+        title: 'Bandwidth - Email',
+        pricing: [
+          ['Not available', 'Bandwidth does not offer email services']
+        ],
+        pros: [
+          'Focus on core telecom services'
+        ],
+        cons: [
+          'No email service offered',
+          'Need separate email provider'
+        ]
+      },
+      'sinch-phone': {
+        title: 'Sinch - Phone Numbers',
+        pricing: [
+          ['US Local', '$1.00/month'],
+          ['US Toll-Free', '$2.00/month'],
+          ['Canada Local', '$1.25/month'],
+          ['UK Local', '$1.50/month'],
+          ['Global Coverage', 'Variable pricing']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: Variable by region, unlimited (with registration)',
+          'Global Super Network coverage',
+          'Number porting supported globally',
+          'Instant provisioning in 190+ countries',
+          'Advanced international routing'
+        ],
+        pros: [
+          'Excellent global coverage',
+          'Strong international presence',
+          'Advanced routing capabilities',
+          'Good for multinational businesses',
+          'Comprehensive compliance support'
+        ],
+        cons: [
+          'Higher pricing than specialists',
+          'Complex platform for simple needs',
+          'Enterprise-focused features'
+        ]
+      },
+      'sinch-sms': {
+        title: 'Sinch - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.0075 per message'],
+          ['Europe', '$0.035-0.055 per message'],
+          ['Asia-Pacific', '$0.02-0.15 per message'],
+          ['Global Average', '$0.02-0.20 per message']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: Variable by region, unlimited (with registration)',
+          'Free trial: $10 credit for new accounts',
+          'Volume discounts available',
+          'Advanced routing and failover',
+          'Global Super Network delivery optimization'
+        ],
+        pros: [
+          'Excellent global delivery rates',
+          'Advanced routing capabilities',
+          'Strong international presence',
+          'Good analytics and reporting',
+          'Comprehensive compliance support'
+        ],
+        cons: [
+          'Higher per-message costs',
+          'Complex platform for simple needs',
+          'Enterprise-focused pricing'
+        ]
+      },
+      'sinch-voice': {
+        title: 'Sinch - Voice',
+        pricing: [
+          ['US/Canada', '$0.0085 per minute'],
+          ['Europe', '$0.015-0.035 per minute'],
+          ['Asia-Pacific', '$0.02-0.25 per minute'],
+          ['Global Average', '$0.02-0.40 per minute']
+        ],
+        additionalInfo: [
+          'Global Super Network voice infrastructure',
+          'Advanced call routing and analytics',
+          'WebRTC and SIP support',
+          'Call recording and transcription',
+          'Enterprise compliance and SLA options'
+        ],
+        pros: [
+          'Excellent global voice quality',
+          'Advanced call features',
+          'Strong international presence',
+          'Good analytics and reporting',
+          'Enterprise-grade reliability'
+        ],
+        cons: [
+          'Higher per-minute costs',
+          'Complex platform for simple needs',
+          'Enterprise-focused pricing'
+        ]
+      },
+      'sinch-email': {
+        title: 'Sinch - Email',
+        pricing: [
+          ['Mailgun Basic', '$0.0008 per email'],
+          ['Mailgun Pro', '$0.0006 per email'],
+          ['Enterprise', 'Custom pricing']
+        ],
+        additionalInfo: [
+          'Powered by Mailgun (acquired by Sinch)',
+          'Advanced email analytics and tracking',
+          'Template management and personalization',
+          'Deliverability optimization',
+          'Global email infrastructure'
+        ],
+        pros: [
+          'Excellent deliverability (Mailgun)',
+          'Advanced email features',
+          'Global infrastructure',
+          'Good analytics and tracking',
+          'Integration with Sinch platform'
+        ],
+        cons: [
+          'Higher cost than basic email providers',
+          'Complex for simple email needs',
+          'Enterprise-focused features'
+        ]
+      },
+      'messagebird-phone': {
+        title: 'MessageBird - Phone Numbers',
+        pricing: [
+          ['US Local', '$1.00/month'],
+          ['US Toll-Free', '$5.00/month'],
+          ['Canada Local', '$1.50/month'],
+          ['UK Local', '$1.50/month'],
+          ['Netherlands Local', '$1.50/month'],
+          ['Germany Local', '$2.00/month']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 20 msg/sec (default), unlimited (with approval)',
+          'Strong European presence with local numbers',
+          'Number porting available in most regions',
+          'Instant provisioning in 80+ countries',
+          'Advanced number management features'
+        ],
+        pros: [
+          'Excellent European coverage',
+          'Omnichannel communication platform',
+          'Strong API documentation',
+          'Good customer support',
+          'Compliance with EU regulations'
+        ],
+        cons: [
+          'Higher pricing than pure-play providers',
+          'Complex platform for simple use cases',
+          'US presence is secondary to European focus'
+        ]
+      },
+      'messagebird-sms': {
+        title: 'MessageBird - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.0075 per message'],
+          ['UK', '$0.033 per message'],
+          ['Netherlands', '$0.055 per message'],
+          ['Germany', '$0.055 per message'],
+          ['Global Average', '$0.02-0.15 per message']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 20 msg/sec (default), unlimited (with approval)',
+          'Free trial: €20 credit for new accounts',
+          'Volume discounts available',
+          'Advanced message routing and failover',
+          'Rich media support and templates'
+        ],
+        pros: [
+          'Excellent delivery rates globally',
+          'Strong omnichannel capabilities',
+          'Good analytics and reporting',
+          'Template management',
+          'Multi-channel messaging'
+        ],
+        cons: [
+          'Higher per-message costs',
+          'Can be complex for simple SMS needs',
+          'Premium pricing for premium features'
+        ]
+      },
+      'messagebird-voice': {
+        title: 'MessageBird - Voice',
+        pricing: [
+          ['US/Canada', '$0.012 per minute'],
+          ['UK', '$0.02 per minute'],
+          ['Netherlands', '$0.015 per minute'],
+          ['International', '$0.015-0.40 per minute']
+        ],
+        additionalInfo: [
+          'High-quality voice infrastructure',
+          'Advanced call routing and IVR',
+          'WebRTC and SIP support',
+          'Call recording and analytics',
+          'Integration with omnichannel platform'
+        ],
+        pros: [
+          'Good voice quality',
+          'Integrated with messaging platform',
+          'Advanced call features',
+          'European infrastructure strength',
+          'Unified communications'
+        ],
+        cons: [
+          'Higher per-minute costs',
+          'Complex setup for simple voice needs',
+          'Focus on European markets'
+        ]
+      },
+      'messagebird-email': {
+        title: 'MessageBird - Email',
+        pricing: [
+          ['Pay-as-you-go', '€0.0003 per email'],
+          ['Monthly Plans', 'Starting from €25/month'],
+          ['Enterprise', 'Custom pricing']
+        ],
+        additionalInfo: [
+          'Transactional and marketing email support',
+          'Advanced email analytics and tracking',
+          'Template management and personalization',
+          'Deliverability optimization',
+          'Integration with omnichannel platform'
+        ],
+        pros: [
+          'Good deliverability rates',
+          'Integrated omnichannel approach',
+          'Advanced analytics',
+          'Template management',
+          'GDPR compliant'
+        ],
+        cons: [
+          'Higher cost than dedicated email providers',
+          'Complex for simple email needs',
+          'European focus may limit global reach'
+        ]
+      },
+      'telnyx-phone': {
+        title: 'Telnyx - Phone Numbers',
+        pricing: [
+          ['US Local', '$0.85/month'],
+          ['US Toll-Free', '$2.00/month'],
+          ['Canada Local', '$1.00/month'],
+          ['UK Local', '$1.25/month'],
+          ['Australia Local', '$5.00/month']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 1 msg/sec (default), unlimited (with approval)',
+          'Mission-critical network infrastructure',
+          'Instant number provisioning',
+          'Advanced number management API',
+          'Global private network backbone'
+        ],
+        pros: [
+          'Excellent network infrastructure',
+          'Mission-critical reliability',
+          'Competitive pricing',
+          'Developer-friendly API',
+          'Strong global presence'
+        ],
+        cons: [
+          'Newer company with less track record',
+          'Complex feature set',
+          'Support quality can vary'
+        ]
+      },
+      'telnyx-sms': {
+        title: 'Telnyx - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.004 per message'],
+          ['UK', '$0.035 per message'],
+          ['Australia', '$0.045 per message'],
+          ['Global Average', '$0.01-0.12 per message']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 1 msg/sec (default), unlimited (with approval)',
+          'Free trial: $10 credit for new accounts',
+          'Volume discounts available',
+          'Advanced message routing',
+          'Real-time delivery reports'
+        ],
+        pros: [
+          'Very competitive pricing',
+          'Excellent delivery rates',
+          'Mission-critical infrastructure',
+          'Good API documentation',
+          'Fast message delivery'
+        ],
+        cons: [
+          'Newer company',
+          'Limited advanced features',
+          'Support can be inconsistent'
+        ]
+      },
+      'telnyx-voice': {
+        title: 'Telnyx - Voice',
+        pricing: [
+          ['US/Canada', '$0.004 per minute'],
+          ['International', '$0.01-0.35 per minute']
+        ],
+        additionalInfo: [
+          'Global private network infrastructure',
+          'WebRTC and SIP support',
+          'Advanced call routing',
+          'Real-time call analytics',
+          'Mission-critical voice quality'
+        ],
+        pros: [
+          'Excellent voice quality',
+          'Very competitive pricing',
+          'Mission-critical infrastructure',
+          'Advanced call features',
+          'Global reach'
+        ],
+        cons: [
+          'Newer company',
+          'Complex setup for beginners',
+          'Limited enterprise features'
+        ]
+      },
+      'telnyx-email': {
+        title: 'Telnyx - Email',
+        pricing: [
+          ['Not available', 'Telnyx does not offer email services']
+        ],
+        additionalInfo: [
+          'Focus on telecommunications services',
+          'Partners with email providers for integrated solutions'
+        ],
+        pros: [
+          'Focus on core telecom services'
+        ],
+        cons: [
+          'No email service offered',
+          'Need separate email provider'
+        ]
+      },
+      'signalwire-phone': {
+        title: 'SignalWire - Phone Numbers',
+        pricing: [
+          ['US Local', '$1.00/month'],
+          ['US Toll-Free', '$2.00/month'],
+          ['Canada Local', '$1.50/month'],
+          ['UK Local', '$2.00/month'],
+          ['International', 'Variable pricing']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 1 msg/sec (default), unlimited (with approval)',
+          'Built by former Twilio engineers',
+          'Instant provisioning',
+          'Advanced programmable features',
+          'WebRTC-first approach'
+        ],
+        pros: [
+          'Modern WebRTC infrastructure',
+          'Competitive pricing',
+          'Advanced programmable features',
+          'Good developer experience',
+          'Founded by Twilio veterans'
+        ],
+        cons: [
+          'Smaller company with limited track record',
+          'Limited global presence',
+          'Fewer enterprise features'
+        ]
+      },
+      'signalwire-sms': {
+        title: 'SignalWire - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.0075 per message'],
+          ['International', '$0.02-0.15 per message']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 1 msg/sec (default), unlimited (with approval)',
+          'Free trial: $5 credit for new accounts',
+          'Advanced message routing',
+          'Real-time delivery tracking',
+          'MMS support with media optimization'
+        ],
+        pros: [
+          'Good delivery rates',
+          'Modern API design',
+          'Competitive pricing',
+          'Advanced features',
+          'Good documentation'
+        ],
+        cons: [
+          'Limited global coverage',
+          'Smaller support team',
+          'Less enterprise focus'
+        ]
+      },
+      'signalwire-voice': {
+        title: 'SignalWire - Voice',
+        pricing: [
+          ['US/Canada', '$0.0085 per minute'],
+          ['International', '$0.02-0.40 per minute']
+        ],
+        additionalInfo: [
+          'WebRTC-first voice infrastructure',
+          'Advanced call routing and IVR',
+          'Real-time call analytics',
+          'SIP and WebRTC support',
+          'Built for modern web applications'
+        ],
+        pros: [
+          'Modern WebRTC infrastructure',
+          'Good voice quality',
+          'Advanced call features',
+          'Developer-friendly',
+          'Competitive pricing'
+        ],
+        cons: [
+          'Limited global presence',
+          'Newer company',
+          'Less enterprise support'
+        ]
+      },
+      'signalwire-webrtc': {
+        title: 'SignalWire - WebRTC',
+        pricing: [
+          ['Basic Plan', '$0.004 per minute'],
+          ['Pro Plan', '$0.0035 per minute'],
+          ['Enterprise', 'Custom pricing']
+        ],
+        additionalInfo: [
+          'Native WebRTC infrastructure',
+          'Real-time communication APIs',
+          'Video conferencing capabilities',
+          'Screen sharing and collaboration',
+          'Integration with voice and messaging'
+        ],
+        pros: [
+          'Native WebRTC support',
+          'Modern real-time communication',
+          'Good video quality',
+          'Integrated platform',
+          'Developer-friendly APIs'
+        ],
+        cons: [
+          'Limited to WebRTC use cases',
+          'Newer technology stack',
+          'Less enterprise adoption'
+        ]
+      },
+      '46elks-phone': {
+        title: '46elks - Phone Numbers',
+        pricing: [
+          ['Sweden Local', '5 SEK/month (~$0.50)'],
+          ['Norway Local', '10 NOK/month (~$1.00)'],
+          ['Denmark Local', '5 DKK/month (~$0.75)'],
+          ['Finland Local', '2 EUR/month (~$2.20)'],
+          ['US Local', '$1.50/month']
+        ],
+        additionalInfo: [
+          'Strong Nordic and European focus',
+          'Regulatory compliance for EU markets',
+          'Simple number provisioning',
+          'Local presence in Scandinavia',
+          'Developer-friendly API'
+        ],
+        pros: [
+          'Excellent Nordic coverage',
+          'Competitive European pricing',
+          'Simple and clean API',
+          'Good local support',
+          'EU regulatory compliance'
+        ],
+        cons: [
+          'Limited global presence',
+          'Smaller company',
+          'Fewer advanced features',
+          'Limited US/international support'
+        ]
+      },
+      '46elks-sms': {
+        title: '46elks - SMS/MMS',
+        pricing: [
+          ['Sweden', '0.35 SEK per message (~$0.035)'],
+          ['Norway', '0.50 NOK per message (~$0.05)'],
+          ['Denmark', '0.30 DKK per message (~$0.045)'],
+          ['Finland', '0.04 EUR per message (~$0.044)'],
+          ['US', '$0.0075 per message']
+        ],
+        additionalInfo: [
+          '🚫 NO A2P registration required for US domestic messaging',
+          '🚫 NO A2P registration required for Nordic/European markets',
+          'Sending limits: 10 msg/sec (default), unlimited (with approval)',
+          'Strong Nordic delivery rates',
+          'Free trial: €20 credit for new accounts',
+          'Simple pricing structure',
+          'Local carrier relationships',
+          'GDPR compliant'
+        ],
+        pros: [
+          'Excellent Nordic delivery rates',
+          'Very competitive pricing',
+          'Simple and reliable',
+          'Good local support',
+          'GDPR compliant'
+        ],
+        cons: [
+          'Limited global coverage',
+          'Basic feature set',
+          'Smaller support team',
+          'Limited advanced analytics'
+        ]
+      },
+      '46elks-voice': {
+        title: '46elks - Voice',
+        pricing: [
+          ['Sweden', '0.09 SEK per minute (~$0.009)'],
+          ['Norway', '0.12 NOK per minute (~$0.012)'],
+          ['Denmark', '0.08 DKK per minute (~$0.012)'],
+          ['Finland', '0.012 EUR per minute (~$0.013)'],
+          ['US', '$0.012 per minute']
+        ],
+        additionalInfo: [
+          'High-quality Nordic voice infrastructure',
+          'Local carrier relationships',
+          'Simple voice API',
+          'Call recording available',
+          'IVR and call routing'
+        ],
+        pros: [
+          'Excellent Nordic voice quality',
+          'Very competitive pricing',
+          'Simple implementation',
+          'Good local support',
+          'Reliable service'
+        ],
+        cons: [
+          'Limited global presence',
+          'Basic call features',
+          'Smaller company',
+          'Limited enterprise features'
+        ]
+      },
+      'flowroute-phone': {
+        title: 'Flowroute - Phone Numbers',
+        pricing: [
+          ['US Local', '$1.25/month'],
+          ['US Toll-Free', '$2.00/month'],
+          ['Canada Local', '$1.50/month'],
+          ['DID (Direct Inward Dialing)', '$1.25/month']
+        ],
+        additionalInfo: [
+          'Focus on US/Canada markets',
+          'SIP trunking specialization',
+          'Number porting supported',
+          'VoIP and PBX integration',
+          'Carrier-grade infrastructure'
+        ],
+        pros: [
+          'Excellent for VoIP and PBX systems',
+          'Competitive US/Canada pricing',
+          'Strong SIP trunking features',
+          'Good for business phone systems',
+          'Reliable carrier infrastructure'
+        ],
+        cons: [
+          'Limited to US/Canada only',
+          'Smaller company',
+          'Limited SMS/messaging focus',
+          'Basic web interface'
+        ]
+      },
+      'flowroute-sms': {
+        title: 'Flowroute - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.0055 per message'],
+          ['MMS', '$0.0255 per message']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 1 msg/sec (default), 10 msg/sec (with approval)',
+          'Free trial: $5 credit for new accounts',
+          'Focus on business messaging',
+          'Simple REST API',
+          'Delivery reports included'
+        ],
+        pros: [
+          'Competitive US/Canada pricing',
+          'Good for business messaging',
+          'Simple and reliable',
+          'Decent delivery rates',
+          'VoIP integration'
+        ],
+        cons: [
+          'US/Canada only',
+          'Limited advanced features',
+          'Basic analytics',
+          'Smaller support team'
+        ]
+      },
+      'flowroute-voice': {
+        title: 'Flowroute - Voice',
+        pricing: [
+          ['US/Canada', '$0.0058 per minute'],
+          ['SIP Trunking', '$0.0059 per minute'],
+          ['International', 'Limited availability']
+        ],
+        additionalInfo: [
+          'Carrier-grade voice infrastructure',
+          'SIP trunking specialization',
+          'Advanced call routing',
+          'Call detail records',
+          'Integration with PBX systems'
+        ],
+        pros: [
+          'Excellent voice quality',
+          'Great for SIP trunking',
+          'Competitive pricing',
+          'Good for business phone systems',
+          'Carrier-grade reliability'
+        ],
+        cons: [
+          'Limited to US/Canada',
+          'Focus on VoIP rather than API',
+          'Limited programmable features',
+          'Basic web interface'
+        ]
+      },
+      'bulksms-phone': {
+        title: 'BulkSMS - Phone Numbers',
+        pricing: [
+          ['US Local', '$1.20/month'],
+          ['UK Local', '$1.50/month'],
+          ['South Africa Local', '$0.80/month'],
+          ['Australia Local', '$3.50/month'],
+          ['Global Coverage', 'Variable pricing']
+        ],
+        additionalInfo: [
+          '🚫 NO A2P registration required for US domestic messaging',
+          '🚫 NO A2P registration required for international markets',
+          'Sending limits: 100 msg/sec (default), unlimited (enterprise)',
+          'Strong presence in Africa and Europe',
+          'Number porting available',
+          'Simple provisioning process',
+          'Focus on global markets'
+        ],
+        pros: [
+          'No A2P required in many regions',
+          'Strong African and European presence',
+          'Simple setup process',
+          'Good global coverage',
+          'Competitive international pricing'
+        ],
+        cons: [
+          'Limited US presence',
+          'Basic feature set',
+          'Smaller company',
+          'Limited enterprise features'
+        ]
+      },
+      'bulksms-sms': {
+        title: 'BulkSMS - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.0055 per message'],
+          ['UK', '$0.035 per message'],
+          ['South Africa', '$0.015 per message'],
+          ['Australia', '$0.045 per message'],
+          ['Global Average', '$0.01-0.08 per message']
+        ],
+        additionalInfo: [
+          '🚫 NO A2P registration required for US domestic messaging',
+          '🚫 NO A2P registration required for international markets',
+          'Sending limits: 100 msg/sec (default), unlimited (enterprise)',
+          'Free trial: $10 credit for new accounts',
+          'Volume discounts available',
+          'Simple REST API',
+          'Global SMS coverage in 200+ countries'
+        ],
+        pros: [
+          'No A2P required in many regions',
+          'Very competitive international pricing',
+          'High sending limits',
+          'Good global coverage',
+          'Simple and reliable'
+        ],
+        cons: [
+          'Limited US market focus',
+          'Basic analytics',
+          'Limited advanced features',
+          'Smaller support team'
+        ]
+      },
+      'bulksms-voice': {
+        title: 'BulkSMS - Voice',
+        pricing: [
+          ['Voice services', 'Limited availability'],
+          ['Focus on SMS', 'Primary service is SMS']
+        ],
+        additionalInfo: [
+          'Primary focus on SMS services',
+          'Limited voice capabilities',
+          'Partners with voice providers',
+          'SMS-first approach'
+        ],
+        pros: [
+          'SMS expertise',
+          'Global SMS focus'
+        ],
+        cons: [
+          'Limited voice services',
+          'Not a voice specialist',
+          'Basic voice features'
+        ]
+      },
+      'infobip-phone': {
+        title: 'Infobip - Phone Numbers',
+        pricing: [
+          ['US Local', '$1.00/month'],
+          ['UK Local', '$1.50/month'],
+          ['Germany Local', '$2.00/month'],
+          ['Croatia Local', '$1.20/month'],
+          ['Global Coverage', 'Variable pricing']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 1000 msg/sec (enterprise), unlimited (custom)',
+          'Strong European presence',
+          'Number porting available globally',
+          'Instant provisioning in 70+ countries',
+          'Enterprise-grade infrastructure'
+        ],
+        pros: [
+          'Excellent European presence',
+          'Enterprise-grade infrastructure',
+          'High sending limits',
+          'Global compliance support',
+          'Strong carrier relationships'
+        ],
+        cons: [
+          'Premium pricing',
+          'Complex for small businesses',
+          'Enterprise-focused features',
+          'Requires technical expertise'
+        ]
+      },
+      'infobip-sms': {
+        title: 'Infobip - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.0075 per message'],
+          ['Europe', '$0.035-0.055 per message'],
+          ['Asia-Pacific', '$0.02-0.12 per message'],
+          ['Global Average', '$0.02-0.15 per message']
+        ],
+        additionalInfo: [
+          '⚠️ A2P registration REQUIRED for US domestic messaging',
+          '🚫 NO A2P registration required for most international markets',
+          'Sending limits: 1000 msg/sec (enterprise), unlimited (custom)',
+          'Free trial: €20 credit for new accounts',
+          'Volume discounts available',
+          'Advanced routing and analytics',
+          'Multi-channel messaging platform'
+        ],
+        pros: [
+          'Excellent global delivery rates',
+          'Very high sending limits',
+          'Advanced analytics and reporting',
+          'Multi-channel capabilities',
+          'Strong enterprise support'
+        ],
+        cons: [
+          'Premium pricing',
+          'Complex setup for simple needs',
+          'Enterprise-focused',
+          'Requires technical expertise'
+        ]
+      },
+      'infobip-voice': {
+        title: 'Infobip - Voice',
+        pricing: [
+          ['US/Canada', '$0.0085 per minute'],
+          ['Europe', '$0.015-0.035 per minute'],
+          ['Asia-Pacific', '$0.02-0.30 per minute'],
+          ['Global Average', '$0.02-0.45 per minute']
+        ],
+        additionalInfo: [
+          'Global voice infrastructure',
+          'Advanced call routing and IVR',
+          'WebRTC and SIP support',
+          'Call recording and analytics',
+          'Enterprise-grade features'
+        ],
+        pros: [
+          'Excellent global voice quality',
+          'Advanced call features',
+          'Strong international presence',
+          'Good analytics and reporting',
+          'Enterprise-grade reliability'
+        ],
+        cons: [
+          'Premium pricing',
+          'Complex for simple voice needs',
+          'Enterprise-focused',
+          'Requires technical setup'
+        ]
+      },
+      'infobip-email': {
+        title: 'Infobip - Email',
+        pricing: [
+          ['Transactional', '$0.0008 per email'],
+          ['Marketing', '$0.0006 per email'],
+          ['Enterprise', 'Custom pricing']
+        ],
+        additionalInfo: [
+          'Advanced email analytics and tracking',
+          'Template management and personalization',
+          'Deliverability optimization',
+          'Multi-channel integration',
+          'Enterprise compliance features'
+        ],
+        pros: [
+          'Good deliverability rates',
+          'Multi-channel integration',
+          'Advanced analytics',
+          'Template management',
+          'Enterprise features'
+        ],
+        cons: [
+          'Premium pricing',
+          'Complex for simple email needs',
+          'Enterprise-focused',
+          'Requires technical expertise'
+        ]
+      },
+      'clicksend-phone': {
+        title: 'ClickSend - Phone Numbers',
+        pricing: [
+          ['US Local', '$1.25/month'],
+          ['UK Local', '$1.50/month'],
+          ['Australia Local', '$2.50/month'],
+          ['Canada Local', '$1.25/month'],
+          ['Global Coverage', 'Variable pricing']
+        ],
+        additionalInfo: [
+          '🚫 NO A2P registration required for US domestic messaging',
+          '🚫 NO A2P registration required for international markets',
+          'Sending limits: 50 msg/sec (default), unlimited (enterprise)',
+          'Strong Australian presence',
+          'Number porting available',
+          'Simple provisioning process',
+          'Multi-channel platform'
+        ],
+        pros: [
+          'No A2P required in many regions',
+          'Strong Australian presence',
+          'Multi-channel platform',
+          'Simple setup',
+          'Good global coverage'
+        ],
+        cons: [
+          'Limited US market focus',
+          'Higher pricing than specialists',
+          'Complex for simple needs',
+          'Australian company focus'
+        ]
+      },
+      'clicksend-sms': {
+        title: 'ClickSend - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.0065 per message'],
+          ['UK', '$0.035 per message'],
+          ['Australia', '$0.035 per message'],
+          ['Global Average', '$0.02-0.12 per message']
+        ],
+        additionalInfo: [
+          '🚫 NO A2P registration required for US domestic messaging',
+          '🚫 NO A2P registration required for international markets',
+          'Sending limits: 50 msg/sec (default), unlimited (enterprise)',
+          'Free trial: $5 credit for new accounts',
+          'Volume discounts available',
+          'Multi-channel messaging platform',
+          'Simple REST API'
+        ],
+        pros: [
+          'No A2P required in many regions',
+          'Multi-channel capabilities',
+          'Good global coverage',
+          'Simple API',
+          'Australian compliance expertise'
+        ],
+        cons: [
+          'Limited US market focus',
+          'Higher pricing than specialists',
+          'Basic analytics',
+          'Australian company focus'
+        ]
+      },
+      'clicksend-voice': {
+        title: 'ClickSend - Voice',
+        pricing: [
+          ['US/Canada', '$0.012 per minute'],
+          ['UK', '$0.02 per minute'],
+          ['Australia', '$0.015 per minute'],
+          ['International', '$0.015-0.40 per minute']
+        ],
+        additionalInfo: [
+          'Multi-channel voice capabilities',
+          'Text-to-speech and voice broadcasting',
+          'Call recording available',
+          'Integration with messaging platform',
+          'Simple voice API'
+        ],
+        pros: [
+          'Multi-channel integration',
+          'Text-to-speech capabilities',
+          'Simple voice API',
+          'Good Australian presence',
+          'Voice broadcasting features'
+        ],
+        cons: [
+          'Limited advanced voice features',
+          'Higher pricing than specialists',
+          'Basic call analytics',
+          'Australian company focus'
+        ]
+      },
+      'clicksend-email': {
+        title: 'ClickSend - Email',
+        pricing: [
+          ['Transactional', '$0.0009 per email'],
+          ['Marketing', '$0.0007 per email'],
+          ['Enterprise', 'Custom pricing']
+        ],
+        additionalInfo: [
+          'Multi-channel email integration',
+          'Email analytics and tracking',
+          'Template management',
+          'Deliverability optimization',
+          'Integration with SMS and voice'
+        ],
+        pros: [
+          'Multi-channel integration',
+          'Good deliverability',
+          'Simple setup',
+          'Template management',
+          'Unified platform'
+        ],
+        cons: [
+          'Higher cost than dedicated email providers',
+          'Basic email features',
+          'Australian company focus',
+          'Limited advanced analytics'
+        ]
+      },
+      'textmagic-phone': {
+        title: 'TextMagic - Phone Numbers',
+        pricing: [
+          ['US Local', '$2.00/month'],
+          ['UK Local', '$2.50/month'],
+          ['Canada Local', '$2.00/month'],
+          ['Limited availability', 'Focus on SMS services']
+        ],
+        additionalInfo: [
+          '🚫 NO A2P registration required for US domestic messaging',
+          '🚫 NO A2P registration required for international markets',
+          'Sending limits: 10 msg/sec (default), 100 msg/sec (enterprise)',
+          'Primary focus on SMS services',
+          'Limited phone number inventory',
+          'Simple business messaging focus',
+          'Easy setup process'
+        ],
+        pros: [
+          'No A2P required in many regions',
+          'Simple business focus',
+          'Easy setup',
+          'Good for small businesses',
+          'SMS specialization'
+        ],
+        cons: [
+          'Limited phone number availability',
+          'Higher pricing than specialists',
+          'Basic feature set',
+          'Limited global presence'
+        ]
+      },
+      'textmagic-sms': {
+        title: 'TextMagic - SMS/MMS',
+        pricing: [
+          ['US/Canada', '$0.04 per message'],
+          ['UK', '$0.04 per message'],
+          ['Europe', '$0.035-0.055 per message'],
+          ['Global Average', '$0.03-0.12 per message']
+        ],
+        additionalInfo: [
+          '🚫 NO A2P registration required for US domestic messaging',
+          '🚫 NO A2P registration required for international markets',
+          'Sending limits: 10 msg/sec (default), 100 msg/sec (enterprise)',
+          'Free trial: $2 credit for new accounts',
+          'Volume discounts available',
+          'Simple business messaging platform',
+          'Easy-to-use web interface'
+        ],
+        pros: [
+          'No A2P required in many regions',
+          'Simple and easy to use',
+          'Good for small businesses',
+          'Reliable delivery',
+          'Business-focused features'
+        ],
+        cons: [
+          'Higher per-message costs',
+          'Lower sending limits',
+          'Basic analytics',
+          'Limited advanced features'
+        ]
+      },
+      'textmagic-voice': {
+        title: 'TextMagic - Voice',
+        pricing: [
+          ['Voice services', 'Limited availability'],
+          ['Focus on SMS', 'Primary service is SMS']
+        ],
+        additionalInfo: [
+          'Primary focus on SMS services',
+          'Limited voice capabilities',
+          'SMS-first business approach',
+          'Voice features under development'
+        ],
+        pros: [
+          'SMS expertise',
+          'Business messaging focus'
+        ],
+        cons: [
+          'Limited voice services',
+          'Not a voice specialist',
+          'Basic voice features'
+        ]
+      }
+    };
+
+    function searchProviders() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const cards = document.querySelectorAll('.provider-card');
+      
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function filterProviders(category) {
+      const cards = document.querySelectorAll('.provider-card');
+      const buttons = document.querySelectorAll('.filter-button');
+      
+      // Update active button
+      buttons.forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      cards.forEach(card => {
+        if (category === 'all') {
+          card.style.display = 'block';
+        } else {
+          const categories = card.dataset.category || '';
+          if (categories.includes(category)) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    function toggleProvider(card) {
+      const serviceList = card.querySelector('.service-list');
+      const toggleBtn = card.querySelector('.provider-toggle');
+      const isExpanded = card.classList.contains('expanded');
+      
+      // Close all other cards
+      document.querySelectorAll('.provider-card').forEach(otherCard => {
+        if (otherCard !== card) {
+          otherCard.classList.remove('expanded');
+          const otherServiceList = otherCard.querySelector('.service-list');
+          const otherToggleBtn = otherCard.querySelector('.provider-toggle');
+          if (otherServiceList) {
+            otherServiceList.classList.remove('expanded');
+            otherServiceList.style.height = '0';
+          }
+          if (otherToggleBtn) {
+            otherToggleBtn.textContent = '+';
+          }
+        }
+      });
+      
+      // Toggle current card
+      if (isExpanded) {
+        card.classList.remove('expanded');
+        serviceList.classList.remove('expanded');
+        serviceList.style.height = '0';
+        toggleBtn.textContent = '+';
+      } else {
+        card.classList.add('expanded');
+        serviceList.classList.add('expanded');
+        toggleBtn.textContent = '−';
+        
+        // Calculate and set dynamic height
+        setTimeout(() => {
+          serviceList.style.height = serviceList.scrollHeight + 'px';
+        }, 10);
+      }
+    }
+
+    function openModal(serviceId) {
+      const modal = document.getElementById('serviceModal');
+      const data = serviceData[serviceId];
+      
+      if (!data) {
+        alert('Service information not available yet.');
+        return;
+      }
+      
+      // Update modal content
+      document.getElementById('modalTitle').textContent = data.title;
+      
+      // Update pricing
+      const pricingContainer = document.getElementById('modalPricing');
+      pricingContainer.innerHTML = '';
+      
+      if (data.pricing && data.pricing.length > 0) {
+        const table = document.createElement('table');
+        table.className = 'pricing-table';
+        
+        const thead = document.createElement('thead');
+        thead.innerHTML = '<tr><th>Service</th><th>Price</th></tr>';
+        table.appendChild(thead);
+        
+        const tbody = document.createElement('tbody');
+        data.pricing.forEach(([service, price]) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${service}</td><td class="price-highlight">${price}</td>`;
+          tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        
+        pricingContainer.appendChild(table);
+      }
+      
+      // Update additional info
+      const infoContainer = document.getElementById('modalInfo');
+      infoContainer.innerHTML = '';
+      if (data.additionalInfo && data.additionalInfo.length > 0) {
+        const infoList = document.createElement('ul');
+        infoList.style.listStyle = 'disc';
+        infoList.style.paddingLeft = '20px';
+        data.additionalInfo.forEach(info => {
+          const li = document.createElement('li');
+          li.textContent = info;
+          li.style.marginBottom = '8px';
+          infoList.appendChild(li);
+        });
+        infoContainer.appendChild(infoList);
+      } else {
+        infoContainer.innerHTML = '<p>Additional information coming soon...</p>';
+      }
+      
+      // Update pros
+      const prosContainer = document.getElementById('modalPros');
+      prosContainer.innerHTML = '';
+      if (data.pros) {
+        data.pros.forEach(pro => {
+          const li = document.createElement('li');
+          li.textContent = pro;
+          prosContainer.appendChild(li);
+        });
+      }
+      
+      // Update cons
+      const consContainer = document.getElementById('modalCons');
+      consContainer.innerHTML = '';
+      if (data.cons) {
+        data.cons.forEach(con => {
+          const li = document.createElement('li');
+          li.textContent = con;
+          consContainer.appendChild(li);
+        });
+      }
+      
+      // Show modal
+      modal.style.display = 'block';
+    }
+
+    function closeModal() {
+      document.getElementById('serviceModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      const modal = document.getElementById('serviceModal');
+      if (event.target === modal) {
+        closeModal();
+      }
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    // Initialize with all providers visible
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Phone Number Provider Specs loaded with modal functionality');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bulk SMS System Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .test-section { background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #007bff; }
+        button { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>📱 Bulk SMS System Test Page</h1>
+    
+    <div class="test-section">
+        <h2>🔧 System Status</h2>
+        <div id="system-status">Checking system status...</div>
+        <button class="btn-primary" onclick="checkSystemStatus()">Refresh Status</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>📋 Test SMS Editor Integration</h2>
+        <p>This simulates the SMS editor sending data to the contact list:</p>
+        
+        <label>SMS Message:</label>
+        <textarea id="test-message" placeholder="Enter test SMS message">Hi {first_name}, this is a test message from our bulk SMS system!</textarea>
+        
+        <label>Provider:</label>
+        <select id="test-provider">
+            <option value="clicksend">ClickSend</option>
+            <option value="twilio">Twilio</option>
+            <option value="plivo">Plivo</option>
+        </select>
+        
+        <br><br>
+        <button class="btn-success" onclick="simulateSMSEditor()">📤 Simulate "Send to List"</button>
+        <button class="btn-primary" onclick="openContactList()">📋 Open Contact List</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>🧪 API Testing</h2>
+        <div id="api-status">API Status: Not checked</div>
+        <button class="btn-primary" onclick="testAPI()">Test API Connection</button>
+        <button class="btn-warning" onclick="testCSVUpload()">Test CSV Upload</button>
+        
+        <div id="api-results" style="margin-top: 15px;"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📄 Sample CSV Download</h2>
+        <p>Download a sample CSV file to test the import functionality:</p>
+        <button class="btn-success" onclick="downloadSampleCSV()">📥 Download Sample CSV</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>📚 Quick Links</h2>
+        <button class="btn-primary" onclick="window.open('sms/sms_editor.html', '_blank')">📝 SMS Editor</button>
+        <button class="btn-primary" onclick="window.open('list.html', '_blank')">📋 Contact List</button>
+        <button class="btn-primary" onclick="window.open('http://localhost:5000', '_blank')">🔗 API Server</button>
+        <button class="btn-primary" onclick="window.open('BULK_SMS_SYSTEM_README.md', '_blank')">📖 Documentation</button>
+    </div>
+
+    <script>
+        function checkSystemStatus() {
+            const statusDiv = document.getElementById('system-status');
+            statusDiv.innerHTML = '<div class="info">Checking system components...</div>';
+            
+            let status = [];
+            
+            // Check if SMS editor exists
+            fetch('sms/sms_editor.html', { method: 'HEAD' })
+                .then(() => status.push('✅ SMS Editor: Available'))
+                .catch(() => status.push('❌ SMS Editor: Not found'))
+                .finally(updateStatus);
+            
+            // Check if contact list exists
+            fetch('list.html', { method: 'HEAD' })
+                .then(() => status.push('✅ Contact List: Available'))
+                .catch(() => status.push('❌ Contact List: Not found'))
+                .finally(updateStatus);
+            
+            // Check API server
+            fetch('http://localhost:5000/')
+                .then(() => status.push('✅ API Server: Running'))
+                .catch(() => status.push('❌ API Server: Not running (start with start_sms_api.bat)'))
+                .finally(updateStatus);
+            
+            function updateStatus() {
+                if (status.length >= 3) {
+                    statusDiv.innerHTML = status.map(s => `<div>${s}</div>`).join('');
+                }
+            }
+        }
+        
+        function simulateSMSEditor() {
+            const message = document.getElementById('test-message').value.trim();
+            const provider = document.getElementById('test-provider').value;
+            
+            if (!message) {
+                alert('Please enter a test message');
+                return;
+            }
+            
+            // Store SMS data in localStorage (same as SMS editor)
+            const smsData = {
+                message: message,
+                from: 'SMS',
+                provider: provider,
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('pendingSMSData', JSON.stringify(smsData));
+            
+            alert('✅ SMS data stored in localStorage! Now open the contact list to see it in action.');
+        }
+        
+        function openContactList() {
+            window.open('list.html?mode=sms&action=bulk', '_blank');
+        }
+        
+        function testAPI() {
+            const statusDiv = document.getElementById('api-status');
+            const resultsDiv = document.getElementById('api-results');
+            
+            statusDiv.innerHTML = '<div class="info">Testing API connection...</div>';
+            
+            fetch('http://localhost:5000/')
+                .then(response => response.text())
+                .then(data => {
+                    statusDiv.innerHTML = '<div class="success">✅ API Server: Connected</div>';
+                    resultsDiv.innerHTML = '<div class="status success">API server is running and responding correctly!</div>';
+                })
+                .catch(error => {
+                    statusDiv.innerHTML = '<div class="error">❌ API Server: Connection failed</div>';
+                    resultsDiv.innerHTML = '<div class="status error">API server connection failed. Please start the server with start_sms_api.bat</div>';
+                });
+        }
+        
+        function testCSVUpload() {
+            const resultsDiv = document.getElementById('api-results');
+            
+            // Create a test CSV blob
+            const csvContent = `first_name,last_name,phone,email
+John,Test,+15551234567,john.test@example.com
+Jane,Demo,+15551234568,jane.demo@example.com`;
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const formData = new FormData();
+            formData.append('file', blob, 'test.csv');
+            
+            resultsDiv.innerHTML = '<div class="info">Testing CSV upload...</div>';
+            
+            fetch('http://localhost:5000/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultsDiv.innerHTML = `<div class="status success">
+                    ✅ CSV Upload Test Successful!<br>
+                    Session ID: ${data.session_id}<br>
+                    Contacts Found: ${data.contacts_found}
+                </div>`;
+            })
+            .catch(error => {
+                resultsDiv.innerHTML = '<div class="status error">❌ CSV upload test failed. Make sure API server is running.</div>';
+            });
+        }
+        
+        function downloadSampleCSV() {
+            const csvContent = `first_name,last_name,phone,email,city,state
+John,Doe,+15551234567,john.doe@example.com,New York,NY
+Jane,Smith,+15551234568,jane.smith@example.com,Los Angeles,CA
+Mike,Johnson,+15551234569,mike.johnson@example.com,Chicago,IL
+Sarah,Williams,+15551234570,sarah.williams@example.com,Houston,TX
+David,Brown,+15551234571,david.brown@example.com,Phoenix,AZ
+Lisa,Davis,+15551234572,lisa.davis@example.com,Philadelphia,PA
+Chris,Miller,+15551234573,chris.miller@example.com,San Antonio,TX
+Amanda,Wilson,+15551234574,amanda.wilson@example.com,San Diego,CA
+Ryan,Moore,+15551234575,ryan.moore@example.com,Dallas,TX
+Emily,Taylor,+15551234576,emily.taylor@example.com,San Jose,CA`;
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sample_contacts.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+        
+        // Auto-check system status on page load
+        window.onload = function() {
+            checkSystemStatus();
+        };
+    </script>
+</body>
+</html>
